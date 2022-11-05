@@ -2,7 +2,7 @@
   "name": "theengine",
   "version": "1.0.0",
   "description": "A discord bot for Torn",
-  "main": "index.js",
+  "main": "theEngine.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

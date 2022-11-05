@@ -1,0 +1,14 @@
+{
+  "name": "theengine",
+  "version": "1.0.0",
+  "description": "A discord bot for Torn",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "byrod",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.6.0"
+  }
+}

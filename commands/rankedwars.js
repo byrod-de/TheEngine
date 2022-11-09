@@ -1,13 +1,17 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { apiKey, comment } = require('../config.json');
+const { apiKey, comment, rwPingRoleId} = require('../config.json');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('rankedwars')
-		.setDescription('Get a list of Torn Ranked Wars'),
+		.setDescription('Get a list of finished Torn Ranked Wars')
+		.addIntegerOption(option =>
+		option.setName('lasthours')
+			.setDescription('Number of hours to go back with.')),
 
 	async execute(interaction) {
-    console.log(`Used API Key ${apiKey} `);
+		const lasthours = interaction.options.getInteger('lasthours') ?? 5;
+    console.log(`Number of hours ${lasthours}`);
 
     let rwURL = 'https://api.torn.com/torn/?selections=rankedwars&key=' + apiKey + '&comment=' + comment;
     console.log(` > ${rwURL}`);
@@ -24,7 +28,7 @@ module.exports = {
       let rwEmbed = new EmbedBuilder()
       .setColor(0x1199bb)
       .setTitle('Ranked Wars')
-      .setDescription('Ranked Wars which ended within the last 5 hours')
+      .setDescription(`Ranked Wars which ended within the last ${lasthours} hours`)
       .setTimestamp();
 
       for( let rwId in rankedWars ){
@@ -39,7 +43,7 @@ module.exports = {
         let now = Date.now() / 1000;
 
 
-        if ((rankedWar.war.end != 0) && (now -  rankedWar.war.end <= 18000) && (fieldsAdded <= 25))) {
+        if ((rankedWar.war.end != 0) && (now -  rankedWar.war.end <= lasthours * 60 * 60) && (fieldsAdded <= 25)) {
 
           let rwReportlURL = 'https://api.torn.com/torn/' + rwId + '?selections=rankedwarreport&key=' + apiKey + '&comment=' + comment;
           console.log(` >> ${rwReportlURL}`);
@@ -67,8 +71,12 @@ module.exports = {
               counter = 1;
 
               for (let itemsId in rankedWarReport.factions[factionID].rewards.items) {
-                  faction1Items = faction1Items + rankedWarReport.factions[factionID].rewards.items[itemsId].quantity + 'x ' + rankedWarReport.factions[factionID].rewards.items[itemsId].name + '\n';
-              }
+								if (faction1Items == '') {
+									faction1Items = rankedWarReport.factions[factionID].rewards.items[itemsId].quantity.toString().padStart(3) + 'x ' + rankedWarReport.factions[factionID].rewards.items[itemsId].name.padEnd(15) + '\n';
+								} else {
+									faction1Items = faction1Items + rankedWarReport.factions[factionID].rewards.items[itemsId].quantity.toString().padStart(11) + 'x ' + rankedWarReport.factions[factionID].rewards.items[itemsId].name.padEnd(15) + '\n';
+								}
+							}
 
             } else {
               faction2Name = faction.name;
@@ -76,23 +84,38 @@ module.exports = {
               faction2ID = factionID;
 
               for (let itemsId in rankedWarReport.factions[factionID].rewards.items) {
-                  faction2Items = faction2Items + rankedWarReport.factions[factionID].rewards.items[itemsId].quantity + 'x ' + rankedWarReport.factions[factionID].rewards.items[itemsId].name + '\n';
-              }
+								if (faction2Items == '') {
+									faction2Items = rankedWarReport.factions[factionID].rewards.items[itemsId].quantity.toString().padStart(3) + 'x ' + rankedWarReport.factions[factionID].rewards.items[itemsId].name.padEnd(15) + '\n';
+								} else {
+									faction2Items = faction2Items + rankedWarReport.factions[factionID].rewards.items[itemsId].quantity.toString().padStart(11) + 'x ' + rankedWarReport.factions[factionID].rewards.items[itemsId].name.padEnd(15) + '\n';
+								}
+							}
             }
           }
 
-          rwEmbed.addFields({ name: `${faction1Name}`, value: `Score: ${faction1Score}\n${faction1Items}\n`, inline: true });
-          rwEmbed.addFields({ name: `${faction2Name}`, value: `Score: ${faction2Score}\n${faction2Items}\n`, inline: true });
-          rwEmbed.addFields({ name: warStatus, value: `<t:${rankedWar.war.end}:R>`, inline: true });
-          rwEmbed.addFields({ name: '\u200B', value: '\u200B' });
+					let value = faction1Name
+									  + '\n```Score  : ' + faction1Score.toString().padStart(5)
+										+ '\nRewards:' + faction1Items
+										+ '```\n'
+									  + faction2Name
+										+ '\n```Score  : ' + faction2Score.toString().padStart(5)
+										+ '\nRewards:' + faction2Items
+										+ '```'
+										+ `War ended <t:${rankedWar.war.end}:R>\n`;
 
-          fieldsAdded = fieldsAdded + 4;
+          rwEmbed.addFields({ name: `${faction1Name} vs ${faction2Name}`, value: `${value}`, inline: false });
+
+          fieldsAdded = fieldsAdded + 1;
 
     		}
       }
+			await interaction.reply({content: `Command /rankedwars executed for the last ${lasthours} hours `, ephemeral: true })
 
-      await interaction.reply({ embeds: [rwEmbed], ephemeral: true });
-
+			if (rwPingRoleId != '') {
+      	await interaction.channel.send({ content: `<@&${rwPingRoleId}>`, embeds: [rwEmbed], ephemeral: false });
+			} else {
+				await interaction.channel.send({ embeds: [rwEmbed], ephemeral: false });
+			}
 
     } else {
       alert("HTTP-Error: " + response.status);

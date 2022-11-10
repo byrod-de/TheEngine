@@ -15,7 +15,6 @@ for (const file of commandFiles) {
 	const filePath = path.join(commandsPath, file);
 	const command = require(filePath);
 	client.commands.set(command.data.name, command);
-  //console.log(' > ' + command.data.name);
 }
 
 const hostname = os.hostname();
@@ -30,6 +29,11 @@ client.once(Events.ClientReady, c => {
 	if (statusChannel !== undefined) {
 		setInterval(send_msg, 1000 * 60 * 15);
 	}
+
+	client.user.setPresence({
+    activities: [{ name: "running wild" }],
+    status: "online",
+  })
 });
 
 client.on(Events.InteractionCreate, async interaction => {

@@ -4,6 +4,7 @@ const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { token, statusChannelId, statusGuildId } = require('./config.json');
 const moment = require('moment');
 const os = require('os');
+const hostname = os.hostname();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -17,7 +18,6 @@ for (const file of commandFiles) {
 	client.commands.set(command.data.name, command);
 }
 
-const hostname = os.hostname();
 
 client.once(Events.ClientReady, c => {
 	let currentDate = moment().format().replace('T',' ');

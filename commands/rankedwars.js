@@ -7,7 +7,7 @@ module.exports = {
 		.setDescription('Get a list of finished Torn Ranked Wars')
 		.addIntegerOption(option =>
 		option.setName('lasthours')
-			.setDescription('Number of hours to go back with.')),
+			.setDescription('Number of hours to go back with (default: 5).')),
 
 	async execute(interaction) {
 		const lasthours = interaction.options.getInteger('lasthours') ?? 5;

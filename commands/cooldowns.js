@@ -5,7 +5,7 @@ const { apiKey, comment} = require('../config.json');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('cooldowns')
-		.setDescription('Replies with Pong and the current timestamp!'),
+		.setDescription('Returns torn cooldowns.'),
 
 	async execute(interaction) {
 		let cdURL = 'https://api.torn.com/user/?selections=basic,bars,cooldowns,timestamp&key=' + apiKey + '&comment=' + comment;
@@ -33,8 +33,8 @@ module.exports = {
             ts = new Date(drugTime * 1000);
             let drugTimeFormatted = `<t:${drugTime}:f>`;
             let drugTimeR = `<t:${drugTime}:R>`;
-            if (drugTime == 0) {
-                drugTimeFormatted = 'no cooldown';
+            if (drugCD == 0) {
+                drugTimeFormatted = ' > no cooldown';
                 drugTimeR = '';
             }
 
@@ -43,9 +43,9 @@ module.exports = {
             ts = new Date(medicalTime * 1000);
             let medicalTimeFormatted = `<t:${medicalTime}:f>`;
             let medicalTimeR = `<t:${medicalTime}:R>`;
-            if (medicalTime == 0) {
-                medicalTimeFormatted = 'no cooldown';
-                medicalimeR = '';
+            if (medicalCD == 0) {
+                medicalTimeFormatted = ' > no cooldown';
+                medicalTimeR = '';
             }
 
             let boosterCD = cooldownsJson['cooldowns']['booster'];
@@ -53,8 +53,8 @@ module.exports = {
             ts = new Date(boosterTime * 1000);
             let boosterTimeFormatted = `<t:${boosterTime}:f>`;
             let boosterTimeR = `<t:${boosterTime}:R>`;
-            if (boosterTime == 0) {
-                boosterTimeFormatted = 'no cooldown';
+            if (boosterCD == 0) {
+                boosterTimeFormatted = ' > no cooldown';
                 boosterTimeR = '';
             }
 
@@ -70,8 +70,8 @@ module.exports = {
             let energyFullTimeFormatted = `<t:${energyFullTime}:f>`;
             let energyFullTimeR = `<t:${energyFullTime}:R>`;
             if (energyFull == 0) {
-                energyFullTimeFormatted = "";
-                energyFullTimeR = "";
+                energyFullTimeFormatted = ' > full';
+                energyFullTimeR = '';
             }
 
             let nerveCur = cooldownsJson['nerve']['current'];
@@ -82,8 +82,8 @@ module.exports = {
             let nerveFullTimeFormatted = `<t:${nerveFullTime}:f>`;
             let nerveFullTimeR = `<t:${nerveFullTime}:R>`;
             if (nerveFull == 0) {
-                nerveFullTimeFormatted = "";
-                nerveFullTimeR = "";
+                nerveFullTimeFormatted = ' > full';
+                nerveFullTimeR = '';
             }
 
             let lifeCur = cooldownsJson['life']['current'];
@@ -94,8 +94,8 @@ module.exports = {
             let lifeFullTimeFormatted = `<t:${lifeFullTime}:f>`;
             let lifeFullTimeR = `<t:${lifeFullTime}:R>`;
             if (lifeFull == 0) {
-                lifeFullTimeFormatted = "";
-                lifeFullTimeR = "";
+                lifeFullTimeFormatted = ' > full';
+                lifeFullTimeR = '';
             }
 
             cooldownEmbed.addFields({name: 'Energy', value:`[ ${energyCur} | ${energyMax}]\n${energyFullTimeFormatted} ${energyFullTimeR}`, inline: false});

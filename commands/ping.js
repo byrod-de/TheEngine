@@ -10,6 +10,6 @@ module.exports = {
 	async execute(interaction) {
 		currentDate = moment().format().replace('T',' ');
 
-    await interaction.reply({ content: `Pong! at ${currentDate}`, ephemeral: false });
+    await interaction.reply({ content: `\`\`\`Pong! at ${currentDate}\`\`\``, ephemeral: false });
 	},
 };

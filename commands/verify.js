@@ -25,7 +25,7 @@ module.exports = {
             let member = await interaction.guild.members.fetch(discordID);
             //member.setNickname(`${tornUser} [${tornId}]`);
 
-            await interaction.reply(`\`\`\`This command was run by ${interaction.user.username} [${interaction.user.id}], who is joined on ${tornUser} [${tornId}] on Torn.\`\`\``);
+            await interaction.reply(`\`\`\`This command was run by ${interaction.user.username} (${interaction.user.id}), who is named ${tornUser} [${tornId}] on Torn.\`\`\``);
             
         }
 	},

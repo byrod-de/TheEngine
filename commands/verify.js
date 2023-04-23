@@ -1,31 +1,43 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { apiKey, comment} = require('../config.json');
+const { SlashCommandBuilder } = require('discord.js');
+const { apiKey, comment, verifieRoleId} = require('../config.json');
 
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('verify')
-		.setDescription('Verify user towards Torn API.'),
+		.setDescription('Verify user towards Torn API.')
+        .addIntegerOption(option =>
+            option.setName('tornid')
+                .setDescription('Torn user ID.')),
 
 	async execute(interaction) {
 
-        let discordID = interaction.user.id;
+        const userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
 
-		let vfURL = `https://api.torn.com/user/${discordID}?selections=basic,discord&key=${apiKey}&comment=${comment}`;
+		let vfURL = `https://api.torn.com/user/${userID}?selections=basic,discord&key=${apiKey}&comment=${comment}`;
         console.log(` > ${vfURL}`);
 
         let vfResponse = await fetch(vfURL);
 
         if (vfResponse.ok) { // if HTTP-status is 200-299
 
-            let cooldownsJson = await vfResponse.json();
-            let tornUser = cooldownsJson['name'];
-            let tornId = cooldownsJson['player_id'];
+            let memberJson = await vfResponse.json();
+            let tornUser = memberJson['name'];
+            let tornId = memberJson['player_id'];
+            let discordID = memberJson['discord']['discordID'];
 
-            let member = await interaction.guild.members.fetch(discordID);
-            //member.setNickname(`${tornUser} [${tornId}]`);
+            if (discordID.length > 10) {
+                let member = await interaction.guild.members.fetch(discordID);
+                member.roles.add(verifieRoleId);
+ 
+                try {
+                    member.setNickname(`${tornUser} [${tornId}]`);
+                } catch (e) {
+                    console.log(e);
+                } 
+            }
 
-            await interaction.reply(`\`\`\`This command was run by ${interaction.user.username} (${interaction.user.id}), who is named ${tornUser} [${tornId}] on Torn.\`\`\``);
+            await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);
             
         }
 	},

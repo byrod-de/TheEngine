@@ -22,6 +22,15 @@ module.exports = {
         if (vfResponse.ok) { // if HTTP-status is 200-299
 
             let memberJson = await vfResponse.json();
+
+            if (memberJson.hasOwnProperty('error')){
+                if (memberJson['error'].code === 6) {
+                    await interaction.reply(`\`\`\`User ${interaction.user.username} is not verified on Torn.\`\`\``);
+                } else {
+                    await interaction.reply(`\`\`\`Error Code ${memberJson['error'].code},  ${memberJson['error'].error}.\`\`\``)
+                }
+            } else {
+
             let tornUser = memberJson['name'];
             let tornId = memberJson['player_id'];
             let discordID = memberJson['discord']['discordID'];
@@ -38,7 +47,7 @@ module.exports = {
             }
 
             await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);
-            
+            }
         }
 	},
 };

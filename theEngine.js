@@ -30,6 +30,10 @@ client.once(Events.ClientReady, c => {
 		setInterval(send_msg, 1000 * 60 * 15);
 	}
 
+	//client.on('guildMemberAdd', member => {
+	//	member.guild.channels.get(statusChannelId).send("Welcome"); 
+	//});
+
 	client.user.setPresence({
     activities: [{ name: "running wild" }],
     status: "online",
@@ -50,6 +54,7 @@ client.on(Events.InteractionCreate, async interaction => {
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 	}
 });
+
 
 async function send_msg() {
 	let currentDate = moment().format().replace('T',' ');

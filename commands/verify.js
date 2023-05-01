@@ -37,13 +37,15 @@ module.exports = {
 
                 if (discordID.length > 10) {
                     let member = await interaction.guild.members.fetch(discordID);
-                    member.roles.add(verifieRoleId);
 
-                    try {
+try {
                         member.setNickname(`${tornUser} [${tornId}]`);
                     } catch (e) {
                         console.log(e);
                     }
+                    member.roles.add(verifieRoleId);
+
+                    
                 }
 
                 await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);

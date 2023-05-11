@@ -5,7 +5,7 @@ const { apiKey, comment, verifieRoleId } = require('../config.json');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('verify')
-        .setDescription('Verify user towards Torn API.')
+        .setDescription('Verify a user towards Torn API!')
         .addIntegerOption(option =>
             option.setName('tornid')
                 .setDescription('Torn user ID.')),
@@ -38,14 +38,12 @@ module.exports = {
                 if (discordID.length > 10) {
                     let member = await interaction.guild.members.fetch(discordID);
 
-try {
+                    try {
                         member.setNickname(`${tornUser} [${tornId}]`);
                     } catch (e) {
-                        console.log(e);
+                        console.log('Set Nickname failed: ' & e);
                     }
                     member.roles.add(verifieRoleId);
-
-                    
                 }
 
                 await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);

@@ -4,7 +4,7 @@ const { apiKey, comment } = require('../config.json');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('rankedwars')
-    .setDescription('Get a list of finished Torn Ranked Wars')
+    .setDescription('Get a list of finished Torn Ranked Wars! You can add a number of hours to go back with (default: 5).')
     .addIntegerOption(option =>
       option.setName('lasthours')
         .setDescription('Number of hours to go back with (default: 5).')),
@@ -116,10 +116,9 @@ module.exports = {
 
           }
         }
-        await interaction.reply({ content: `Command /rankedwars executed for the last ${lasthours} hours `, ephemeral: true })
+        await interaction.reply({ content: `Command /rankedwars executed for the last ${lasthours} hours `, ephemeral: true });
 
-
-          await interaction.channel.send({ embeds: [rwEmbed], ephemeral: false });
+        await interaction.channel.send({ embeds: [rwEmbed], ephemeral: false });
       }
     } else {
       alert("HTTP-Error: " + response.status);

@@ -5,7 +5,7 @@ const { apiKey, comment} = require('../config.json');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('cooldowns')
-		.setDescription('Returns torn cooldowns.'),
+		.setDescription('Returns your Torn cooldowns! You need to store a key with Minimal Access first.'),
 
 	async execute(interaction) {
 		let cdURL = 'https://api.torn.com/user/?selections=basic,bars,cooldowns,timestamp&key=' + apiKey + '&comment=' + comment;

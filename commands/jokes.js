@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('jokes')
-		.setDescription('Tell a joke...'),
+		.setDescription('Tells a joke... no guarantee it is funny, though.'),
 
 	async execute(interaction) {
 	    let apiURL = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single';

@@ -33,10 +33,11 @@ module.exports = {
         let rankedWars = jsonRwResponse['rankedwars'];
 
         let rwEmbed = new EmbedBuilder()
-          .setColor(0x1199bb)
+          .setColor(0xdf691a)
           .setTitle('Ranked Wars')
           .setDescription(`Ranked Wars which ended within the last ${lasthours} hours`)
-          .setTimestamp();
+          .setTimestamp()
+          .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
 
         for (let rwId in rankedWars) {
 

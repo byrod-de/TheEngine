@@ -1,5 +1,3 @@
-
-
 function abbreviateNumber(value) {
     value = Math.abs(value);
     var newValue = value;

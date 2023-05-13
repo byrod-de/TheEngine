@@ -11,7 +11,7 @@ module.exports = {
         .setDescription('Get a players stat history! Add a tornid for checking another player, leave it empty for yourself.')
         .addIntegerOption(option =>
             option.setName('tornid')
-                .setDescription('Torn user ID.')),
+                  .setDescription('Torn user ID.')),
 
     async execute(interaction) {
 
@@ -39,25 +39,16 @@ module.exports = {
             let refillsCur = '';
             let xantakenCur = '';
             let statenhancersusedCur = '';
-            let useractivityCur = '';
 
             if (playerJson.hasOwnProperty('error')) {
                 await interaction.reply(`\`\`\`Error Code ${playerJson['error'].code},  ${playerJson['error'].error}.\`\`\``)
             } else {
-
-                let tornUser = playerJson['name'];
-                let tornId = playerJson['player_id'];
-
                 let personalstats = playerJson['personalstats'];
-                let faction_id = playerJson['faction']['faction_id'];
-                let faction_name = playerJson['faction']['faction_name'];
-                let faction_tag = playerJson['faction']['faction_tag'];
 
                 networthCur = personalstats['networth'];
                 refillsCur = personalstats['refills'];
                 xantakenCur = personalstats['xantaken'];
                 statenhancersusedCur = personalstats['statenhancersused'];
-                useractivityCur = personalstats['useractivity'];
 
 
 
@@ -79,21 +70,31 @@ module.exports = {
                         let tornId = playerJson['player_id'];
 
                         let personalstats = playerJson['personalstats'];
-                        let faction_id = playerJson['faction']['faction_id'];
+                        let position = playerJson['faction']['position'];
                         let faction_name = playerJson['faction']['faction_name'];
                         let faction_tag = playerJson['faction']['faction_tag'];
+                        let faction_id = playerJson['faction']['faction_id'];
+
+                        let last_action = playerJson['last_action']['relative'];
+                        let status = playerJson['last_action']['status'];
+                        let revivable = playerJson['revivable'];
+                        if (revivable == 0) revivable = 'false';
+                        else revivable = 'true';
+
 
                         let networthHist = personalstats['networth'];
                         let refillsHist = personalstats['refills'];
                         let xantakenHist = personalstats['xantaken'];
                         let statenhancersusedHist = personalstats['statenhancersused'];
-                        let useractivityHist = personalstats['useractivity'];
 
                         let statsEmbed = new EmbedBuilder()
-                        .setColor(0x1199bb)
-                        .setAuthor({name:`${tornUser} [${tornId}]`, url:`https://www.torn.com/profiles.php?XID=${tornId}`})
-                        .setDescription(` of ${faction_tag} -  ${faction_name}`)
-                        .setTimestamp();
+                        .setColor(0xdf691a)
+                        .setTitle(`${tornUser} [${tornId}]`)
+                        .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
+                        .setAuthor({name:`${position} of ${faction_tag} -  ${faction_name}`, url:`https://www.torn.com/factions.php?step=profile&ID=${faction_id}`})
+                        .setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}`)
+                        .setTimestamp()
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                         replyMsg = ``;
                         replyMsg = replyMsg + 'Stat'.padEnd(7);

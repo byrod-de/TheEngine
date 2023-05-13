@@ -10,9 +10,12 @@ module.exports = {
 	async execute(interaction) {
 
         let helpEmbed = new EmbedBuilder()
-          .setColor(0x1199bb)
-          .setTitle('TheEngine Slash Commands Overview')
-          .setTimestamp();
+          .setColor(0xdf691a)
+          .setTitle(`TornEngine`)
+          .setURL(`https://tornengine.netlify.app/`)
+          .setDescription('TheEngine Slash Commands Overview')
+          .setTimestamp()
+          .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
 
         const commands = [];
         // Grab all the command files from the commands directory you created earlier

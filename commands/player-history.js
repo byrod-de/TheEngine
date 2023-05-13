@@ -1,6 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { apiKey, comment, verifieRoleId } = require('../config.json');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { apiKey, comment } = require('../config.json');
 const moment = require('moment');
+var formatting = require('../helper/formattings');
 
 
 
@@ -20,9 +21,9 @@ module.exports = {
 
         let currentStatsURL = `https://api.torn.com/user/${userID}?selections=basic,personalstats,profile&key=${apiKey}&comment=${comment}`;
         let thismoment = moment();
-        let currentDate = thismoment.format().replace('T',' ');
+        let currentDate = thismoment.format().replace('T', ' ');
         let historymoment = thismoment.subtract(30, 'days');
-        let historyDate = historymoment.format().replace('T',' ');
+        let historyDate = historymoment.format().replace('T', ' ');
 
 
         console.log(`${currentDate} > ${currentStatsURL}`);
@@ -57,69 +58,87 @@ module.exports = {
                 xantakenCur = personalstats['xantaken'];
                 statenhancersusedCur = personalstats['statenhancersused'];
                 useractivityCur = personalstats['useractivity'];
-            }
 
 
-            let histStatsURL = `https://api.torn.com/user/${userID}?selections=basic,personalstats,profile&stat=networth,refills,xantaken,statenhancersused,useractivity&timestamp=${historymoment.unix()}&key=${apiKey}&comment=${comment}`;
-            console.log(`${historyDate} > ${histStatsURL}`);
 
-            let histStatsResponse = await fetch(histStatsURL);
+                let histStatsURL = `https://api.torn.com/user/${userID}?selections=basic,personalstats,profile&stat=networth,refills,xantaken,statenhancersused,useractivity&timestamp=${historymoment.unix()}&key=${apiKey}&comment=${comment}`;
+                console.log(`${historyDate} > ${histStatsURL}`);
+
+                let histStatsResponse = await fetch(histStatsURL);
 
 
-            if (histStatsResponse.ok) { // if HTTP-status is 200-299
+                if (histStatsResponse.ok) { // if HTTP-status is 200-299
 
-                let playerJson = await histStatsResponse.json();
+                    let playerJson = await histStatsResponse.json();
 
-                if (playerJson.hasOwnProperty('error')) {
-                    await interaction.reply(`\`\`\`Error Code ${playerJson['error'].code},  ${playerJson['error'].error}.\`\`\``)
+                    if (playerJson.hasOwnProperty('error')) {
+                        await interaction.reply(`\`\`\`Error Code ${playerJson['error'].code},  ${playerJson['error'].error}.\`\`\``)
+                    } else {
+
+                        let tornUser = playerJson['name'];
+                        let tornId = playerJson['player_id'];
+
+                        let personalstats = playerJson['personalstats'];
+                        let faction_id = playerJson['faction']['faction_id'];
+                        let faction_name = playerJson['faction']['faction_name'];
+                        let faction_tag = playerJson['faction']['faction_tag'];
+
+                        let networthHist = personalstats['networth'];
+                        let refillsHist = personalstats['refills'];
+                        let xantakenHist = personalstats['xantaken'];
+                        let statenhancersusedHist = personalstats['statenhancersused'];
+                        let useractivityHist = personalstats['useractivity'];
+
+                        let statsEmbed = new EmbedBuilder()
+                        .setColor(0x1199bb)
+                        .setAuthor({name:`${tornUser} [${tornId}]`, url:`https://www.torn.com/profiles.php?XID=${tornId}`})
+                        .setDescription(` of ${faction_tag} -  ${faction_name}`)
+                        .setTimestamp();
+
+                        replyMsg = ``;
+                        replyMsg = replyMsg + 'Stat'.padEnd(7);
+                        replyMsg = replyMsg + ` | ${'30d ago'.padEnd(7)}`;
+                        replyMsg = replyMsg + ` | ${'Today'.padEnd(7)}`;
+                        replyMsg = replyMsg + ` | ${'Diff'.padEnd(7)}`;
+                        replyMsg = replyMsg + ` | ${'Daily'.padEnd(7)}`;
+                        replyMsg = replyMsg + '\n';
+                        replyMsg = replyMsg + '-'.padEnd(9 + 9 + 9 + 9 + 11, '-');
+                        replyMsg = replyMsg + '\n';
+
+                        replyMsg = replyMsg + 'Xanax'.padEnd(7) + ` | ${formatting.abbreviateNumber(xantakenHist).padStart(7)}`;
+                        replyMsg = replyMsg + ` | ${formatting.abbreviateNumber(xantakenCur).padStart(7)}`;
+                        replyMsg = replyMsg + ` | +${formatting.abbreviateNumber(xantakenCur - xantakenHist).toString().padStart(6)}`;
+                        replyMsg = replyMsg + ` | +${formatting.abbreviateNumber((xantakenCur - xantakenHist) / 30).toString().padStart(6)}`;
+                        replyMsg = replyMsg + '\n';
+                        replyMsg = replyMsg + 'SE used'.padEnd(7) + ` | ${formatting.abbreviateNumber(statenhancersusedHist).toString().padStart(7)}`;
+                        replyMsg = replyMsg + ` | ${formatting.abbreviateNumber(statenhancersusedCur).toString().padStart(7)}`;
+                        replyMsg = replyMsg + ` | +${formatting.abbreviateNumber(statenhancersusedCur - statenhancersusedHist).toString().padStart(6)}`;
+                        replyMsg = replyMsg + ` | +${formatting.abbreviateNumber((statenhancersusedCur - statenhancersusedHist) / 30).toString().padStart(6)}`;
+                        replyMsg = replyMsg + '\n';
+                        replyMsg = replyMsg + 'Refills'.padEnd(7) + ` | ${formatting.abbreviateNumber(refillsHist).toString().padStart(7)}`;
+                        replyMsg = replyMsg + ` | ${formatting.abbreviateNumber(refillsCur).toString().padStart(7)}`;
+                        replyMsg = replyMsg + ` | +${formatting.abbreviateNumber(refillsCur - refillsHist).toString().padStart(6)}`;
+                        replyMsg = replyMsg + ` | +${formatting.abbreviateNumber((refillsCur - refillsHist) / 30).toString().padStart(6)}`;
+                        replyMsg = replyMsg + '\n';
+                        replyMsg = replyMsg + 'Netwrth'.padEnd(7) + ` | ${formatting.abbreviateNumber(networthHist).toString().padStart(7)}`;
+                        replyMsg = replyMsg + ` | ${formatting.abbreviateNumber(networthCur).toString().padStart(7)}`;
+                        let networthDiff = networthCur - networthHist;
+                        let sign = '+';
+                        if (networthDiff < 0) sign = '-';
+                        replyMsg = replyMsg + ` | ${sign}${formatting.abbreviateNumber(networthDiff).toString().padStart(6)}`;
+                        replyMsg = replyMsg + ` | ${sign}${formatting.abbreviateNumber(networthDiff / 30).toString().padStart(6)}`;
+
+                        statsEmbed.addFields({name: 'Personal Stats', value:`\`\`\`${replyMsg}\`\`\``, inline: false});
+
+                        await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
+
+                    }
                 } else {
-
-                    let tornUser = playerJson['name'];
-                    let tornId = playerJson['player_id'];
-
-                    let personalstats = playerJson['personalstats'];
-                    let faction_id = playerJson['faction']['faction_id'];
-                    let faction_name = playerJson['faction']['faction_name'];
-                    let faction_tag = playerJson['faction']['faction_tag'];
-
-                    let networthHist = personalstats['networth'];
-                    let refillsHist = personalstats['refills'];
-                    let xantakenHist = personalstats['xantaken'];
-                    let statenhancersusedHist = personalstats['statenhancersused'];
-                    let useractivityHist = personalstats['useractivity'];
-                    
-                    replyMsg = `${faction_tag} ${tornUser} [${tornId}] of ${faction_name} \n`;
-                    replyMsg = replyMsg + 'Stat'.padEnd(14);
-                    replyMsg = replyMsg + `| ${'30 days ago'.padEnd(13)}`;
-                    replyMsg = replyMsg + ` | ${'Today'.padEnd(13)}`;
-                    replyMsg = replyMsg + ` | ${'Diff'.padEnd(5)}`;
-                    replyMsg = replyMsg + '\n';
-                    replyMsg = replyMsg + '-'.padEnd(12+14+12+5+12,'-');
-                    replyMsg = replyMsg + '\n';
-
-                    replyMsg = replyMsg + 'Xanax'.padEnd(14)         + `| ${xantakenHist.toString().padStart(13)}`;
-                    replyMsg = replyMsg + ` | ${xantakenCur.toString().padStart(13)}`;
-                    replyMsg = replyMsg + ` | + ${(xantakenCur-xantakenHist).toString().padEnd(3)}`;
-                    replyMsg = replyMsg + '\n';
-                    replyMsg = replyMsg + 'Stat Enhancer'.padEnd(14) + `| ${statenhancersusedHist.toString().padStart(13)}`;
-                    replyMsg = replyMsg + ` | ${statenhancersusedCur.toString().padStart(13)}`;
-                    replyMsg = replyMsg + ` | + ${(statenhancersusedCur-statenhancersusedHist).toString().padEnd(3)}`;
-                    replyMsg = replyMsg + '\n';
-                    replyMsg = replyMsg + 'Refills'.padEnd(14)       + `| ${refillsHist.toString().padStart(13)}`;
-                    replyMsg = replyMsg + ` | ${refillsCur.toString().padStart(13)}`;
-                    replyMsg = replyMsg + ` | + ${(refillsCur-refillsHist).toString().padEnd(3)}`;
-                    replyMsg = replyMsg + '\n';
-                    replyMsg = replyMsg + 'Networth'.padEnd(14)      + `| \$${networthHist.toString().padEnd(12)}`;
-                    replyMsg = replyMsg + ` | \$${networthCur.toString().padEnd(12)}`;
-                    let networthDiff = networthCur-networthHist;
-                    let sign = '+ ';
-                    if (networthDiff < 0) sign = '';
-                    replyMsg = replyMsg + ` | ${sign}\$${networthDiff.toString().padEnd(3)}`;
-
+                    await interaction.reply(`\`\`\`${replyMsg}\`\`\``);
                 }
-
-                await interaction.reply(`\`\`\`${replyMsg}\`\`\``);
             }
+        } else {
+            await interaction.reply(`\`\`\`${replyMsg}\`\`\``);
         }
     },
 };

@@ -118,7 +118,7 @@ module.exports = {
         }
         await interaction.reply({ content: `Command /rankedwars executed for the last ${lasthours} hours `, ephemeral: true });
 
-        await interaction.channel.send({ embeds: [rwEmbed], ephemeral: false });
+
       }
     } else {
       alert("HTTP-Error: " + response.status);

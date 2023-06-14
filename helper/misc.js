@@ -1,3 +1,5 @@
+const { apiKey, comment, storeMethod } = require('../config.json');
+
 function checkAPIKey(apikey) {
 
     if (apikey.length != 16)
@@ -9,20 +11,56 @@ function checkAPIKey(apikey) {
     return 'Okay';
 }
 
-function storeJSON(jsonText) {
+function storeAPIKey(jsonText) {
     let keyinfo = JSON.parse(jsonText).keyinfo;
     console.log(keyinfo.userID);
 
-    const fs = require('fs');
+    if (storeMethod === "File") {
 
-    fs.writeFile("tmp/keys.csv", `${keyinfo.userID};${keyinfo.tornUser};${keyinfo.tornId};${keyinfo.mykey};${keyinfo.access_level};${keyinfo.access_type}`, function (err) {
-        if (err) {
-            return console.log(err);
-        }
-        console.log("The file was saved!");
-    });
+        const fs = require('fs');
+
+        fs.writeFile("tmp/keys.csv", `${keyinfo.userID};${keyinfo.tornUser};${keyinfo.tornId};${keyinfo.mykey};${keyinfo.access_level};${keyinfo.access_type}`, function (err) {
+            if (err) {
+                return console.log(err);
+            }
+            console.log("The file was saved!");
+        });
+    }
 }
 
+function getAPIKey(userID) {
+
+    var apiKey = '';
+
+    if (storeMethod === "File") {
+
+        const fs = require('fs');
+        const readline = require('readline');
+
+        const fileStream = fs.createReadStream('tmp/keys.csv');
+
+        const rl = readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity
+        });
 
 
-module.exports = { checkAPIKey, storeJSON };
+        rl.on('line', (line) => {
+            var csv = line.split(";");
+            if (csv[0] === userID || csv[2] === userID) {
+                apiKey = csv[3];
+                return apiKey;
+            }
+
+        });
+
+        rl.on('close', () => {
+            console.log('Finished reading the file.');
+        });
+
+
+    }
+
+}
+
+module.exports = { checkAPIKey, storeAPIKey, getAPIKey };

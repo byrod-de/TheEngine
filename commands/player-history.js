@@ -1,7 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { apiKey, comment } = require('../config.json');
 const moment = require('moment');
-var formatting = require('../helper/formattings');
+
+const formatting = require('../helper/formattings');
+const misc = require('../helper/misc');
+
 
 
 
@@ -11,13 +14,15 @@ module.exports = {
         .setDescription('Get a players stat history! Add a tornid for checking another player, leave it empty for yourself.')
         .addIntegerOption(option =>
             option.setName('tornid')
-                  .setDescription('Torn user ID.')),
+                .setDescription('Torn user ID.')),
 
     async execute(interaction) {
 
         const userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
 
         let replyMsg = `Let's try this...`;
+
+        console.log(misc.getAPIKey(userID));
 
         let currentStatsURL = `https://api.torn.com/user/${userID}?selections=basic,personalstats,profile&key=${apiKey}&comment=${comment}`;
         let thismoment = moment();
@@ -75,6 +80,18 @@ module.exports = {
                         let faction_tag = playerJson['faction']['faction_tag'];
                         let faction_id = playerJson['faction']['faction_id'];
 
+                        let faction_icon = 'https://tornengine.netlify.app/images/logo-100x100.png';
+
+                        if (faction_id != 0) {
+                            let factionURL = 'https://api.torn.com/faction/' + faction_id + '?selections=basic&key=' + apiKey + '&comment=' + comment;
+                            let factionResponse = await fetch(factionURL);
+
+                            if (factionResponse.ok) { // if HTTP-status is 200-299
+                                let cooldownsJson = await factionResponse.json();
+                                faction_icon = `https://factiontags.torn.com/` + cooldownsJson['tag_image'];
+                            }
+                        }
+
                         let last_action = playerJson['last_action']['relative'];
                         let status = playerJson['last_action']['status'];
                         let revivable = playerJson['revivable'];
@@ -88,13 +105,13 @@ module.exports = {
                         let statenhancersusedHist = personalstats['statenhancersused'];
 
                         let statsEmbed = new EmbedBuilder()
-                        .setColor(0xdf691a)
-                        .setTitle(`${tornUser} [${tornId}]`)
-                        .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
-                        .setAuthor({name:`${position} of ${faction_tag} -  ${faction_name}`, url:`https://www.torn.com/factions.php?step=profile&ID=${faction_id}`})
-                        .setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}`)
-                        .setTimestamp()
-                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+                            .setColor(0xdf691a)
+                            .setTitle(`${tornUser} [${tornId}]`)
+                            .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
+                            .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                            .setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}`)
+                            .setTimestamp()
+                            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                         replyMsg = ``;
                         replyMsg = replyMsg + 'Stat'.padEnd(7);
@@ -129,7 +146,7 @@ module.exports = {
                         replyMsg = replyMsg + ` | ${sign}${formatting.abbreviateNumber(networthDiff).toString().padStart(6)}`;
                         replyMsg = replyMsg + ` | ${sign}${formatting.abbreviateNumber(networthDiff / 30).toString().padStart(6)}`;
 
-                        statsEmbed.addFields({name: 'Personal Stats', value:`\`\`\`${replyMsg}\`\`\``, inline: false});
+                        statsEmbed.addFields({ name: 'Personal Stats', value: `\`\`\`${replyMsg}\`\`\``, inline: false });
 
                         await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
 

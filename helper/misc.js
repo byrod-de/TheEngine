@@ -30,7 +30,7 @@ function storeAPIKey(jsonText) {
 
 function getAPIKey(userID) {
 
-    var apiKey = '';
+    var userApiKey = '';
 
     if (storeMethod === "File") {
 
@@ -48,8 +48,8 @@ function getAPIKey(userID) {
         rl.on('line', (line) => {
             var csv = line.split(";");
             if (csv[0] === userID || csv[2] === userID) {
-                apiKey = csv[3];
-                return apiKey;
+                userApiKey = csv[3];
+                return userApiKey;
             }
 
         });
@@ -57,9 +57,9 @@ function getAPIKey(userID) {
         rl.on('close', () => {
             console.log('Finished reading the file.');
         });
-
-
-    }
+    } else {
+        return apiKey;
+    } 
 
 }
 

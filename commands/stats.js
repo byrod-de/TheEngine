@@ -89,7 +89,7 @@ module.exports = {
                 , inline: false
             });
 
-            await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
+            await interaction.reply({ embeds: [statsEmbed], ephemeral: true });
 
         }
     },

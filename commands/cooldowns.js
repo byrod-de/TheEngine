@@ -128,7 +128,7 @@ module.exports = {
 
 
 
-                await interaction.reply({ embeds: [cooldownEmbed], ephemeral: false });
+                await interaction.reply({ embeds: [cooldownEmbed], ephemeral: true });
             }
         }
     },

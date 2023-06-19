@@ -2,11 +2,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { token, statusChannelId, territoryChannelId, apiKey, comment } = require('./config.json');
+const { ttFactionIDs } = require('./tornParams.json');
+
 const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const NodeCache = require( "node-cache" ); 
+const NodeCache = require("node-cache");
 const myCache = new NodeCache();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -23,24 +25,26 @@ for (const file of commandFiles) {
 
 
 client.once(Events.ClientReady, c => {
-	let currentDate = moment().format().replace('T',' ');
+	let currentDate = moment().format().replace('T', ' ');
 	let statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag} at ${currentDate}`;
 	console.log(statusMessage);
 	let statusChannel = client.channels.cache.get(statusChannelId);
 	if (statusChannel !== undefined) {
 		statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
-		setInterval(send_msg, 1000 * 60 * 15);
+		setInterval(send_msg, 1000 * 60 * 60);
 	}
 
 	client.user.setPresence({
-    activities: [{ name: "running wild" }],
-    status: "online",
-  })
+		activities: [{ name: "running wild" }],
+		status: "online",
+	})
 });
 
 client.on('ready', () => {
 	let territoryChannel = client.channels.cache.get(territoryChannelId);
 	if (territoryChannel !== undefined) {
+		let statusMessage = `Started Checking TT changes for ${ttFactionIDs}!`;
+		territoryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(checkTerritories, 1000 * 60);
 	}
 });
@@ -62,84 +66,93 @@ client.on(Events.InteractionCreate, async interaction => {
 
 
 async function send_msg() {
-	let currentDate = moment().format().replace('T',' ');
+	let currentDate = moment().format().replace('T', ' ');
 	let statusMessage = `Still running on ${hostname}! ${currentDate}`;
 	let statusChannel = client.channels.cache.get(statusChannelId);
 
-    let apiURL = `https://api.torn.com/torn/?selections=timestamp&key=${apiKey}&comment=${comment}`;
-    //console.log(` > ${apiURL}`);
+	let apiURL = `https://api.torn.com/torn/?selections=timestamp&key=${apiKey}&comment=${comment}`;
+	//console.log(` > ${apiURL}`);
 
-    let apiResponse = await fetch(apiURL);
+	let apiResponse = await fetch(apiURL);
 
-    if (apiResponse.ok) { // if HTTP-status is 200-299
+	if (apiResponse.ok) { // if HTTP-status is 200-299
 
-        let apiJson = await apiResponse.json();
+		let apiJson = await apiResponse.json();
 
-        if (apiJson.hasOwnProperty('error')) {
-            statusMessage = statusMessage + `\nError Code ${apiJson['error'].code},  ${apiJson['error'].error}.`;
-        } else {
-            statusMessage = statusMessage + `\nTorn API available!`;
-        }
-    } else {
-        statusMessage = statusMessage + `\nGeneral http error.`;
-    }
+		if (apiJson.hasOwnProperty('error')) {
+			statusMessage = statusMessage + `\nError Code ${apiJson['error'].code},  ${apiJson['error'].error}.`;
+		} else {
+			statusMessage = statusMessage + `\nTorn API available!`;
+		}
+	} else {
+		statusMessage = statusMessage + `\nGeneral http error.`;
+	}
 
 	statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
 }
 
 async function checkTerritories() {
-	let currentDate = moment().format().replace('T',' ');
-	let territoryChannel = client.channels.cache.get(territoryChannelId);
+	for (let i = 0; i < ttFactionIDs.length; ++i) {
+		let faction_id = ttFactionIDs[i];
 
-    let territoryURL = `https://api.torn.com/faction/?selections=territory,basic&key=${apiKey}&comment=${comment}`;
-    console.log(` > ${territoryURL}`);
+		let currentDate = moment().format().replace('T', ' ');
+		let territoryChannel = client.channels.cache.get(territoryChannelId);
 
-    let territoryResponse = await fetch(territoryURL);
+		let territoryURL = `https://api.torn.com/faction/${faction_id}?selections=territory,basic&key=${apiKey}&comment=${comment}`;
+		console.log(` > ${territoryURL}`);
 
-    if (territoryResponse.ok) { // if HTTP-status is 200-299
+		let territoryResponse = await fetch(territoryURL);
 
-        let territoryJson = await territoryResponse.json();
+		if (territoryResponse.ok) { // if HTTP-status is 200-299
 
-        if (territoryJson.hasOwnProperty('error')) {
-            territoryChannel.send(`Error Code ${territoryJson['error'].code},  ${territoryJson['error'].error}.`);
-        } else {
-            	let faction_name = territoryJson['name'];
-                let faction_id = territoryJson['ID'];
-                let faction_tag = territoryJson['tag'];
-                let faction_icon = `https://factiontags.torn.com/` + territoryJson['tag_image'];
+			let territoryJson = await territoryResponse.json();
+
+			if (territoryJson.hasOwnProperty('error')) {
+				territoryChannel.send(`Error Code ${territoryJson['error'].code},  ${territoryJson['error'].error}.`);
+			} else {
+				let faction_name = territoryJson['name'];
+				let faction_tag = territoryJson['tag'];
+				let faction_icon = `https://factiontags.torn.com/` + territoryJson['tag_image'];
 
 
-                let territoryEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
-                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setTimestamp()
-                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+				let territoryEmbed = new EmbedBuilder()
+					.setColor(0xdf691a)
+					.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+					.setTimestamp()
+					.setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
 				let territories = territoryJson ? Object.keys(territoryJson.territory).sort() : null;
-                if (!territories || territories.length <= 0) {
-                    return;
-                }
+				if (!territories || territories.length <= 0) {
+					return;
+				}
 
 				let cachedTTs = myCache.get(faction_id);
-				if (cachedTTs !== undefined ){
-					console.log(cachedTTs);
-					if (cachedTTs === territories.toString()) {
-						console.log('No Change');
-					} else {
-						territoryEmbed.addFields({ name: 'Territories', value: `Territory changes! ${territories.toString()}`, inline: true })
-						territoryChannel.send({ embeds: [territoryEmbed], ephemeral: false })
+				if (cachedTTs !== undefined) {
 
+					let diffInCache = cachedTTs.filter(x => !territories.includes(x));
+
+					if (diffInCache.length > 0)
+						territoryEmbed.addFields({ name: 'Abandoned', value: `${faction_name} abandoned ${diffInCache.toString()}.`, inline: false })
+
+					let diffInTTs = territories.filter(x => !cachedTTs.includes(x));
+					if (diffInTTs.length > 0)
+						territoryEmbed.addFields({ name: 'Claimed', value: `${faction_name} claimed ${diffInTTs.toString()}.`, inline: false })
+
+
+					if (diffInCache.length > 0 || diffInTTs.length > 0) {
+						territoryChannel.send({ embeds: [territoryEmbed], ephemeral: false })
 					};
 
 				} else {
 					console.log('Cache empty');
 				}
 
-				if (myCache.set(faction_id, territories.toString(), 120)) console.log(territories.toString() + ' added to cache');
-        }
-    } else {
-        territoryChannel.send(`General http error.`);
-    }
+				if (myCache.set(faction_id, territories, 120)) console.log(territories + ' added to cache');
+			}
+		} else {
+			territoryChannel.send(`General http error.`);
+		}
+	}
 }
 
 client.login(token);

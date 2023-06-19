@@ -1,8 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const { token, statusChannelId, territoryChannelId, apiKey, comment } = require('./config.json');
-const { ttFactionIDs } = require('./tornParams.json');
+const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval, apiKey, comment } = require('./config.json');
 
 const moment = require('moment');
 const os = require('os');
@@ -31,7 +30,7 @@ client.once(Events.ClientReady, c => {
 	let statusChannel = client.channels.cache.get(statusChannelId);
 	if (statusChannel !== undefined) {
 		statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
-		setInterval(send_msg, 1000 * 60 * 60);
+		setInterval(send_msg, 1000 * 60 * statusUpdateInterval);
 	}
 
 	client.user.setPresence({
@@ -43,9 +42,9 @@ client.once(Events.ClientReady, c => {
 client.on('ready', () => {
 	let territoryChannel = client.channels.cache.get(territoryChannelId);
 	if (territoryChannel !== undefined) {
-		let statusMessage = `Started Checking TT changes for ${ttFactionIDs}!`;
+		let statusMessage = `Territory stalker started!`;
 		territoryChannel.send(`\`\`\`${statusMessage}\`\`\``);
-		setInterval(checkTerritories, 1000 * 60);
+		setInterval(checkTerritories, 1000 * 60 * territoryUpdateInterval);
 	}
 });
 
@@ -92,9 +91,14 @@ async function send_msg() {
 }
 
 async function checkTerritories() {
-	for (let i = 0; i < ttFactionIDs.length; ++i) {
-		let faction_id = ttFactionIDs[i];
 
+	let ttFactionIDs = fs.readFileSync('./tornParams.json');
+	console.log(JSON.parse(ttFactionIDs));
+
+	let factions = JSON.parse(ttFactionIDs);
+
+	for (let key in factions.ttFactionIDs) {
+		let faction_id = factions.ttFactionIDs[key];
 		let currentDate = moment().format().replace('T', ' ');
 		let territoryChannel = client.channels.cache.get(territoryChannelId);
 

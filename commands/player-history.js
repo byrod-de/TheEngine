@@ -5,9 +5,6 @@ const moment = require('moment');
 const formatting = require('../helper/formattings');
 const misc = require('../helper/misc');
 
-
-
-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('player-history')

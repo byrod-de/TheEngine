@@ -1,4 +1,6 @@
 const { apiKey, comment, storeMethod } = require('../config.json');
+const moment = require('moment');
+
 
 function checkAPIKey(apikey) {
 
@@ -63,4 +65,9 @@ function getAPIKey(userID) {
 
 }
 
-module.exports = { checkAPIKey, storeAPIKey, getAPIKey };
+function printLog(logtext) {
+    let currentDate = moment().format().replace('T', ' ');
+    console.log(currentDate + ' > '  + logtext);
+}
+
+module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog };

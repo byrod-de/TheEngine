@@ -7,6 +7,8 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
+const misc = require('./helper/misc');
+
 const NodeCache = require("node-cache");
 const myCache = new NodeCache();
 
@@ -26,7 +28,7 @@ for (const file of commandFiles) {
 client.once(Events.ClientReady, c => {
 	let currentDate = moment().format().replace('T', ' ');
 	let statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag} at ${currentDate}`;
-	console.log(statusMessage);
+	misc.printLog(statusMessage);
 	let statusChannel = client.channels.cache.get(statusChannelId);
 	if (statusChannel !== undefined) {
 		statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
@@ -40,9 +42,11 @@ client.once(Events.ClientReady, c => {
 });
 
 client.on('ready', () => {
+	let currentDate = moment().format().replace('T', ' ');
+
 	let territoryChannel = client.channels.cache.get(territoryChannelId);
 	if (territoryChannel !== undefined) {
-		let statusMessage = `Territory stalker started!`;
+		let statusMessage = `${currentDate} > Territory stalker started!`;
 		territoryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(checkTerritories, 1000 * 60 * territoryUpdateInterval);
 	}
@@ -70,7 +74,7 @@ async function send_msg() {
 	let statusChannel = client.channels.cache.get(statusChannelId);
 
 	let apiURL = `https://api.torn.com/torn/?selections=timestamp&key=${apiKey}&comment=${comment}`;
-	//console.log(` > ${apiURL}`);
+	misc.printLog(apiURL);
 
 	let apiResponse = await fetch(apiURL);
 
@@ -93,17 +97,15 @@ async function send_msg() {
 async function checkTerritories() {
 
 	let ttFactionIDs = fs.readFileSync('./tornParams.json');
-	console.log(JSON.parse(ttFactionIDs));
 
 	let factions = JSON.parse(ttFactionIDs);
 
 	for (let key in factions.ttFactionIDs) {
 		let faction_id = factions.ttFactionIDs[key];
-		let currentDate = moment().format().replace('T', ' ');
 		let territoryChannel = client.channels.cache.get(territoryChannelId);
 
 		let territoryURL = `https://api.torn.com/faction/${faction_id}?selections=territory,basic&key=${apiKey}&comment=${comment}`;
-		console.log(` > ${territoryURL}`);
+		misc.printLog(territoryURL);
 
 		let territoryResponse = await fetch(territoryURL);
 
@@ -113,6 +115,10 @@ async function checkTerritories() {
 
 			if (territoryJson.hasOwnProperty('error')) {
 				territoryChannel.send(`Error Code ${territoryJson['error'].code},  ${territoryJson['error'].error}.`);
+				let cachedTTs = myCache.get(faction_id);
+				if (cachedTTs !== undefined) {
+					if (myCache.set(faction_id, cachedTTs, 120)) misc.printLog(`Cache refreshed for ${faction_id}`);
+				}
 			} else {
 				let faction_name = territoryJson['name'];
 				let faction_tag = territoryJson['tag'];
@@ -127,7 +133,7 @@ async function checkTerritories() {
 
 				let territories = territoryJson ? Object.keys(territoryJson.territory).sort() : null;
 				if (!territories || territories.length <= 0) {
-					return;
+					continue;
 				}
 
 				let cachedTTs = myCache.get(faction_id);
@@ -148,10 +154,10 @@ async function checkTerritories() {
 					};
 
 				} else {
-					console.log('Cache empty');
+					misc.printLog('Cache empty');
 				}
 
-				if (myCache.set(faction_id, territories, 120)) console.log(territories + ' added to cache');
+				if (myCache.set(faction_id, territories, 120)) misc.printLog(`Cache updated for ${faction_name} [${faction_id}] with ${territories}`);
 			}
 		} else {
 			territoryChannel.send(`General http error.`);

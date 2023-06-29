@@ -192,7 +192,7 @@ async function checkArmoury() {
 
 	let armouryChannel = client.channels.cache.get(armouryChannelId);
 
-	let armouryURL = `https://api.torn.com/faction/?selections=armorynews,basic&timestamp=${timestamp}&key=${apiKey}&comment=${comment}`;
+	let armouryURL = `https://api.torn.com/faction/?selections=armorynews,basic&from=${timestamp}&key=${apiKey}&comment=${comment}`;
 	misc.printLog(armouryURL);
 
 	try {

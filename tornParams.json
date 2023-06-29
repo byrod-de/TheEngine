@@ -1,3 +1,4 @@
 {
-    "ttFactionIDs": ["3241", "14821", "14365", "6924", "25874", "35776", "9674", "7709", "7835", "18736", "8336"]
+    "ttFactionIDs": ["3241", "14821", "14365", "6924", "25874", "35776", "9674", "7709", "7835", "18736", "8336"],
+    "armouryFilter":["Can of", "Featherly", "Blood Bag", "Xanax", "Epinephrine", "Melatonin", "Tyrosine", "Serotonin"]
 }

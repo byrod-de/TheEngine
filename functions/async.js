@@ -12,6 +12,8 @@ const { printLog } = require('../helper/misc');
 const NodeCache = require("node-cache");
 const myCache = new NodeCache();
 const timestampCache = new NodeCache();
+const moment = require('moment');
+
 
 async function send_msg(statusChannel, apiKey, comment) {
     let currentDate = moment().format().replace('T', ' ');

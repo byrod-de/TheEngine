@@ -128,7 +128,7 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
     if (lastTimestamp !== undefined) {
         timestamp = lastTimestamp;
     } else {
-        printLog('Timestamp cache empty');
+        printLog('Armoury timestamp cache empty');
     }
 
     let armouryURL = `https://api.torn.com/faction/?selections=armorynews,basic&from=${timestamp}&key=${apiKey}&comment=${comment}`;
@@ -215,4 +215,91 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
 
 }
 
-module.exports = { checkTerritories, checkArmoury, send_msg };
+async function checkRetals(retalChannel, apiKey, comment) {
+
+    let currentTimestamp = Math.floor(Date.now() / 1000);
+    let timestamp = currentTimestamp;
+
+    let lastTimestamp = timestampCache.get('retalExecTime');
+    if (lastTimestamp !== undefined) {
+        timestamp = lastTimestamp;
+    } else {
+        printLog('Retal timestamp cache empty');
+    }
+
+    let attacksURL = `https://api.torn.com/faction/?selections=attacks,basic&from=${timestamp}&key=${apiKey}&comment=${comment}`;
+    printLog(attacksURL);
+
+    try {
+        const attacksResponse = await fetch(attacksURL);
+
+        if (attacksResponse.ok) {
+            const attacksJson = await attacksResponse.json();
+
+            if (attacksJson.hasOwnProperty('error')) {
+                armouryChannel.send(`Error Code ${attacksJson['error'].code},  ${attacksJson['error'].error}.`);
+                let lastTimestamp = timestampCache.get('retalExecTime');
+
+                if (lastTimestamp !== undefined && timestampCache.set('retalExecTime', currentTimestamp, 120)) {
+                    printLog(`Cache refreshed: ${currentTimestamp}`);
+                }
+            } else {
+
+                let faction_name = attacksJson['name'];
+                let faction_tag = attacksJson['tag'];
+                let faction_id = attacksJson['ID'];
+                let faction_icon = `https://factiontags.torn.com/` + attacksJson['tag_image'];
+
+                let attacks = attacksJson['attacks'];
+
+                for (let attackID in attacks) {
+
+                    let timestamp_ended = attacks[attackID].timestamp_ended;
+                    let attacker_id = attacks[attackID].attacker_id;
+                    let attacker_name = attacks[attackID].attacker_name;
+                    let attacker_faction = attacks[attackID].attacker_faction;//7709
+                    let attacker_factionname = attacks[attackID].attacker_factionname;
+                    let defender_id = attacks[attackID].defender_id;
+                    let defender_name = attacks[attackID].defender_name;
+                    let deadline = moment.unix(timestamp_ended).add(5, 'm') / 1000;
+
+
+                    if (attacker_faction !== 7709) {
+
+
+                        let attackEmbed = new EmbedBuilder()
+                            .setColor(0xdf691a)
+                            .setTitle(`Retal on ${attacker_name} [${attacker_id}]`)
+                            .setURL(`https://www.torn.com/loader.php?sid=attack&user2ID=${attacker_id}`)
+                            .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                            .setDescription(`Retal deadline <t:${deadline}:R>`)
+                            .setTimestamp()
+                            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
+
+
+                        attackEmbed.addFields({ name: `Defender`, value: `${defender_name} [${defender_id}]`, inline: false });
+                        attackEmbed.addFields({ name: `Attacker`, value: `${attacker_name} [${attacker_id}]\n of ${attacker_factionname}`, inline: false });
+
+
+
+                        if (retalChannel) {
+                            retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
+                        } else {
+                            printLog('retalChannel is undefined');
+                        }
+                    }
+                }
+
+                if (timestampCache.set('retalExecTime', currentTimestamp, 120)) printLog(`Cache updated for 'retalExecTime' with ${currentTimestamp}`);
+
+            }
+        } else {
+            throw new Error('General http error.');
+        }
+    } catch (error) {
+        console.log("Catched:" + error.message);
+    }
+
+}
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, send_msg };

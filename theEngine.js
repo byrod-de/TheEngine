@@ -1,13 +1,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval, armouryChannelId, armouryUpdateInterval, apiKey, comment } = require('./config.json');
+const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval, 
+		armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval, apiKey, comment } = require('./config.json');
 
 const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const { checkTerritories, checkArmoury, send_msg } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, send_msg } = require('./functions/async');
 const { printLog } = require('./helper/misc');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -54,6 +55,14 @@ client.on('ready', () => {
 		let statusMessage = `${currentDate} > Armoury logger started!`;
 		armouryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkArmoury(armouryChannel, apiKey, comment), 1000 * 60 * armouryUpdateInterval);
+	}
+
+	let retalChannel = client.channels.cache.get(retalChannelId);
+
+	if (retalChannel !== undefined) {
+		let statusMessage = `${currentDate} > Retal bot started!`;
+		retalChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		setInterval(() => checkRetals(retalChannel, apiKey, comment), 1000 * 60 * retalUpdateInterval);
 	}
 });
 

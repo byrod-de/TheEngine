@@ -16,6 +16,9 @@ const moment = require('moment');
 
 
 async function send_msg(statusChannel, apiKey, comment) {
+
+    const hostname = os.hostname();
+
     let currentDate = moment().format().replace('T', ' ');
     let statusMessage = `Still running on ${hostname}! ${currentDate}`;
 
@@ -88,11 +91,11 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
                     let diffInCache = cachedTTs.filter(x => !territories.includes(x));
 
                     if (diffInCache.length > 0)
-                        territoryEmbed.addFields({ name: 'Abandoned', value: `${faction_name} abandoned ${diffInCache.toString()}.`, inline: false })
+                        territoryEmbed.addFields({ name: `${faction_name} abandoned`, value: `${diffInCache.toString()}.`, inline: false })
 
                     let diffInTTs = territories.filter(x => !cachedTTs.includes(x));
                     if (diffInTTs.length > 0)
-                        territoryEmbed.addFields({ name: 'Claimed', value: `${faction_name} claimed ${diffInTTs.toString()}.`, inline: false })
+                        territoryEmbed.addFields({ name: `${faction_name} claimed`, value: `${diffInTTs.toString()}.`, inline: false })
 
 
                     if (diffInCache.length > 0 || diffInTTs.length > 0) {
@@ -100,7 +103,7 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
                     };
 
                 } else {
-                    printLog('Cache empty');
+                    printLog('Territory cache empty');
                 }
 
                 if (myCache.set(faction_id, territories, 120)) printLog(`Cache updated for ${faction_name} [${faction_id}] with ${territories}`);
@@ -121,7 +124,7 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
     let currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
 
-    let lastTimestamp = timestampCache.get('lastexecution');
+    let lastTimestamp = timestampCache.get('armouryExecTime');
     if (lastTimestamp !== undefined) {
         timestamp = lastTimestamp;
     } else {
@@ -139,9 +142,9 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
 
             if (armouryJson.hasOwnProperty('error')) {
                 armouryChannel.send(`Error Code ${armouryJson['error'].code},  ${armouryJson['error'].error}.`);
-                let lastTimestamp = timestampCache.get('lastexecution');
+                let lastTimestamp = timestampCache.get('armouryExecTime');
 
-                if (lastTimestamp !== undefined && timestampCache.set('lastexecution', currentTimestamp, 120)) {
+                if (lastTimestamp !== undefined && timestampCache.set('armouryExecTime', currentTimestamp, 120)) {
                     printLog(`Cache refreshed: ${currentTimestamp}`);
                 }
             } else {
@@ -158,39 +161,48 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
                     let news = armouryNews[newsID].news;
                     let timestamp = armouryNews[newsID].timestamp;
 
-                    let player_url = news.substring(news.indexOf('"') + 1, news.lastIndexOf('"'));
-                    let tornId = player_url.substring(player_url.indexOf('=') + 1, player_url.length);
-                    let tornUser = news.substring(news.lastIndexOf('"') + 2, news.lastIndexOf('/') - 1);
-                    let newstext = news.substring(news.lastIndexOf('>') + 2, news.lastIndexOf('.'));
-                    let item = newstext.substring(newstext.lastIndexOf('faction\'s') + 10, newstext.lastIndexOf('items') - 1);
-                    if (newstext.includes('loaned')) {
-                        item = newstext.substring(newstext.indexOf('loaned') + 7, newstext.lastIndexOf('to') - 1);
-                    }
+                    if (!news.includes('deposited') && !news.includes('returned')) {
 
-                    if (tornParams.armouryFilter.some(i => item.includes(i))) {
-                        let armouryEmbed = new EmbedBuilder()
-                            .setColor(0xdf691a)
-                            .setTitle(`${tornUser} [${tornId}]`)
-                            .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
-                            .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                            .setTimestamp(timestamp * 1000)
-                            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
-
-
-                        armouryEmbed.addFields({ name: `${item}`, value: `${tornUser} [${tornId}] ${newstext}`, inline: false });
-
-
-                        if (armouryChannel) {
-                            armouryChannel.send({ embeds: [armouryEmbed], ephemeral: false });
-                        } else {
-                            printLog('armouryChannel is undefined');
+                        let player_url = news.substring(news.indexOf('"') + 1, news.lastIndexOf('"'));
+                        let tornId = player_url.substring(player_url.indexOf('=') + 1, player_url.length);
+                        let tornUser = news.substring(news.lastIndexOf('"') + 2, news.lastIndexOf('/') - 1);
+                        let newstext = news.substring(news.lastIndexOf('>') + 2, news.lastIndexOf('.'));
+                        let item = newstext.substring(newstext.lastIndexOf('faction\'s') + 10, newstext.lastIndexOf('items') - 1);
+                        if (newstext.includes('loaned')) {
+                            item = newstext.substring(newstext.indexOf('loaned') + 7, newstext.lastIndexOf('to') - 1);
                         }
-                    } else {
-                        printLog(`Item not displayed: ${item}`);
+                        if (newstext.includes('gave')) {
+                            item = newstext.substring(newstext.indexOf('gave') + 7, newstext.lastIndexOf('to') - 1);
+                        }
+                        if (newstext.includes('refill their energy')) {
+                            item = 'Energy refill (25 points)';
+                        }
+
+                        if (tornParams.armouryFilter.some(i => item.includes(i))) {
+                            let armouryEmbed = new EmbedBuilder()
+                                .setColor(0xdf691a)
+                                // .setTitle(`${tornUser} [${tornId}]`)
+                                // .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
+                                .setAuthor({ name: `${tornUser} [${tornId}]`, iconURL: faction_icon, url: `https://www.torn.com/profiles.php?XID=${tornId}` })
+                                .setTimestamp(timestamp * 1000)
+                                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+
+                            armouryEmbed.addFields({ name: `${item}`, value: `${tornUser} [${tornId}] ${newstext}`, inline: false });
+
+
+                            if (armouryChannel) {
+                                armouryChannel.send({ embeds: [armouryEmbed], ephemeral: false });
+                            } else {
+                                printLog('armouryChannel is undefined');
+                            }
+                        } else {
+                            printLog(`Item not displayed: ${item}`);
+                        }
                     }
                 }
 
-                if (timestampCache.set('lastexecution', currentTimestamp, 120)) printLog(`Cache updated for 'lastexecution' with ${currentTimestamp}`);
+                if (timestampCache.set('armouryExecTime', currentTimestamp, 120)) printLog(`Cache updated for 'armouryExecTime' with ${currentTimestamp}`);
 
             }
         } else {

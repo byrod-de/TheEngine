@@ -14,10 +14,11 @@ const myCache = new NodeCache();
 const timestampCache = new NodeCache();
 const moment = require('moment');
 
+const os = require('os');
+const hostname = os.hostname();
 
 async function send_msg(statusChannel, apiKey, comment) {
 
-    const hostname = os.hostname();
 
     let currentDate = moment().format().replace('T', ' ');
     let statusMessage = `Still running on ${hostname}! ${currentDate}`;
@@ -262,9 +263,10 @@ async function checkRetals(retalChannel, apiKey, comment) {
                     let defender_id = attacks[attackID].defender_id;
                     let defender_name = attacks[attackID].defender_name;
                     let deadline = moment.unix(timestamp_ended).add(5, 'm') / 1000;
+                    let stealthed = attacks[attackID].stealthed;
+                    let respect = attacks[attackID].respect;
 
-
-                    if (attacker_faction !== 7709) {
+                    if (attacker_faction !== 7709 && stealthed === 0 && respect > 0) {
 
 
                         let attackEmbed = new EmbedBuilder()

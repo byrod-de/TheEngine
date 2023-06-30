@@ -98,7 +98,7 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
                     };
 
                 } else {
-                    .printLog('Cache empty');
+                    printLog('Cache empty');
                 }
 
                 if (myCache.set(faction_id, territories, 120)) printLog(`Cache updated for ${faction_name} [${faction_id}] with ${territories}`);

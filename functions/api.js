@@ -8,15 +8,17 @@ let fetch;
 })();
 
 
-async function callTornApi(endpoint, selections, criteria = '', from = 0, to = 0, timestamp = 0, stats = '') {
+async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '') {
 
     let statusMessage;
     let apiJson = '';
     let status = false;
 
-    if (to > 0) to = `&to=${to}`;
-    if (from > 0) from = `&from=${from}`;
-    if (timestamp > 0) timestamp = `&timestamp=${timestamp}`;
+    let from = '', to = '', timestamp = '';
+
+    if (toTS > 0) to = `&to=${toTS}`;
+    if (fromTS > 0) from = `&from=${fromTS}`;
+    if (timestampTS > 0) timestamp = `&timestamp=${timestampTS}`;
     if (stats.length > 0) stats = `&stat=${stats}`;
 
     let apiURL = `https://api.torn.com/${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}&key=${apiKey}&comment=${comment}`;

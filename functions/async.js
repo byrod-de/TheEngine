@@ -35,10 +35,19 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
 
     let tornParams = JSON.parse(tornParamsFile);
 
+    let territorywars =  await callTornApi('torn', 'territorywars');
+    let territoriesInWar = '';
+    if (territorywars[0]) {
+        let territoryWarJson = territorywars[2];
+        for (let territory in territoryWarJson['territorywars']) {
+            territoriesInWar = territoriesInWar + ',' + territory;
+        }
+    }
+
     for (let key in tornParams.ttFactionIDs) {
         let faction_id = tornParams.ttFactionIDs[key];
 
-        let response = await callTornApi('faction', 'territory,basic', faction_id)
+        let response = await callTornApi('faction', 'territory,basic', faction_id);
         if (response[0]) {
             let territoryJson = response[2];
 
@@ -64,14 +73,14 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
                 let diffInCache = cachedTTs.filter(x => !territories.includes(x));
 
                 if (diffInCache.length > 0)
-                    territoryEmbed.addFields({ name: `${faction_name} abandoned ${diffInCache.toString()}`, value: `${territories}.`, inline: false })
+                    territoryEmbed.addFields({ name: `${faction_name} abandoned:`, value: `${diffInCache.toString()}`, inline: false })
 
                 let diffInTTs = territories.filter(x => !cachedTTs.includes(x));
                 if (diffInTTs.length > 0)
-                    territoryEmbed.addFields({ name: `${faction_name} claimed ${diffInTTs.toString()}`, value: `${territories}.`, inline: false })
-
+                    territoryEmbed.addFields({ name: `${faction_name} claimed:`, value: `${diffInTTs.toString()}`, inline: false })
 
                 if (diffInCache.length > 0 || diffInTTs.length > 0) {
+                    territoryEmbed.addFields({ name: `${faction_name} holds now:`, value: `${territories}.`, inline: false })
                     territoryChannel.send({ embeds: [territoryEmbed], ephemeral: false })
                 };
 

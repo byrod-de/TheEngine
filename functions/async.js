@@ -120,7 +120,7 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
     let tornParamsFile = fs.readFileSync('./tornParams.json');
 
     let tornParams = JSON.parse(tornParamsFile);
-    printLog(tornParams.armouryFilter.toString());
+    //printLog(tornParams.armouryFilter.toString());
 
     let currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
@@ -280,8 +280,8 @@ async function checkRetals(retalChannel, apiKey, comment) {
 
 
                         attackEmbed.addFields({ name: `Defender`, value: `${defender_name} [${defender_id}]`, inline: false });
-                        attackEmbed.addFields({ name: `Attacker`, value: `${attacker_name} [${attacker_id}]\n of ${attacker_factionname}`, inline: false });
-
+                        attackEmbed.addFields({ name: `Attacker`, value: `${attacker_name} [${attacker_id}] of ${attacker_factionname}`, inline: false });
+                        printLog(`Defender ${defender_name} [${defender_id}] < Attacker ${attacker_name} [${attacker_id}] of ${attacker_factionname}`);
 
 
                         if (retalChannel) {

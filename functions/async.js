@@ -92,11 +92,11 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
                     let diffInCache = cachedTTs.filter(x => !territories.includes(x));
 
                     if (diffInCache.length > 0)
-                        territoryEmbed.addFields({ name: `${faction_name} abandoned`, value: `${diffInCache.toString()}.`, inline: false })
+                        territoryEmbed.addFields({ name: `${faction_name} abandoned ${diffInCache.toString()}`, value: `${territories}.`, inline: false })
 
                     let diffInTTs = territories.filter(x => !cachedTTs.includes(x));
                     if (diffInTTs.length > 0)
-                        territoryEmbed.addFields({ name: `${faction_name} claimed`, value: `${diffInTTs.toString()}.`, inline: false })
+                        territoryEmbed.addFields({ name: `${faction_name} claimed ${diffInTTs.toString()}`, value: `${territories}.`, inline: false })
 
 
                     if (diffInCache.length > 0 || diffInTTs.length > 0) {

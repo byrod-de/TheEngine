@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { apiKey, comment } = require('../config.json');
+const { callTornApi } = require('../functions/api');
+const { printLog } = require('../helper/misc');
+
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,60 +15,46 @@ module.exports = {
     const lasthours = interaction.options.getInteger('lasthours') ?? 5;
     console.log(`Number of hours ${lasthours}`);
 
-    let rwURL = 'https://api.torn.com/torn/?selections=rankedwars&key=' + apiKey + '&comment=' + comment;
-    console.log(` > ${rwURL}`);
+    let response = await callTornApi('torn', 'rankedwars');
 
-    let rwResponse = await fetch(rwURL);
+    if (response[0]) {
+      let jsonRwResponse = response[2];
 
-    let fieldsAdded = 0;
+      let fieldsAdded = 0;
 
-    if (rwResponse.ok) { // if HTTP-status is 200-299
-      // get the response body (the method explained below)
-      let jsonRwResponse = await rwResponse.json();
+      let rankedWars = jsonRwResponse['rankedwars'];
 
-      if (jsonRwResponse.hasOwnProperty('error')) {
+      let rwEmbed = new EmbedBuilder()
+        .setColor(0xdf691a)
+        .setTitle('Ranked Wars')
+        .setDescription(`Ranked Wars which ended within the last ${lasthours} hours`)
+        .setTimestamp()
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
 
-        await interaction.reply(`\`\`\`Error Code ${jsonRwResponse['error'].code},  ${jsonRwResponse['error'].error}.\`\`\``)
+      for (let rwId in rankedWars) {
 
-      } else {
+        let rankedWar = rankedWars[rwId];
 
-        let rankedWars = jsonRwResponse['rankedwars'];
+        let faction1Name = '', faction2Name = '', faction1ID = '', faction2ID = '', faction1Score = '', faction2Score = '';
+        let counter = 0;
 
-        let rwEmbed = new EmbedBuilder()
-          .setColor(0xdf691a)
-          .setTitle('Ranked Wars')
-          .setDescription(`Ranked Wars which ended within the last ${lasthours} hours`)
-          .setTimestamp()
-          .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
-
-        for (let rwId in rankedWars) {
-
-          let rankedWar = rankedWars[rwId];
-
-          let faction1Name = '', faction2Name = '', faction1ID = '', faction2ID = '', faction1Score = '', faction2Score = '';
-          let counter = 0;
-
-          let warStatus = '', rankedWarReport;
-          let faction1Items = '', faction2Items = '';
-          let now = Date.now() / 1000;
+        let warStatus = '', rankedWarReport;
+        let faction1Items = '', faction2Items = '';
+        let now = Date.now() / 1000;
 
 
-          if ((rankedWar.war.end != 0) && (now - rankedWar.war.end <= lasthours * 60 * 60) && (fieldsAdded <= 25)) {
+        if ((rankedWar.war.end != 0) && (now - rankedWar.war.end <= lasthours * 60 * 60) && (fieldsAdded <= 25)) {
 
-            let rwReportlURL = 'https://api.torn.com/torn/' + rwId + '?selections=rankedwarreport&key=' + apiKey + '&comment=' + comment;
-            console.log(` >> ${rwReportlURL}`);
+          let responseReport = await callTornApi('torn', 'rankedwarreport', rwId);
 
-            let rwReportResponse = await fetch(rwReportlURL);
+          if (responseReport[0]) {
+            let jsonRwReportResponse = responseReport[2];
 
-            if (rwReportResponse.ok) {
-              let jsonRwReportResponse = await rwReportResponse.json();
-              rankedWarReport = jsonRwReportResponse['rankedwarreport'];
-            }
+            rankedWarReport = jsonRwReportResponse['rankedwarreport'];
 
             warStatus = 'ended';
 
-            console.log(` >>> ${warStatus}`);
-
+            printLog(` >>> ${warStatus}`);
 
             for (let factionID in rankedWar.factions) {
 
@@ -117,12 +105,11 @@ module.exports = {
 
           }
         }
-        await interaction.reply({ content: `Command /rankedwars executed for the last ${lasthours} hours `, ephemeral: true });
-
-
       }
+      await interaction.reply({ embeds: [rwEmbed], ephemeral: true });
+
     } else {
-      alert("HTTP-Error: " + response.status);
+      await interaction.reply({ content: response[1], ephemeral: true });
     }
   },
 };

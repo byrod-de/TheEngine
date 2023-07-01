@@ -9,6 +9,7 @@ const os = require('os');
 const hostname = os.hostname();
 
 const { checkTerritories, checkArmoury, checkRetals, send_msg } = require('./functions/async');
+
 const { printLog } = require('./helper/misc');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });

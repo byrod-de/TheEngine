@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { apiKey, comment } = require('../config.json');
-
-var formatting = require('../helper/formattings');
+const { callTornApi } = require('../functions/api');
+const { numberWithCommas, addSign } = require('../helper/formattings');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,14 +8,12 @@ module.exports = {
         .setDescription('Returns your Torn stats! You need to store a key with Minimal Access first.'),
 
     async execute(interaction) {
-        let statsURL = 'https://api.torn.com/user/?selections=basic,battlestats,profile,timestamp&key=' + apiKey + '&comment=' + comment;
-        console.log(` > ${statsURL}`);
 
-        let statsResponse = await fetch(statsURL);
+        let response = await callTornApi('user', 'basic,battlestats,profile,timestamp');
 
-        if (statsResponse.ok) { // if HTTP-status is 200-299
+        if (response[0]) {
+            let statsJson = response[2];
 
-            let statsJson = await statsResponse.json();
             let tornUser = statsJson['name'];
             let tornId = statsJson['player_id'];
 
@@ -28,12 +25,11 @@ module.exports = {
             let faction_icon = 'https://tornengine.netlify.app/images/logo-100x100.png';
 
             if (faction_id != 0) {
-                let factionURL = 'https://api.torn.com/faction/' + faction_id + '?selections=basic&key=' + apiKey + '&comment=' + comment;
-                let factionResponse = await fetch(factionURL);
+                let responseFaction = await callTornApi('faction', 'basic', faction_id);
 
-                if (factionResponse.ok) { // if HTTP-status is 200-299
-                    let cooldownsJson = await factionResponse.json();
-                    faction_icon = `https://factiontags.torn.com/` + cooldownsJson['tag_image'];
+                if (responseFaction[0]) {
+                    let factionJson = responseFaction[2];
+                    faction_icon = `https://factiontags.torn.com/` + factionJson['tag_image'];
                 }
             }
 
@@ -71,26 +67,28 @@ module.exports = {
 
             statsEmbed.addFields({
                 name: 'Battlestats',
-                value: `\`Strength  : ${formatting.numberWithCommas(strength).toString().padStart(21)}\` ${formatting.addSign(strength_modifier)}%\n` +
-                    `\`Defense   : ${formatting.numberWithCommas(defense).toString().padStart(21)}\` ${formatting.addSign(defense_modifier)}%\n` +
-                    `\`Speed     : ${formatting.numberWithCommas(speed).toString().padStart(21)}\` ${formatting.addSign(speed_modifier)}%\n` +
-                    `\`Dexterity : ${formatting.numberWithCommas(dexterity).toString().padStart(21)}\` ${formatting.addSign(dexterity_modifier)}%\n` +
-                    `\`Total     : ${formatting.numberWithCommas(total).toString().padStart(21)}\`\n`
+                value: `\`Strength  : ${numberWithCommas(strength).toString().padStart(21)}\` ${addSign(strength_modifier)}%\n` +
+                    `\`Defense   : ${numberWithCommas(defense).toString().padStart(21)}\` ${addSign(defense_modifier)}%\n` +
+                    `\`Speed     : ${numberWithCommas(speed).toString().padStart(21)}\` ${addSign(speed_modifier)}%\n` +
+                    `\`Dexterity : ${numberWithCommas(dexterity).toString().padStart(21)}\` ${addSign(dexterity_modifier)}%\n` +
+                    `\`Total     : ${numberWithCommas(total).toString().padStart(21)}\`\n`
                 , inline: false
             });
 
             statsEmbed.addFields({
                 name: 'Effective Stats',
-                value: `\`Strength  : ${formatting.numberWithCommas(effective_strength).toString().padStart(21)}\`\n` +
-                    `\`Defense   : ${formatting.numberWithCommas(effective_defense).toString().padStart(21)}\`\n` +
-                    `\`Speed     : ${formatting.numberWithCommas(effective_speed).toString().padStart(21)}\`\n` +
-                    `\`Dexterity : ${formatting.numberWithCommas(effective_dexterity).toString().padStart(21)}\`\n` +
-                    `\`Total     : ${formatting.numberWithCommas(effective_total).toString().padStart(21)}\`\n`
+                value: `\`Strength  : ${numberWithCommas(effective_strength).toString().padStart(21)}\`\n` +
+                    `\`Defense   : ${numberWithCommas(effective_defense).toString().padStart(21)}\`\n` +
+                    `\`Speed     : ${numberWithCommas(effective_speed).toString().padStart(21)}\`\n` +
+                    `\`Dexterity : ${numberWithCommas(effective_dexterity).toString().padStart(21)}\`\n` +
+                    `\`Total     : ${numberWithCommas(effective_total).toString().padStart(21)}\`\n`
                 , inline: false
             });
 
             await interaction.reply({ embeds: [statsEmbed], ephemeral: true });
 
+        } else {
+            await interaction.reply({ content: response[1], ephemeral: true });
         }
     },
 };

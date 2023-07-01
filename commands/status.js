@@ -1,8 +1,7 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
-const { token, statusChannelId, statusGuildId } = require('../config.json');
+const { statusChannelId } = require('../config.json');
+const { callTornApi } = require('../functions/api');
 const moment = require('moment');
-const os = require('os');
-const hostname = os.hostname();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -13,13 +12,9 @@ module.exports = {
 
 	async execute(interaction) {
     let currentDate = moment().format().replace('T',' ');
-    let statusMessage = `Alive! time: ${currentDate}`;
+    let statusMessage = `${currentDate} > Still running!`;
 
-    await interaction.reply(statusMessage);
-
-    let statusChannel = client.channels.cache.get(statusChannelId);
-    if (statusChannel !== undefined) {
-      statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
-    }
+    let result = await callTornApi('torn', 'timestamp');
+    await interaction.reply(`\`\`\`${statusMessage}\n${result[1]}\`\`\``);
 	},
 };

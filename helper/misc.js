@@ -67,7 +67,9 @@ function getAPIKey(userID) {
 
 function printLog(logtext) {
     let currentDate = moment().format().replace('T', ' ');
-    console.log(currentDate + ' > '  + logtext);
+    let message = currentDate + ' > '  + logtext
+    console.log(message);
+    return message;
 }
 
 module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog };

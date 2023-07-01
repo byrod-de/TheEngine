@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { apiKey, comment } = require('../config.json');
+const { comment } = require('../config.json');
 
 var misc = require('../helper/misc');
 

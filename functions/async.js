@@ -36,13 +36,12 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
     let tornParams = JSON.parse(tornParamsFile);
 
     let territorywars =  await callTornApi('torn', 'territorywars');
-    let territoriesInWar = '';
+    let territoriesInWar;
     if (territorywars[0]) {
         let territoryWarJson = territorywars[2];
-        for (let territory in territoryWarJson['territorywars']) {
-            territoriesInWar = territoriesInWar + ',' + territory;
-        }
+        territoriesInWar = territoryWarJson ? Object.keys(territoryWarJson.territorywars).sort() : null;
     }
+
 
     for (let key in tornParams.ttFactionIDs) {
         let faction_id = tornParams.ttFactionIDs[key];
@@ -79,6 +78,11 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
                 if (diffInTTs.length > 0)
                     territoryEmbed.addFields({ name: `${faction_name} claimed:`, value: `${diffInTTs.toString()}`, inline: false })
 
+                let factionTTInAssault = territories.filter(x => territoriesInWar.includes(x));
+                if (factionTTInAssault.length > 0) {
+                    territoryEmbed.addFields({ name: `${faction_name} is defending:`, value: `${factionTTInAssault}.`, inline: false })                        
+                } 
+
                 if (diffInCache.length > 0 || diffInTTs.length > 0) {
                     territoryEmbed.addFields({ name: `${faction_name} holds now:`, value: `${territories}.`, inline: false })
                     territoryChannel.send({ embeds: [territoryEmbed], ephemeral: false })
@@ -87,6 +91,8 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
             } else {
                 printLog('Territory cache empty');
             }
+
+            
 
             if (myCache.set(faction_id, territories, 120)) printLog(`Cache updated for ${faction_name} [${faction_id}] with ${territories}`);
         }
@@ -208,7 +214,7 @@ async function checkRetals(retalChannel, apiKey, comment) {
             let stealthed = attacks[attackID].stealthed;
             let respect = attacks[attackID].respect;
 
-            if (attacker_faction !== homeFaction && stealthed === 0 && respect > 0) {
+            if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
 
                 let attackEmbed = new EmbedBuilder()
                     .setColor(0xdf691a)

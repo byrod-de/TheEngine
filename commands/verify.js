@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { verifieRoleId } = require('../config.json');
 const { callTornApi } = require('../functions/api');
+const { printLog } = require('../helper/misc');
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -29,11 +31,11 @@ module.exports = {
                 try {
                     member.setNickname(`${tornUser} [${tornId}]`);
                 } catch (e) {
-                    console.log('Set Nickname failed: ' & e);
+                    printLog('Set Nickname failed: ' & e);
                 }
                 member.roles.add(verifieRoleId);
             }
-
+            printLog(`${tornUser} [${tornId}] verified on Torn.`);
             await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);
         } else {
             await interaction.reply({ content: response[1], ephemeral: true });

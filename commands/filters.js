@@ -54,7 +54,7 @@ module.exports = {
 
             var arrayLength = tornParams[category].length;
             for (var i = 0; i < arrayLength; i++) {
-                console.log(tornParams[category][i]);
+                printLog(tornParams[category][i]);
                 paramList = paramList + tornParams[category][i] + '\n';
             }
 

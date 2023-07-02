@@ -13,7 +13,7 @@ module.exports = {
 
   async execute(interaction) {
     const lasthours = interaction.options.getInteger('lasthours') ?? 5;
-    console.log(`Number of hours ${lasthours}`);
+    printLog(`Number of hours ${lasthours}`);
 
     let response = await callTornApi('torn', 'rankedwars');
 

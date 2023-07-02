@@ -1,4 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
+const { printLog } = require('../helper/misc');
+
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -7,7 +9,7 @@ module.exports = {
 
 	async execute(interaction) {
 	    let apiURL = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single';
-        console.log(` > ${apiURL}`);
+        printLog(apiURL);
 
         let apiResponse = await fetch(apiURL);
 

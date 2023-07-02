@@ -1,7 +1,6 @@
 const { apiKey, comment, storeMethod } = require('../config.json');
 const moment = require('moment');
 
-
 function checkAPIKey(apikey) {
 
     if (apikey.length != 16)
@@ -15,7 +14,7 @@ function checkAPIKey(apikey) {
 
 function storeAPIKey(jsonText) {
     let keyinfo = JSON.parse(jsonText).keyinfo;
-    console.log(keyinfo.userID);
+    printLog(keyinfo.userID);
 
     if (storeMethod === "File") {
 
@@ -23,9 +22,9 @@ function storeAPIKey(jsonText) {
 
         fs.writeFile("tmp/keys.csv", `${keyinfo.userID};${keyinfo.tornUser};${keyinfo.tornId};${keyinfo.mykey};${keyinfo.access_level};${keyinfo.access_type}`, function (err) {
             if (err) {
-                return console.log(err);
+                return printLog(err);
             }
-            console.log("The file was saved!");
+            printLog("The file was saved!");
         });
     }
 }
@@ -57,7 +56,7 @@ function getAPIKey(userID) {
         });
 
         rl.on('close', () => {
-            console.log('Finished reading the file.');
+            printLog('Finished reading the file.');
         });
     } else {
         return apiKey;

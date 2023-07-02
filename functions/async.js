@@ -144,7 +144,7 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
                     item = newstext.substring(newstext.indexOf('loaned') + 7, newstext.lastIndexOf('to') - 1);
                 }
                 if (newstext.includes('gave')) {
-                    item = newstext.substring(newstext.indexOf('gave') + 7, newstext.lastIndexOf('to') - 1);
+                    item = newstext.substring(newstext.indexOf('gave') + 5, newstext.lastIndexOf('to') - 1);
                 }
                 if (newstext.includes('refill their energy')) {
                     item = 'Energy refill (25 points)';

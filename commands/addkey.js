@@ -26,7 +26,7 @@ module.exports = {
         } else {
 
             let playerURL = `https://api.torn.com/user/${userID}?selections=basic,discord&key=${mykey}&comment=${comment}`;
-            console.log(` > ${playerURL}`);
+            printLog(` > ${playerURL}`);
 
             let playerResponse = await fetch(playerURL);
 

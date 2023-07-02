@@ -213,6 +213,8 @@ async function checkRetals(retalChannel, apiKey, comment) {
             let deadline = moment.unix(timestamp_ended).add(5, 'm') / 1000;
             let stealthed = attacks[attackID].stealthed;
             let respect = attacks[attackID].respect;
+            let overseas = false;
+            if (attacks[attackID].modifiers.overseas > 1) overseas = true;
 
             if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
 
@@ -230,7 +232,10 @@ async function checkRetals(retalChannel, apiKey, comment) {
                 attackEmbed.addFields({ name: `Attacker`, value: `${attacker_name} [${attacker_id}] of ${attacker_factionname}`, inline: false });
                 printLog(`Defender ${defender_name} [${defender_id}] < Attacker ${attacker_name} [${attacker_id}] of ${attacker_factionname}`);
 
+                
+                if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `Attack was abroad.`, inline: false });
 
+                
                 if (retalChannel) {
                     retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
                 } else {

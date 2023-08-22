@@ -2,3 +2,5 @@ node_modules
 .env
 config.json
 tmp
+package-lock.json
+package.json

@@ -1,11 +1,5 @@
 const fs = require('fs');
 
-let fetch;
-(async () => {
-    const nodeFetch = await import('node-fetch');
-    fetch = nodeFetch.default;
-})();
-
 const { EmbedBuilder } = require('discord.js');
 const { printLog } = require('../helper/misc');
 const { callTornApi } = require('../functions/api');

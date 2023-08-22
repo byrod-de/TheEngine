@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { numberWithCommas, addSign } = require('../helper/formattings');
+const he = require('he');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,7 +19,7 @@ module.exports = {
             let tornId = statsJson['player_id'];
 
             let position = statsJson['faction']['position'];
-            let faction_name = statsJson['faction']['faction_name'];
+            let faction_name = he.decode(statsJson['faction']['faction_name']);
             let faction_tag = statsJson['faction']['faction_tag'];
             let faction_id = statsJson['faction']['faction_id'];
 

@@ -1,5 +1,4 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
-const { statusChannelId } = require('../config.json');
 const { callTornApi } = require('../functions/api');
 const moment = require('moment');
 

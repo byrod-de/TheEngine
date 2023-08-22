@@ -29,4 +29,13 @@ function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign };
+// Function to create formatted cooldown time strings
+function formatDiscordTimeWithOffset(apiTime, offset) {
+  const discordTime = apiTime + offset;
+  const ts = new Date(discordTime * 1000);
+  const formattedTime = `<t:${discordTime}:f>`;
+  const relativeTime = `<t:${discordTime}:R>`;
+  return { formattedTime, relativeTime };
+}
+
+module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset };

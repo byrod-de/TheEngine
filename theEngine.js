@@ -66,18 +66,13 @@ client.on('ready', () => {
 		setInterval(() => checkRetals(retalChannel), 1000 * 60 * retalUpdateInterval);
 	}
 
-
+	console.log('here!')
 	// Run the API key verification once every 24 hours after the start of the script
-	const verificationInterval = 1000 * 60 * 60 * 24; // 24 hours in milliseconds
-	setInterval(async () => {
-		try {
-			printLog('Verifying API keys...');
-			await verifyKeys();
-			printLog('API keys verification complete.');
-		} catch (error) {
-			printLog('Error verifying API keys:', error);
-		}
-	}, verificationInterval);
+	const verificationInterval = 60 * 24; // 24 hours
+	let statusChannel = client.channels.cache.get(statusChannelId);
+	if (statusChannel !== undefined) {
+		setInterval(() => verifyKeys(statusChannel), 1000 * 60 * verificationInterval);
+	}
 });
 
 client.on(Events.InteractionCreate, async interaction => {

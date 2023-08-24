@@ -278,18 +278,25 @@ async function verifyAPIKey(apiKey, comment) {
 
 
 
-async function verifyKeys() {
+async function verifyKeys(statusChannel) {
+    let currentDate = moment().format().replace('T', ' ');
     const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+    
+    let verificationCount = 0;
+    let totalKeys = apiConfig.apiKeys.length;
 
     for (const apiKey of apiConfig.apiKeys) {
       if (apiKey.active || !apiKey.hasOwnProperty('active')) {
         await verifyAPIKey(apiKey, apiConfig.comment);
         printLog(`Verified API Key: ${apiKey.key}.`);
+        verificationCount++;
       }
     }
 
     fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
-    printLog(`apiConfig file updated.`);
+    let statusMessage = `API Key verification executed for ${verificationCount} active of ${totalKeys} total keys!`;
+    printLog(statusMessage);
+    statusChannel.send(`\`\`\`${currentDate} > ${statusMessage}\`\`\``);
 }
 
 

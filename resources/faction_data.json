@@ -1,0 +1,1318 @@
+{
+  "faction": {
+    "19": {
+      "name": "39th Street Killers"
+    },
+    "33": {
+      "name": "Honour and Pride"
+    },
+    "59": {
+      "name": "Malicious Intentions"
+    },
+    "74": {
+      "name": "The Cabinet"
+    },
+    "89": {
+      "name": "Catalysis"
+    },
+    "95": {
+      "name": "MORTAL LEGENDS"
+    },
+    "195": {
+      "name": "The Horde"
+    },
+    "230": {
+      "name": "PT-Family"
+    },
+    "231": {
+      "name": "Destructive Anomaly"
+    },
+    "355": {
+      "name": "Notorious Crew"
+    },
+    "366": {
+      "name": "Evolution"
+    },
+    "475": {
+      "name": "Screaming Eagles"
+    },
+    "478": {
+      "name": "PT-Penguins"
+    },
+    "525": {
+      "name": "EQ: Ministry of Mayhem"
+    },
+    "581": {
+      "name": "~FB4E~"
+    },
+    "695": {
+      "name": "Indigo stained eyes"
+    },
+    "787": {
+      "name": "La Guerilla"
+    },
+    "886": {
+      "name": "The 420 Inc"
+    },
+    "891": {
+      "name": "Glogow"
+    },
+    "937": {
+      "name": "Sport Club"
+    },
+    "946": {
+      "name": "PT-IronHearts"
+    },
+    "1117": {
+      "name": "Hobros HQ"
+    },
+    "1134": {
+      "name": "The Chang Gang"
+    },
+    "1149": {
+      "name": "WTF"
+    },
+    "1251": {
+      "name": "Unhinged"
+    },
+    "1336": {
+      "name": "The Devils"
+    },
+    "1620": {
+      "name": "Ninja"
+    },
+    "1779": {
+      "name": "Fallen Existence"
+    },
+    "2013": {
+      "name": "Subversive  Alliance"
+    },
+    "2036": {
+      "name": "Urban Broil"
+    },
+    "2095": {
+      "name": "insurreXtion"
+    },
+    "2288": {
+      "name": "For-Sale"
+    },
+    "2379": {
+      "name": "MIDNIGHT Magic"
+    },
+    "2408": {
+      "name": ".."
+    },
+    "2736": {
+      "name": "Itsi Bitsi Bikini"
+    },
+    "2904": {
+      "name": "The Demonic Core"
+    },
+    "3241": {
+      "name": "JFK"
+    },
+    "3251": {
+      "name": "The Beyond"
+    },
+    "3301": {
+      "name": "Anti-Faction"
+    },
+    "3670": {
+      "name": "The enD"
+    },
+    "5092": {
+      "name": "RAGE"
+    },
+    "5113": {
+      "name": "ThugLife"
+    },
+    "5431": {
+      "name": "Ghost Ship"
+    },
+    "5580": {
+      "name": "Untitled Faction"
+    },
+    "5927": {
+      "name": "The_Shelter"
+    },
+    "6005": {
+      "name": "Atlantic mafia"
+    },
+    "6538": {
+      "name": "Machine Gun Men"
+    },
+    "6539": {
+      "name": "Westends Angels"
+    },
+    "6541": {
+      "name": "Anarquia e Morte"
+    },
+    "6557": {
+      "name": "CR - Forge"
+    },
+    "6613": {
+      "name": "Divination"
+    },
+    "6630": {
+      "name": "HOUNDS"
+    },
+    "6659": {
+      "name": "Red Devils"
+    },
+    "6689": {
+      "name": "No Name Yet"
+    },
+    "6731": {
+      "name": "The Next Level"
+    },
+    "6737": {
+      "name": "Investment"
+    },
+    "6759": {
+      "name": "The Prodigal (recruiting)"
+    },
+    "6774": {
+      "name": "THE FIRM"
+    },
+    "6777": {
+      "name": "Merons Meroders"
+    },
+    "6780": {
+      "name": "The United"
+    },
+    "6798": {
+      "name": "Area 51"
+    },
+    "6799": {
+      "name": "The Untouchables"
+    },
+    "6814": {
+      "name": "-Hive-"
+    },
+    "6824": {
+      "name": "The One"
+    },
+    "6834": {
+      "name": "TBA - Rise Above"
+    },
+    "6843": {
+      "name": "Rise From Ruin2.0"
+    },
+    "6895": {
+      "name": "Iron Rose Cartel"
+    },
+    "6924": {
+      "name": "JFR"
+    },
+    "6965": {
+      "name": "Mikaelsons"
+    },
+    "6974": {
+      "name": "Onion Smugglers"
+    },
+    "6984": {
+      "name": "Wraith"
+    },
+    "7002": {
+      "name": "Karma Chameleons"
+    },
+    "7021": {
+      "name": "Section8 - Recruiting"
+    },
+    "7049": {
+      "name": "39th Street Healers"
+    },
+    "7072": {
+      "name": "The Dog Pound RECRUITING"
+    },
+    "7074": {
+      "name": "T.N.U. - Headquarters"
+    },
+    "7093": {
+      "name": "MOB"
+    },
+    "7115": {
+      "name": "Republic Of Futuria"
+    },
+    "7136": {
+      "name": "FUN in the SUN"
+    },
+    "7142": {
+      "name": "The Union Jacks"
+    },
+    "7171": {
+      "name": "TROJANS"
+    },
+    "7182": {
+      "name": "Visionaries"
+    },
+    "7197": {
+      "name": "HeLa"
+    },
+    "7218": {
+      "name": "Midnight Assassins"
+    },
+    "7227": {
+      "name": "The Collective JTF"
+    },
+    "7251": {
+      "name": "Dodgy Geezers"
+    },
+    "7282": {
+      "name": "Bloody Sloths"
+    },
+    "7291": {
+      "name": "Acid Rain Boot Camp"
+    },
+    "7369": {
+      "name": "WeAreFamily"
+    },
+    "7545": {
+      "name": "Styx"
+    },
+    "7620": {
+      "name": "The Alphabet Army"
+    },
+    "7636": {
+      "name": "Hush"
+    },
+    "7652": {
+      "name": "Alley Cats"
+    },
+    "7680": {
+      "name": "Malaysia"
+    },
+    "7709": {
+      "name": "Vulpes Vulpes"
+    },
+    "7746": {
+      "name": "C.R.H"
+    },
+    "7818": {
+      "name": "The Box"
+    },
+    "7819": {
+      "name": "GDZ"
+    },
+    "7835": {
+      "name": "Monarch Engineering"
+    },
+    "7886": {
+      "name": "Natural Selection VII"
+    },
+    "7917": {
+      "name": "DOUBLE 7"
+    },
+    "7920": {
+      "name": "Oddthought Cartel"
+    },
+    "7935": {
+      "name": "The Collective BootCamp"
+    },
+    "7969": {
+      "name": "WIT-Premier"
+    },
+    "7986": {
+      "name": "Assassin Team"
+    },
+    "7990": {
+      "name": "Nomads"
+    },
+    "8001": {
+      "name": "Dark Exterminators"
+    },
+    "8012": {
+      "name": "TC Boot Camp"
+    },
+    "8032": {
+      "name": "Toke N Choke"
+    },
+    "8058": {
+      "name": "Tik Tok"
+    },
+    "8062": {
+      "name": "Ruthless Reborn"
+    },
+    "8063": {
+      "name": "The Aussie"
+    },
+    "8065": {
+      "name": "THE DEFIANTS"
+    },
+    "8071": {
+      "name": "Fat Elvis"
+    },
+    "8076": {
+      "name": "Order Through Chaos"
+    },
+    "8085": {
+      "name": "Nuclear Blast"
+    },
+    "8102": {
+      "name": "PhiKappaRho"
+    },
+    "8103": {
+      "name": "Ludus Magnus"
+    },
+    "8124": {
+      "name": "Temple of Athena"
+    },
+    "8139": {
+      "name": "PeacefulStormRiders"
+    },
+    "8151": {
+      "name": "Chromatic"
+    },
+    "8152": {
+      "name": "The Unwoke"
+    },
+    "8178": {
+      "name": "Last Haven"
+    },
+    "8181": {
+      "name": "Travellers Paradise"
+    },
+    "8184": {
+      "name": "Criminal Scholars Inc 2.0"
+    },
+    "8205": {
+      "name": "CRache Farm"
+    },
+    "8216": {
+      "name": "Digg"
+    },
+    "8227": {
+      "name": "UB 2.0"
+    },
+    "8234": {
+      "name": "nWo"
+    },
+    "8245": {
+      "name": "None"
+    },
+    "8247": {
+      "name": "Secret Intel Service"
+    },
+    "8253": {
+      "name": "CHILLED"
+    },
+    "8255": {
+      "name": "Requiem"
+    },
+    "8273": {
+      "name": "Pandamonium"
+    },
+    "8278": {
+      "name": "Timeless"
+    },
+    "8281": {
+      "name": "PARADISE"
+    },
+    "8285": {
+      "name": "Get Stuffed"
+    },
+    "8289": {
+      "name": "Tactical Warfare."
+    },
+    "8301": {
+      "name": "-BC-Shockers"
+    },
+    "8315": {
+      "name": "Aureate Phoenixes"
+    },
+    "8317": {
+      "name": "Naughty Souls"
+    },
+    "8322": {
+      "name": "The Project Syndicate"
+    },
+    "8331": {
+      "name": "Harumph"
+    },
+    "8336": {
+      "name": "Monarch HQ"
+    },
+    "8351": {
+      "name": "Creeping Death"
+    },
+    "8361": {
+      "name": "Junkies & OldF**ks"
+    },
+    "8367": {
+      "name": "404 - NOT FOUND"
+    },
+    "8379": {
+      "name": "SomeKallUsLaidback"
+    },
+    "8384": {
+      "name": "Savage Plague"
+    },
+    "8392": {
+      "name": "The Equalizer 3 United"
+    },
+    "8397": {
+      "name": "ilimitada"
+    },
+    "8400": {
+      "name": "Lingering Insanity"
+    },
+    "8422": {
+      "name": "MMCP"
+    },
+    "8437": {
+      "name": "The Mile High Clinic"
+    },
+    "8442": {
+      "name": "White and pink"
+    },
+    "8455": {
+      "name": "TR1BE"
+    },
+    "8459": {
+      "name": "Slags"
+    },
+    "8468": {
+      "name": "Bloodbath and Beyond"
+    },
+    "8475": {
+      "name": "Dictatura Testudo Ferrea"
+    },
+    "8500": {
+      "name": "Total Domination"
+    },
+    "8503": {
+      "name": "Bad Moon Rising"
+    },
+    "8509": {
+      "name": "Wandering Earth"
+    },
+    "8510": {
+      "name": "Ara Pacis"
+    },
+    "8520": {
+      "name": "Carbon X"
+    },
+    "8536": {
+      "name": "White Walkers"
+    },
+    "8537": {
+      "name": "NNGO"
+    },
+    "8556": {
+      "name": "The Devils Rejects"
+    },
+    "8565": {
+      "name": "Mayham"
+    },
+    "8566": {
+      "name": "Marv&#039;s Socks"
+    },
+    "8585": {
+      "name": "S-I-S Full Send"
+    },
+    "8592": {
+      "name": "Accurate Hitz Hybrid"
+    },
+    "8606": {
+      "name": "Leviathan Initiative"
+    },
+    "8629": {
+      "name": "Marvel Fanatics"
+    },
+    "8633": {
+      "name": "Padded"
+    },
+    "8634": {
+      "name": "Infamous - Relentless"
+    },
+    "8647": {
+      "name": "QuiXanD"
+    },
+    "8651": {
+      "name": "Project Mayhem"
+    },
+    "8655": {
+      "name": "Random Acts of Chillaxin"
+    },
+    "8659": {
+      "name": "Sergeant General"
+    },
+    "8669": {
+      "name": "Universal"
+    },
+    "8677": {
+      "name": "WIT-Ranger"
+    },
+    "8678": {
+      "name": "The Unknown Quantity"
+    },
+    "8687": {
+      "name": "The Sanctuary"
+    },
+    "8689": {
+      "name": "Inferno2"
+    },
+    "8706": {
+      "name": "Carbon"
+    },
+    "8715": {
+      "name": "Midnight X"
+    },
+    "8735": {
+      "name": "TEA"
+    },
+    "8754": {
+      "name": "no wars"
+    },
+    "8760": {
+      "name": "New Revolution Order"
+    },
+    "8761": {
+      "name": "Team STEGO"
+    },
+    "8764": {
+      "name": "La Famiglia Delucci"
+    },
+    "8766": {
+      "name": "FLUX"
+    },
+    "8779": {
+      "name": "237"
+    },
+    "8791": {
+      "name": "Waste"
+    },
+    "8793": {
+      "name": "Genesis"
+    },
+    "8795": {
+      "name": "Rogue Ones"
+    },
+    "8802": {
+      "name": "Ram Rajya"
+    },
+    "8803": {
+      "name": "Buttgrass Inc"
+    },
+    "8811": {
+      "name": "Impulse 13!"
+    },
+    "8819": {
+      "name": "Violent if Necessary"
+    },
+    "8827": {
+      "name": "BANDILA"
+    },
+    "8828": {
+      "name": "Healer faction recruit me"
+    },
+    "8834": {
+      "name": "Avant-garde"
+    },
+    "8836": {
+      "name": "Vinerri"
+    },
+    "8838": {
+      "name": "RUBBER BULLETS"
+    },
+    "8842": {
+      "name": "Advocate-recruiting"
+    },
+    "8845": {
+      "name": "TC Idols (Not For Sale)"
+    },
+    "8846": {
+      "name": "Trojan"
+    },
+    "8850": {
+      "name": "Shedtown Stranglers"
+    },
+    "8851": {
+      "name": "Chocolate Hamster"
+    },
+    "8867": {
+      "name": "Razers"
+    },
+    "8869": {
+      "name": "Bendetti"
+    },
+    "8870": {
+      "name": "The Smokers N Tokers"
+    },
+    "8894": {
+      "name": "MISSING PERSON"
+    },
+    "8899": {
+      "name": "Stoned Lemmings"
+    },
+    "8901": {
+      "name": "Empire Corporation"
+    },
+    "8904": {
+      "name": "D' Nuke Activator"
+    },
+    "8910": {
+      "name": "One Man Wolfpack"
+    },
+    "8918": {
+      "name": "FITZ FAMILY"
+    },
+    "8929": {
+      "name": "BlackSeptemberGang"
+    },
+    "8938": {
+      "name": "Arcadia"
+    },
+    "8944": {
+      "name": "Ambulance Chasers"
+    },
+    "8946": {
+      "name": "Confederacy"
+    },
+    "8953": {
+      "name": "More Good Times"
+    },
+    "8954": {
+      "name": "Nuclear Armageddon"
+    },
+    "8969": {
+      "name": "Drunken Ninja Monkeys"
+    },
+    "8981": {
+      "name": "Unrelenting"
+    },
+    "8984": {
+      "name": "Korx"
+    },
+    "8989": {
+      "name": "JUX HQ"
+    },
+    "9018": {
+      "name": "agoosh not for sale"
+    },
+    "9024": {
+      "name": "The Burrow"
+    },
+    "9026": {
+      "name": "The Thieves Guild"
+    },
+    "9032": {
+      "name": "Wolf Pack"
+    },
+    "9036": {
+      "name": "The Black Pearl"
+    },
+    "9041": {
+      "name": "PT-Calculated"
+    },
+    "9047": {
+      "name": "DarkHearts"
+    },
+    "9052": {
+      "name": "T.A.G"
+    },
+    "9054": {
+      "name": "Flying Hellfish"
+    },
+    "9055": {
+      "name": "Natural Selection IV"
+    },
+    "9062": {
+      "name": "British bulldogs"
+    },
+    "9100": {
+      "name": "The Black Hand"
+    },
+    "9110": {
+      "name": "Siege"
+    },
+    "9116": {
+      "name": "Sleep Deprivation"
+    },
+    "9118": {
+      "name": "Maiden Voyage"
+    },
+    "9120": {
+      "name": "Project Anarchy"
+    },
+    "9125": {
+      "name": "Royalty"
+    },
+    "9138": {
+      "name": "Do Not Disturb"
+    },
+    "9139": {
+      "name": "Not for Sale"
+    },
+    "9166": {
+      "name": "Phat_Buds"
+    },
+    "9171": {
+      "name": "Occultus"
+    },
+    "9176": {
+      "name": "The Iron Fist"
+    },
+    "9201": {
+      "name": "aXiom"
+    },
+    "9216": {
+      "name": "Seven Nation Army Bunker"
+    },
+    "9223": {
+      "name": "Enlightened Souls......"
+    },
+    "9228": {
+      "name": "-BC-Bust Train"
+    },
+    "9231": {
+      "name": "Fallen Angels"
+    },
+    "9234": {
+      "name": "KMA"
+    },
+    "9269": {
+      "name": "Fearless Fighters II"
+    },
+    "9271": {
+      "name": "Twisted Legacy"
+    },
+    "9274": {
+      "name": "Unmoved"
+    },
+    "9280": {
+      "name": "Nomads Medical"
+    },
+    "9294": {
+      "name": "Bada Bing! NOT FOR SALE"
+    },
+    "9305": {
+      "name": "Legitimate Business"
+    },
+    "9306": {
+      "name": "Knights of Good"
+    },
+    "9338": {
+      "name": "ULTIMATE KINGS"
+    },
+    "9351": {
+      "name": "-REVOLUCiON-"
+    },
+    "9353": {
+      "name": "Ministry of Mayhem II"
+    },
+    "9356": {
+      "name": "SMTH - Party Animals"
+    },
+    "9357": {
+      "name": "Avalon"
+    },
+    "9362": {
+      "name": "Jihadi Nation"
+    },
+    "9370": {
+      "name": "Meliora Prime"
+    },
+    "9384": {
+      "name": "A.R.Y.A.N.S"
+    },
+    "9397": {
+      "name": "Swords Of Hades"
+    },
+    "9400": {
+      "name": "Earthly Cyclone"
+    },
+    "9405": {
+      "name": "Swiss Roll"
+    },
+    "9412": {
+      "name": "BLACK STATUES"
+    },
+    "9418": {
+      "name": "Raiden"
+    },
+    "9420": {
+      "name": "Sacrifice"
+    },
+    "9443": {
+      "name": "P X"
+    },
+    "9455": {
+      "name": "Bleed"
+    },
+    "9465": {
+      "name": "Burrito Loco Bombers"
+    },
+    "9503": {
+      "name": "TSFTS Microbrewery"
+    },
+    "9517": {
+      "name": "OverWatch"
+    },
+    "9524": {
+      "name": "Trinity"
+    },
+    "9528": {
+      "name": "S.C.A.R. - Division X"
+    },
+    "9533": {
+      "name": "Natural Selection"
+    },
+    "9544": {
+      "name": "Primal"
+    },
+    "9577": {
+      "name": "PIHB"
+    },
+    "9599": {
+      "name": "Latin Slangers"
+    },
+    "9624": {
+      "name": "TOXIC Children"
+    },
+    "9642": {
+      "name": "HT-Training"
+    },
+    "9657": {
+      "name": "tatty_teddy"
+    },
+    "9668": {
+      "name": "Moonderland"
+    },
+    "9674": {
+      "name": "IA Bootcamp"
+    },
+    "9685": {
+      "name": "The New Breed"
+    },
+    "9686": {
+      "name": "Doghouse productions"
+    },
+    "9689": {
+      "name": "NNGO Deja 2"
+    },
+    "9700": {
+      "name": "The Devils Revolution"
+    },
+    "9708": {
+      "name": "stolen faction"
+    },
+    "9710": {
+      "name": "Banzai Bandits"
+    },
+    "9720": {
+      "name": "Follow Follow"
+    },
+    "9728": {
+      "name": "SOLDIER"
+    },
+    "9745": {
+      "name": "Emergency Room"
+    },
+    "9768": {
+      "name": "Our_Gang"
+    },
+    "9788": {
+      "name": "Dark Omen"
+    },
+    "9796": {
+      "name": "Z BadAzz Angelz"
+    },
+    "9816": {
+      "name": "Sons of Glyndwr"
+    },
+    "9829": {
+      "name": "bombbombbombbombbombabomb"
+    },
+    "9916": {
+      "name": "Sticks and Stones"
+    },
+    "9932": {
+      "name": "Graveyard"
+    },
+    "9953": {
+      "name": "The Drunk Tank"
+    },
+    "9972": {
+      "name": "Bears Id Like to Faq"
+    },
+    "9988": {
+      "name": "Golden Horde"
+    },
+    "10009": {
+      "name": "Down Under"
+    },
+    "10036": {
+      "name": "Killers in Kartels"
+    },
+    "10044": {
+      "name": "REALM OF ASGARD"
+    },
+    "10067": {
+      "name": "Speed Freaks"
+    },
+    "10073": {
+      "name": "TC Fighters"
+    },
+    "10081": {
+      "name": "S  M"
+    },
+    "10096": {
+      "name": "Asahi"
+    },
+    "10098": {
+      "name": "Moo Farms"
+    },
+    "10140": {
+      "name": "In Memory of the Fallen"
+    },
+    "10157": {
+      "name": "Explosion"
+    },
+    "10168": {
+      "name": "Elderly Home"
+    },
+    "10174": {
+      "name": "The Quidnunks HQ"
+    },
+    "10184": {
+      "name": "Iconoclast"
+    },
+    "10199": {
+      "name": "The Justice League"
+    },
+    "10225": {
+      "name": "The Peacefull Destroyers"
+    },
+    "10279": {
+      "name": "Heavens Tears"
+    },
+    "10290": {
+      "name": "Pendekar Laut Legacy"
+    },
+    "10292": {
+      "name": "Firehouse"
+    },
+    "10293": {
+      "name": "ATC Training"
+    },
+    "10296": {
+      "name": "The Last Post"
+    },
+    "10301": {
+      "name": "Let it burn"
+    },
+    "10305": {
+      "name": "Anarchy Undercover"
+    },
+    "10310": {
+      "name": "Torn City Fire"
+    },
+    "10314": {
+      "name": "Shangri La"
+    },
+    "10360": {
+      "name": "Criminal Intentions"
+    },
+    "10384": {
+      "name": "The Neptune"
+    },
+    "10442": {
+      "name": "Texas"
+    },
+    "10449": {
+      "name": "Pax"
+    },
+    "10461": {
+      "name": "Raising Militias"
+    },
+    "10463": {
+      "name": "Warriors 4077th"
+    },
+    "10465": {
+      "name": "Bird Dogs"
+    },
+    "10476": {
+      "name": "Team Goon"
+    },
+    "10493": {
+      "name": "Thrasher"
+    },
+    "10507": {
+      "name": "DoQ: Ducks of Quacken"
+    },
+    "10532": {
+      "name": "Anon"
+    },
+    "10534": {
+      "name": "IRON FIST"
+    },
+    "10542": {
+      "name": "The Fellowship of LOL"
+    },
+    "10543": {
+      "name": "Estonian Mafia"
+    },
+    "10566": {
+      "name": "The Rifle Company"
+    },
+    "10567": {
+      "name": "Veghards minions"
+    },
+    "10591": {
+      "name": "Renegade"
+    },
+    "10610": {
+      "name": "NPO - Strength"
+    },
+    "10614": {
+      "name": "KICK-ASS"
+    },
+    "10624": {
+      "name": "Thor's Dragoons"
+    },
+    "10630": {
+      "name": "Wookie Nookie"
+    },
+    "10636": {
+      "name": "EXIT13"
+    },
+    "10701": {
+      "name": "The Shark Tank"
+    },
+    "10712": {
+      "name": "IMPERIAL HYDRA CORP"
+    },
+    "10714": {
+      "name": "Peaceful Impact"
+    },
+    "10729": {
+      "name": "Hell On Heels"
+    },
+    "10739": {
+      "name": "Elements"
+    },
+    "10741": {
+      "name": "SMTH - Trisolary"
+    },
+    "10749": {
+      "name": "M.O.B."
+    },
+    "10777": {
+      "name": "Order of the Old Farts"
+    },
+    "10813": {
+      "name": "LEGENDARY"
+    },
+    "10818": {
+      "name": "Lex Wolverines"
+    },
+    "10820": {
+      "name": "Carbon  Penguins"
+    },
+    "10826": {
+      "name": "Blood History"
+    },
+    "10835": {
+      "name": "Fearless Warriors,"
+    },
+    "10850": {
+      "name": "Hobros"
+    },
+    "10851": {
+      "name": "St Louis Killas"
+    },
+    "10856": {
+      "name": "REK II"
+    },
+    "10877": {
+      "name": "House of Dragonborn"
+    },
+    "10879": {
+      "name": "8888"
+    },
+    "10896": {
+      "name": "Kamikazis"
+    },
+    "10899": {
+      "name": "Gang Force"
+    },
+    "10913": {
+      "name": "Unbroken Silence"
+    },
+    "10916": {
+      "name": "The Art Of Peace"
+    },
+    "10924": {
+      "name": "Hells Mercenaries Clan"
+    },
+    "10929": {
+      "name": "Ravens Roost"
+    },
+    "10940": {
+      "name": "for sale message me"
+    },
+    "10960": {
+      "name": "Wolverines Health Org"
+    },
+    "10969": {
+      "name": "TUNE SQUAD"
+    },
+    "10970": {
+      "name": "P-Airs Faction"
+    },
+    "10979": {
+      "name": "BAD COMPANY "
+    },
+    "11037": {
+      "name": "peaceful spot"
+    },
+    "11041": {
+      "name": "Dirty Vegas"
+    },
+    "11043": {
+      "name": "Apocalyptic"
+    },
+    "11062": {
+      "name": "Carbon Z"
+    },
+    "11064": {
+      "name": "Yakuza"
+    },
+    "11092": {
+      "name": "THE FB'S"
+    },
+    "11102": {
+      "name": "Attorney at Law"
+    },
+    "11108": {
+      "name": "stana vesela"
+    },
+    "11131": {
+      "name": "Infernum Perdition"
+    },
+    "11162": {
+      "name": "InQuest"
+    },
+    "11169": {
+      "name": "sigh"
+    },
+    "11214": {
+      "name": "Nightmare Realm"
+    },
+    "11222": {
+      "name": "Juz4Peaze"
+    },
+    "11227": {
+      "name": "MedievalMoon"
+    },
+    "11279": {
+      "name": "Avaritia"
+    },
+    "11312": {
+      "name": "The Enlightened"
+    },
+    "11332": {
+      "name": "Hatecrew Deathroll"
+    },
+    "11335": {
+      "name": "Some old faction I made"
+    },
+    "11356": {
+      "name": "-UGK-"
+    },
+    "11359": {
+      "name": "Notorious "
+    },
+    "11360": {
+      "name": "DeZZuB"
+    },
+    "11376": {
+      "name": "Also Impulse"
+    },
+    "11384": {
+      "name": "TeH rEd PaNdAs"
+    },
+    "11392": {
+      "name": "Sturdy Wings"
+    },
+    "11399": {
+      "name": "Angels 'n' Devils"
+    },
+    "11428": {
+      "name": "Swiss Squad"
+    },
+    "11464": {
+      "name": "Soldaa"
+    },
+    "11465": {
+      "name": "Children of the Damned"
+    },
+    "11481": {
+      "name": "Train 2 Death"
+    },
+    "11522": {
+      "name": "Honey Badgers Medical"
+    },
+    "11539": {
+      "name": "The Sick Bay"
+    },
+    "11559": {
+      "name": "The Masters"
+    },
+    "11581": {
+      "name": "Natural Selection III"
+    },
+    "11658": {
+      "name": "Yakuza - Annihilation"
+    },
+    "11715": {
+      "name": "0merta"
+    },
+    "11724": {
+      "name": "TERRA"
+    },
+    "11747": {
+      "name": "Natural Selection II"
+    },
+    "11753": {
+      "name": "The Blue Triangle"
+    },
+    "11781": {
+      "name": "R.T.F.G."
+    },
+    "11782": {
+      "name": "Plague Inc."
+    },
+    "11796": {
+      "name": "SMTH - Bright Summit"
+    },
+    "11835": {
+      "name": "Zianaiz"
+    },
+    "11872": {
+      "name": "Leafy&#039;s Tree"
+    },
+    "11879": {
+      "name": "Jedi Ninjas"
+    },
+    "11898": {
+      "name": "HW-Warsluts"
+    },
+    "11932": {
+      "name": "The Nootch"
+    },
+    "11949": {
+      "name": "Old people"
+    },
+    "12006": {
+      "name": "Everyday Strangers"
+    },
+    "12009": {
+      "name": "Roo&#039;s Room"
+    },
+    "12031": {
+      "name": "The Low Lands"
+    }
+  }
+}

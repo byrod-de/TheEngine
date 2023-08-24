@@ -42,7 +42,7 @@ module.exports = {
 
     async execute(interaction) {
 
-        let tornParamsFile = fs.readFileSync('./tornParams.json');
+        const tornParamsFile = fs.readFileSync('./tornParams.json');
         let tornParams = JSON.parse(tornParamsFile);
 
         if (interaction.options.getSubcommand() === 'list') {

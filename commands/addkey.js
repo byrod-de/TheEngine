@@ -1,8 +1,11 @@
+const fs = require('fs');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { comment } = require('../config.json');
 const { callTornApi } = require('../functions/api');
+const { verifyAPIKey } = require('../functions/async');
+const { printLog, checkAPIKey } = require('../helper/misc');
+const { comment } = require('../conf/config.json');
 
-var misc = require('../helper/misc');
+const apiConfigPath = './conf/apiConfig.json';
 
 
 module.exports = {
@@ -20,52 +23,55 @@ module.exports = {
         const mykey = interaction.options.getString('mykey');
 
         //Check entered API key if valid
-        let checkAPIKey = misc.checkAPIKey(mykey);
-        if (checkAPIKey.includes('Error')) {
-            await interaction.reply(`\`\`\`${checkAPIKey}\`\`\``);
-
+        let checkedAPIKey = checkAPIKey(mykey);
+        if (checkedAPIKey.includes('Error')) {
+            await interaction.reply(`\`\`\`${checkedAPIKey}\`\`\``);
         } else {
 
-            let response = await callTornApi('user', 'basic,discord', userID);
+            let response = await callTornApi('user', 'basic,discord', userID, undefined, undefined, undefined, undefined, "rotate");
 
             if (response[0]) {
                 let playerJson = response[2];
 
                 let tornUser = playerJson['name'];
                 let tornId = playerJson['player_id'];
-                let discordID = playerJson['discord']['discordID'];
 
-                if (discordID !== userID) {
-                    await interaction.reply(`\`\`\`This is not your API key!\`\`\``)
-                } else {
+                const newKey = {
+                    key: mykey,
+                    id: tornId,
+                    active: false,
+                };
 
-                    let keycheckURL = `https://api.torn.com/key/?selections=info&key=${mykey}`;
+                const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
 
-                    let keycheckResponse = await fetch(keycheckURL);
+                await verifyAPIKey(newKey, comment);
+                printLog(`Verified API Key: ${newKey.key}.`);
 
-                    if (keycheckResponse.ok) { // if HTTP-status is 200-299
-                        let keycheckJson = await keycheckResponse.json();
+                apiConfig.apiKeys.push(newKey);
 
-                        let access_level = keycheckJson['access_level'];
-                        let access_type = keycheckJson['access_type'];
+                fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
 
-                        const jsonText = `{
-                                "keyinfo": {
-                                    "userID": "${userID}",
-                                    "tornUser": "${tornUser}",
-                                    "tornId": "${tornId}",
-                                    "mykey": "${mykey}",
-                                    "access_level": "${access_level}",
-                                    "access_type": "${access_type}"
-                                }
-                              }`;
+                const embed = new EmbedBuilder()
+                    .setColor(0xdf691a)
+                    .setTitle(`${tornUser} [${tornId}]`)
+                    .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
+                    .setDescription(`API Key Stored`)
+                    .setTimestamp()
+                    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                        misc.n(jsonText);
+                embed.addFields(
+                    { name: 'Torn User', value: tornUser, inline: false },
+                    { name: 'Torn ID', value: tornId.toString(), inline: false },
+                    { name: 'Access Level', value: newKey.access_level.toString(), inline: false },
+                    { name: 'Access Type', value: newKey.access_type.toString(), inline: false },
+                    { name: 'API Key', value: newKey.key, inline: false },
 
-                        await interaction.reply(`\`\`\`\n${userID}\n${tornUser}\n${tornId}\n${access_level}\n${access_type}\n${mykey}\`\`\``)
-                    }
-                }
+                );
+
+                await interaction.reply({ embeds: [embed], ephemeral: true })
+
             }
         }
     }
+
 }

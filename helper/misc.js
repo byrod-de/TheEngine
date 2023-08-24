@@ -1,4 +1,4 @@
-const { apiKey, comment, storeMethod } = require('../config.json');
+const { apiKey, storeMethod } = require('../conf/config.json');
 const moment = require('moment');
 
 function checkAPIKey(apikey) {

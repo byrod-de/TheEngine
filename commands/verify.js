@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { verifieRoleId } = require('../config.json');
+const { verifieRoleId } = require('../conf/config.json');
 const { callTornApi } = require('../functions/api');
 const { printLog } = require('../helper/misc');
 

@@ -1,9 +1,11 @@
 const fs = require('fs');
+const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
 const { printLog } = require('../helper/misc');
 const { callTornApi } = require('../functions/api');
-const { homeFaction } = require('../config.json');
+const { homeFaction } = require('../conf/config.json');
+const apiConfigPath = './conf/apiConfig.json';
 
 const NodeCache = require("node-cache");
 const myCache = new NodeCache();
@@ -13,7 +15,7 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-async function send_msg(statusChannel, apiKey, comment) {
+async function send_msg(statusChannel) {
     let currentDate = moment().format().replace('T', ' ');
     let statusMessage = `${currentDate} > Still running on ${hostname}!`;
 
@@ -23,13 +25,14 @@ async function send_msg(statusChannel, apiKey, comment) {
 }
 
 
-async function checkTerritories(territoryChannel, apiKey, comment) {
+async function checkTerritories(territoryChannel) {
 
     let tornParamsFile = fs.readFileSync('./tornParams.json');
 
     let tornParams = JSON.parse(tornParamsFile);
 
-    let territorywars =  await callTornApi('torn', 'territorywars');
+    let territorywars = await callTornApi('torn', 'territorywars', '', undefined, undefined, undefined, undefined, 'rotate');
+
     let territoriesInWar;
     if (territorywars[0]) {
         let territoryWarJson = territorywars[2];
@@ -40,7 +43,7 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
     for (let key in tornParams.ttFactionIDs) {
         let faction_id = tornParams.ttFactionIDs[key];
 
-        let response = await callTornApi('faction', 'territory,basic', faction_id);
+        let response = await callTornApi('faction', 'territory,basic', faction_id, undefined, undefined, undefined, undefined, 'rotate');
         if (response[0]) {
             let territoryJson = response[2];
 
@@ -94,7 +97,7 @@ async function checkTerritories(territoryChannel, apiKey, comment) {
     }
 }
 
-async function checkArmoury(armouryChannel, apiKey, comment) {
+async function checkArmoury(armouryChannel) {
 
     let tornParamsFile = fs.readFileSync('./tornParams.json');
 
@@ -172,7 +175,7 @@ async function checkArmoury(armouryChannel, apiKey, comment) {
     }
 }
 
-async function checkRetals(retalChannel, apiKey, comment) {
+async function checkRetals(retalChannel) {
 
     let currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
@@ -243,4 +246,51 @@ async function checkRetals(retalChannel, apiKey, comment) {
     }
 }
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, send_msg };
+async function verifyAPIKey(apiKey, comment) {
+    const verificationURL = `https://api.torn.com/key/?selections=info&key=${apiKey.key}&comment=${comment}`;
+    printLog(`>> ${verificationURL}`);
+    try {
+        const response = await axios.get(verificationURL);
+        if (response.status === 200) {
+            const verificationJson = response.data;
+            if (verificationJson.hasOwnProperty('error')) {
+                printLog(`Error Code ${verificationJson['error'].code},  ${v['error'].error}.`);
+                if (verificationJson['error'].code === 1  || // 1 => Key is empty : Private key is empty in current request.
+                    verificationJson['error'].code === 2  || // 2 => Incorrect Key : Private key is wrong/incorrect format.
+                    verificationJson['error'].code === 10 || //10 => Key owner is in federal jail : Current key can't be used because owner is in federal jail.
+                    verificationJson['error'].code === 13    //13 => The key is temporarily disabled due to owner inactivity : The key owner hasn't been online for more than 7 days.
+                ) {
+                    apiKey.active = false;
+                    apiKey.errorReason = `${verificationJson['error'].code} = ${verificationJson['error'].error}`;
+                }
+          } else {
+            apiKey.access_level = verificationJson.access_level;
+            apiKey.access_type = verificationJson.access_type;
+            apiKey.active = true;
+          }
+        } else {
+            apiKey.active = false;
+        }
+    } catch (error) {
+        apiKey.active = false;
+    }
+}
+
+
+
+async function verifyKeys() {
+    const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+
+    for (const apiKey of apiConfig.apiKeys) {
+      if (apiKey.active || !apiKey.hasOwnProperty('active')) {
+        await verifyAPIKey(apiKey, apiConfig.comment);
+        printLog(`Verified API Key: ${apiKey.key}.`);
+      }
+    }
+
+    fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
+    printLog(`apiConfig file updated.`);
+}
+
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, send_msg, verifyKeys, verifyAPIKey };

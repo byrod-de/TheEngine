@@ -14,6 +14,6 @@ module.exports = {
     let statusMessage = `${currentDate} > Still running!`;
 
     let result = await callTornApi('torn', 'timestamp');
-    await interaction.reply(`\`\`\`${statusMessage}\n${result[1]}\`\`\``);
+    await interaction.reply(`\`\`\`Bot Status: ${statusMessage}\nAPI Status: ${result[1]}\`\`\``);
 	},
 };

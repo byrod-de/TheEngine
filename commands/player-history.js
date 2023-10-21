@@ -26,8 +26,8 @@ module.exports = {
         printLog(getAPIKey(userID));
 
         const [response, responseHist] = await Promise.all([
-            callTornApi('user', 'basic,personalstats,profile', userID),
-            callTornApi('user', 'basic,personalstats,profile', userID, '', '', historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity')
+            callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
+            callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity', 'rotate')
         ]);
 
         if (response[0] && responseHist[0]) {

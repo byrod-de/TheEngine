@@ -12,22 +12,26 @@ module.exports = {
         .setDescription('Get a players stat history! Add a tornid for checking another player, leave it empty for yourself.')
         .addIntegerOption(option =>
             option.setName('tornid')
-                .setDescription('Torn user ID')),
+                .setDescription('Torn user ID'))
+        .addIntegerOption(option =>
+            option.setName('days')
+                .setDescription('Number of days')),
 
     async execute(interaction) {
         const userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
+        const days = interaction.options.getInteger('days') ?? 30;
 
         const thismoment = moment();
-        const historymoment = thismoment.subtract(30, 'days');
+        const historymoment = thismoment.subtract(days, 'days');
         const historyDate = historymoment.format().replace('T', ' ');
 
         let replyMsg = 'Let\'s try this...';
 
-        printLog(getAPIKey(userID));
+        //printLog(getAPIKey(userID));
 
         const [response, responseHist] = await Promise.all([
             callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
-            callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity', 'rotate')
+            callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity,energydrinkused', 'rotate')
         ]);
 
         if (response[0] && responseHist[0]) {
@@ -41,11 +45,16 @@ module.exports = {
             const refillsCur = personalstats['refills'];
             const xantakenCur = personalstats['xantaken'];
             const statenhancersusedCur = personalstats['statenhancersused'];
+            const energydrinkusedCur = personalstats['energydrinkused'];
+            const useractivityCur = personalstats['useractivity']/60/60;
+
 
             const networthHist = personalstatsHist['networth'];
             const refillsHist = personalstatsHist['refills'];
             const xantakenHist = personalstatsHist['xantaken'];
             const statenhancersusedHist = personalstatsHist['statenhancersused'];
+            const energydrinkusedHist = personalstatsHist['energydrinkused'];
+            const useractivityHist = personalstatsHist['useractivity']/60/60;
 
             const tornUser = playerHistJson['name'];
             const tornId = playerHistJson['player_id'];
@@ -60,7 +69,7 @@ module.exports = {
             const revivable = playerHistJson['revivable'] === 0 ? 'false' : 'true';
 
             const networthDiff = networthCur - networthHist;
-            const sign = networthDiff < 0 ? '-' : '+';
+            //const sign = 
 
             const statsEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
@@ -71,19 +80,21 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-            let replyMsg = 'Stat'.padEnd(7) + ` | ${'30d ago'.padEnd(7)} | ${'Today'.padEnd(7)} | ${'Diff'.padEnd(7)} | ${'Daily'.padEnd(7)}\n`;
+            let replyMsg = 'Stat'.padEnd(7) + ` | ${days}${'d ago'.padEnd(5)} | ${'Today'.padEnd(7)} | ${'Diff'.padEnd(7)} | ${'Daily'.padEnd(7)}\n`;
             replyMsg += '-'.padEnd(9 + 9 + 9 + 9 + 11, '-') + '\n';
 
             const statArray = [
-                { name: 'Xanax', hist: xantakenHist, cur: xantakenCur },
-                { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur },
-                { name: 'Refills', hist: refillsHist, cur: refillsCur },
-                { name: 'Netwrth', hist: networthHist, cur: networthCur }
+                { name: 'Activty', hist: useractivityHist, cur: useractivityCur, sign: ' ' },
+                { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: ' '  },
+                { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: ' '  },
+                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: ' '  },
+                { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: ' '  },
+                { name: 'Netwrth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+'}
             ];
 
             for (const stat of statArray) {
-                const diff = stat.cur - stat.hist;
-                replyMsg += `${stat.name.padEnd(7)} | ${abbreviateNumber(stat.hist).toString().padStart(7)} | ${abbreviateNumber(stat.cur).toString().padStart(7)} | ${sign}${abbreviateNumber(diff).toString().padStart(6)} | ${sign}${abbreviateNumber(diff / 30).toString().padStart(6)}\n`;
+                const diff = stat.cur - stat.hist ;
+                replyMsg += `${stat.name.padEnd(7)} | ${abbreviateNumber(stat.hist).toString().padStart(7)} | ${abbreviateNumber(stat.cur).toString().padStart(7)} | ${stat.sign}${abbreviateNumber(diff).toString().padStart(6)} | ${stat.sign}${abbreviateNumber(diff / days).toString().padStart(6)}\n`;
             }
 
             statsEmbed.addFields({ name: 'Personal Stats', value: `\`\`\`${replyMsg}\`\`\``, inline: false });

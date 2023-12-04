@@ -36,7 +36,7 @@ async function checkTerritories(territoryChannel) {
     let territoriesInWar;
     if (territorywars[0]) {
         let territoryWarJson = territorywars[2];
-        territoriesInWar = territoryWarJson ? Object.keys(territoryWarJson.territorywars).sort() : null;
+        territoriesInWar = territoryWarJson && territoryWarJson.territorywars !== null ? Object.keys(territoryWarJson.territorywars).sort() : null;
     }
 
 
@@ -75,10 +75,15 @@ async function checkTerritories(territoryChannel) {
                 if (diffInTTs.length > 0)
                     territoryEmbed.addFields({ name: `${faction_name} claimed:`, value: `${diffInTTs.toString()}`, inline: false })
 
-                let factionTTInAssault = territories.filter(x => territoriesInWar.includes(x));
+                if (territoriesInWar) {
+                    factionTTInAssault = territories.filter(x => territoriesInWar.includes(x));
+                } else {
+                    factionTTInAssault = []; // Handle the case when territoriesInWar is null or undefined
+                }
+
                 if (factionTTInAssault.length > 0) {
-                    territoryEmbed.addFields({ name: `${faction_name} is defending:`, value: `${factionTTInAssault}.`, inline: false })                        
-                } 
+                    territoryEmbed.addFields({ name: `${faction_name} is defending:`, value: `${factionTTInAssault}.`, inline: false })
+                }
 
                 if (diffInCache.length > 0 || diffInTTs.length > 0) {
                     territoryEmbed.addFields({ name: `${faction_name} holds now:`, value: `${territories}.`, inline: false })
@@ -89,7 +94,7 @@ async function checkTerritories(territoryChannel) {
                 printLog('Territory cache empty');
             }
 
-            
+
 
             if (myCache.set(faction_id, territories, 120)) printLog(`Cache updated for ${faction_name} [${faction_id}] with ${territories}`);
         }
@@ -229,10 +234,10 @@ async function checkRetals(retalChannel) {
                 attackEmbed.addFields({ name: `Attacker`, value: `${attacker_name} [${attacker_id}] of ${attacker_factionname}`, inline: false });
                 printLog(`Defender ${defender_name} [${defender_id}] < Attacker ${attacker_name} [${attacker_id}] of ${attacker_factionname}`);
 
-                
+
                 if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `Attack was abroad.`, inline: false });
 
-                
+
                 if (retalChannel) {
                     retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
                 } else {
@@ -255,19 +260,19 @@ async function verifyAPIKey(apiKey, comment) {
             const verificationJson = response.data;
             if (verificationJson.hasOwnProperty('error')) {
                 printLog(`Error Code ${verificationJson['error'].code},  ${v['error'].error}.`);
-                if (verificationJson['error'].code === 1  || // 1 => Key is empty : Private key is empty in current request.
-                    verificationJson['error'].code === 2  || // 2 => Incorrect Key : Private key is wrong/incorrect format.
+                if (verificationJson['error'].code === 1 || // 1 => Key is empty : Private key is empty in current request.
+                    verificationJson['error'].code === 2 || // 2 => Incorrect Key : Private key is wrong/incorrect format.
                     verificationJson['error'].code === 10 || //10 => Key owner is in federal jail : Current key can't be used because owner is in federal jail.
                     verificationJson['error'].code === 13    //13 => The key is temporarily disabled due to owner inactivity : The key owner hasn't been online for more than 7 days.
                 ) {
                     apiKey.active = false;
                     apiKey.errorReason = `${verificationJson['error'].code} = ${verificationJson['error'].error}`;
                 }
-          } else {
-            apiKey.access_level = verificationJson.access_level;
-            apiKey.access_type = verificationJson.access_type;
-            apiKey.active = true;
-          }
+            } else {
+                apiKey.access_level = verificationJson.access_level;
+                apiKey.access_type = verificationJson.access_type;
+                apiKey.active = true;
+            }
         } else {
             apiKey.active = false;
         }
@@ -281,16 +286,16 @@ async function verifyAPIKey(apiKey, comment) {
 async function verifyKeys(statusChannel) {
     let currentDate = moment().format().replace('T', ' ');
     const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
-    
+
     let verificationCount = 0;
     let totalKeys = apiConfig.apiKeys.length;
 
     for (const apiKey of apiConfig.apiKeys) {
-      if (apiKey.active || !apiKey.hasOwnProperty('active')) {
-        await verifyAPIKey(apiKey, apiConfig.comment);
-        printLog(`Verified API Key: ${apiKey.key}.`);
-        verificationCount++;
-      }
+        if (apiKey.active || !apiKey.hasOwnProperty('active')) {
+            await verifyAPIKey(apiKey, apiConfig.comment);
+            printLog(`Verified API Key: ${apiKey.key}.`);
+            verificationCount++;
+        }
     }
 
     fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));

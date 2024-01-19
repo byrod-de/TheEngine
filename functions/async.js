@@ -2,7 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog } = require('../helper/misc');
+const { printLog, writeNewMessageId, readStoredMessageId, getFlagIcon, sortByUntil } = require('../helper/misc');
 const { callTornApi } = require('../functions/api');
 const { homeFaction } = require('../conf/config.json');
 const apiConfigPath = './conf/apiConfig.json';
@@ -13,6 +13,7 @@ const timestampCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
+const rankedwars = require('../commands/rankedwars');
 const hostname = os.hostname();
 
 async function send_msg(statusChannel) {
@@ -27,7 +28,7 @@ async function send_msg(statusChannel) {
 
 async function checkTerritories(territoryChannel) {
 
-    let tornParamsFile = fs.readFileSync('./tornParams.json');
+    let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
 
     let tornParams = JSON.parse(tornParamsFile);
 
@@ -104,7 +105,7 @@ async function checkTerritories(territoryChannel) {
 
 async function checkArmoury(armouryChannel) {
 
-    let tornParamsFile = fs.readFileSync('./tornParams.json');
+    let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
 
     let tornParams = JSON.parse(tornParamsFile);
 
@@ -304,5 +305,225 @@ async function verifyKeys(statusChannel) {
     statusChannel.send(`\`\`\`${currentDate} > ${statusMessage}\`\`\``);
 }
 
+async function checkWar(warChannel) {
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, send_msg, verifyKeys, verifyAPIKey };
+    if (warChannel) {
+
+        let responseRW = await callTornApi('faction', 'basic,timestamp');
+
+        if (responseRW[0]) {
+            let factionJson = responseRW[2];
+            let faction_name = factionJson['name'];
+            let faction_tag = factionJson['tag'];
+            let faction_id = factionJson['ID'];
+            let faction_icon = `https://factiontags.torn.com/` + factionJson['tag_image'];
+
+            let rankedWars = factionJson['ranked_wars'];
+
+            if (rankedwars) {
+
+                const rankedWar = Object.values(rankedWars)[0];
+                const factionIDs = Object.keys(rankedWar.factions);
+
+                const faction1ID = factionIDs[0];
+                const faction2ID = factionIDs[1];
+
+                const faction1 = rankedWar.factions[faction1ID];
+                const faction2 = rankedWar.factions[faction2ID];
+
+                const war = rankedWar.war;
+
+                let faction1StatusIcon = ':hourglass:';
+                let faction2StatusIcon = ':hourglass:';
+
+                let faction1StatusText = '*waiting to start*';
+                let faction2StatusText = '*waiting to start*';
+
+                let hasStarted = false;
+                const timestamp = factionJson.timestamp;
+
+                if (war.start < timestamp) {
+                    hasStarted = true;
+                }
+
+                if (faction1.score > faction2.score) {
+                    faction1StatusIcon = ':green_circle:';
+                    faction2StatusIcon = ':red_circle:';
+                    faction1StatusText = '**winning**';
+                    faction2StatusText = '**losing**';
+                }
+
+                if (faction1.score < faction2.score) {
+                    faction1StatusIcon = ':red_circle:';
+                    faction2StatusIcon = ':green_circle:';
+                    faction1StatusText = '**losing**';
+                    faction2StatusText = '**winning**';
+                }
+
+                let rwEmbed = new EmbedBuilder()
+                    .setColor(0xdf691a)
+                    .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
+                    .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
+                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                    .setDescription(`Starttime: <t:${war.start}:R>`)
+                    .setTimestamp()
+                    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+
+                rwEmbed.addFields({ name: `${faction1.name}`, value: `${faction1StatusIcon} ${faction1StatusText}\n\`Score:\` ${faction1.score} | ${war.target} \n\`Chain:\`  ${faction1.chain}`, inline: true });
+                rwEmbed.addFields({ name: `${faction2.name}`, value: `${faction2StatusIcon} ${faction2StatusText}\n\`Score:\` ${faction2.score} | ${war.target} \n\`Chain:\`  ${faction2.chain}`, inline: true });
+
+                let rwEmbedMessageId = readStoredMessageId('rwEmbedMessageID');
+
+                if (rwEmbedMessageId) {
+                    // If there is an original message, attempt to delete it
+                    try {
+                        const originalMessage = await warChannel.messages.fetch(rwEmbedMessageId);
+                        await originalMessage.edit({ embeds: [rwEmbed], ephemeral: false });
+                    } catch (error) {
+                        // Handle errors, e.g., message not found
+                        console.error('Catch: ', error.message);
+                        const newMessage = await warChannel.send({ embeds: [rwEmbed], ephemeral: false });
+                        writeNewMessageId('rwEmbedMessageID', newMessage.id);
+                    }
+                }
+
+
+                // Check Status of faction members from faction1:
+                if (hasStarted) {
+
+                    let travelEmbed = new EmbedBuilder()
+                        .setColor(0xdf691a)
+                        .setTitle(`:airplane: Members traveling`)
+                        .setDescription(`List of members from both factions, which are traveling`)
+                        .setTimestamp()
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                    let hospitalEmbed = new EmbedBuilder()
+                        .setColor(0xdf691a)
+                        .setTitle(`:hospital: Members in hospital`)
+                        .setDescription(`List of the next 10 members which will be out of hospital`)
+                        .setTimestamp()
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                    for (var factionID in rankedWar.factions) {
+                        let responseMembers = await callTornApi('faction', 'basic', factionID);
+
+                        if (responseMembers[0]) {
+                            let travelingMembers = '';
+                            let hospitalMembers = '';
+                            let memberCount = 0;
+
+                            const faction = responseMembers[2];
+                            const membersList = faction.members;
+
+                            let memberIndex = {}
+
+                            for (var id in membersList) {
+                                memberIndex[membersList[id].name] = id;
+                            }
+
+                            const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
+
+
+                            for (var id in sortedMembers) {
+
+                                let member = sortedMembers[id];
+                                let memberStatusState = member.status.state;
+
+                                //check Traveling status
+                                if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad') {
+                                    const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+                                    const entry = `${flagIcon} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                                    travelingMembers += entry;
+                                }
+
+                                //check Hospital status
+                                if (memberStatusState == 'Hospital') {
+                                    let timeDifference = (member.status.until - timestamp) / 60;
+
+                                    if (timeDifference < 60) {
+                                        memberCount++;
+                                        if (memberCount < 10) {
+                                            const entry = `:syringe: [${member.name}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
+                                            hospitalMembers += entry;
+                                         }
+                                    }
+                                }
+
+                            }
+
+                            if (travelingMembers == '') travelingMembers = '*none*';
+                            if (hospitalMembers == '') hospitalMembers = '*none*';
+                            travelEmbed.addFields({ name: `${faction.name}`, value: `${travelingMembers}`, inline: false });
+                            hospitalEmbed.addFields({ name: `${faction.name}`, value: `${hospitalMembers}`, inline: false });
+                        }
+                    }
+
+                    let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
+
+                    if (travelEmbedMessageId) {
+                        // If there is an original message, attempt to delete it
+                        try {
+                            const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
+                            await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
+                        } catch (error) {
+                            // Handle errors, e.g., message not found
+                            console.error('Catch: ', error.message);
+                            const newMessage = await warChannel.send({ embeds: [travelEmbed], ephemeral: false });
+                            writeNewMessageId('travelEmbedMessageId', newMessage.id);
+                        }
+                    }
+
+                    let hospitalEmbedMessageId = readStoredMessageId('hospitalEmbedMessageId');
+
+                    if (hospitalEmbedMessageId) {
+                        // If there is an original message, attempt to delete it
+                        try {
+                            const originalMessage = await warChannel.messages.fetch(hospitalEmbedMessageId);
+                            await originalMessage.edit({ embeds: [hospitalEmbed], ephemeral: false });
+                        } catch (error) {
+                            // Handle errors, e.g., message not found
+                            console.error('Catch: ', error.message);
+                            const newMessage = await warChannel.send({ embeds: [hospitalEmbed], ephemeral: false });
+                            writeNewMessageId('hospitalEmbedMessageId', newMessage.id);
+                        }
+                    }
+                } else {
+                    let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
+
+                    if (travelEmbedMessageId) {
+                        // If there is an original message, attempt to delete it
+                        try {
+                            const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
+                            await originalMessage.delete();
+                        } catch (error) {
+                            // Handle errors, e.g., message not found
+                            console.error('Catch: ', error.message);
+                        }
+                    }
+
+                    let hospitalEmbedMessageId = readStoredMessageId('hospitalEmbedMessageId');
+
+                    if (hospitalEmbedMessageId) {
+                        // If there is an original message, attempt to delete it
+                        try {
+                            const originalMessage = await warChannel.messages.fetch(hospitalEmbedMessageId);
+                            await originalMessage.delete();
+                        } catch (error) {
+                            // Handle errors, e.g., message not found
+                            console.error('Catch: ', error.message);
+                        }
+                    }
+
+                }
+            }
+        }
+
+    } else {
+        printLog('warChannel is undefined');
+    }
+}
+
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, send_msg, verifyKeys, verifyAPIKey };

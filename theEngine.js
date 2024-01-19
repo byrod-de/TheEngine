@@ -2,13 +2,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval,
-	armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval } = require('./conf/config.json');
+	armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval, warChannelId, warUpdateInterval } = require('./conf/config.json');
 
 const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const { checkTerritories, checkArmoury, checkRetals, send_msg, verifyKeys } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, send_msg, verifyKeys } = require('./functions/async');
 
 const { printLog } = require('./helper/misc');
 
@@ -66,7 +66,14 @@ client.on('ready', () => {
 		setInterval(() => checkRetals(retalChannel), 1000 * 60 * retalUpdateInterval);
 	}
 
-	console.log('here!')
+	let warChannel = client.channels.cache.get(warChannelId);
+
+	if (warChannel !== undefined) {
+		let statusMessage = `${currentDate} > War status check!`;
+		//warChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		setInterval(() => checkWar(warChannel), 1000 * 60 * warUpdateInterval);
+	}
+
 	// Run the API key verification once every 24 hours after the start of the script
 	const verificationInterval = 60 * 24; // 24 hours
 	let statusChannel = client.channels.cache.get(statusChannelId);

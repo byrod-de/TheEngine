@@ -1,5 +1,6 @@
 const { apiKey, storeMethod } = require('../conf/config.json');
 const moment = require('moment');
+const fs = require('fs');
 
 function checkAPIKey(apikey) {
 
@@ -71,4 +72,76 @@ function printLog(logtext) {
     return message;
 }
 
-module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog };
+const messageIdFile = './conf/messageIds.json';
+
+function readStoredMessageId(key) {
+    // Read the content of the JSON file
+    const data = fs.readFileSync(messageIdFile, 'utf8');
+    
+    try {
+        // Parse the JSON data
+        const messageIds = JSON.parse(data);
+        // Return the value associated with the key "statusMessageID"
+        return messageIds[key];
+    } catch (error) {
+        // Handle JSON parsing errors or missing key
+        console.error('Error reading stored message ID:', error.message);
+        return null;
+    }
+}
+
+
+
+function writeNewMessageId(key, newMessageId) {
+    try {
+        // Read the content of the JSON file
+        const data = fs.readFileSync(messageIdFile, 'utf8');
+        // Parse the JSON data
+        const messageIds = JSON.parse(data);
+        // Update the value associated with the key "statusMessageID"
+        messageIds[key] = newMessageId;
+        // Write the updated data back to the file
+        fs.writeFileSync(messageIdFile, JSON.stringify(messageIds, null, 2), 'utf8');
+    } catch (error) {
+        // Handle JSON parsing or writing errors
+        console.error('Error writing new message ID:', error.message);
+    }
+}
+
+function getFlagIcon(travelStatus, destinationText) {
+    
+    let direction = '>';
+    
+    if (travelStatus == 'Abroad') direction = '=';
+
+    let flag = `:flag_black: \` ${direction} \``;
+
+    if (destinationText.includes('Argentina'))   flag = `:flag_ar: \` ${direction} \``;
+    if (destinationText.includes('Canada'))      flag = `:flag_ca: \` ${direction} \``;
+    if (destinationText.includes('Cayman'))      flag = `:flag_ky: \` ${direction} \``;
+    if (destinationText.includes('China'))       flag = `:flag_cn: \` ${direction} \``;
+    if (destinationText.includes('Hawaii'))      flag = `:flag_us: \` ${direction} \``;
+    if (destinationText.includes('Japan'))       flag = `:flag_jp: \` ${direction} \``;
+    if (destinationText.includes('Mexico'))      flag = `:flag_mx: \` ${direction} \``;
+    if (destinationText.includes('Africa'))      flag = `:flag_za: \` ${direction} \``;
+    if (destinationText.includes('Switzerland')) flag = `:flag_ch: \` ${direction} \``;
+    if (destinationText.includes('UAE'))         flag = `:flag_ae: \` ${direction} \``;
+    if (destinationText.includes('Kingdom'))     flag = `:flag_gb: \` ${direction} \``;
+    if (destinationText.includes('Returning'))   flag = `:pirate_flag: \` < \``;
+
+    return flag;
+
+}
+
+function sortByUntil(a, b) {
+    if (a.status.until < b.status.until) {
+        return 1;
+    } else if (a.status.until > b.status.until) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+
+module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil };

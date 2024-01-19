@@ -364,10 +364,10 @@ async function checkWar(warChannel) {
                     lead = faction2.score - faction1.score;
                 }
 
-                let description = `Starttime: <t:${war.start}:R>`;
+                let description = `Starttime: <t:${war.start}:R>\nTarget: ${war.target}`;
 
                 if (hasStarted)
-                    description += `\nLead: ${lead}\nTarget: ${war.target}`;
+                    description += `\nLead: ${lead}`;
 
                 let rwEmbed = new EmbedBuilder()
                     .setColor(0xdf691a)
@@ -478,7 +478,7 @@ async function checkWar(warChannel) {
                             await originalMessage.edit({ embeds: [hospitalEmbed], ephemeral: false });
                         } catch (error) {
                             // Handle errors, e.g., message not found
-                            console.error('Catch: ', error.message);
+                            printLog('Catch [hospitalEmbedMessageId]: ' + error.message);
                             const newMessage = await warChannel.send({ embeds: [hospitalEmbed], ephemeral: false });
                             writeNewMessageId('hospitalEmbedMessageId', newMessage.id);
                         }
@@ -493,7 +493,7 @@ async function checkWar(warChannel) {
                             await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
                         } catch (error) {
                             // Handle errors, e.g., message not found
-                            console.error('Catch: ', error.message);
+                            printLog('Catch [travelEmbedMessageId]: ' + error.message);
                             const newMessage = await warChannel.send({ embeds: [travelEmbed], ephemeral: false });
                             writeNewMessageId('travelEmbedMessageId', newMessage.id);
                         }
@@ -508,7 +508,7 @@ async function checkWar(warChannel) {
                             await originalMessage.delete();
                         } catch (error) {
                             // Handle errors, e.g., message not found
-                            console.error('Catch: ', error.message);
+                            printLog('Catch [hospitalEmbedMessageId]: ' + error.message);
                         }
                     }
 
@@ -521,7 +521,7 @@ async function checkWar(warChannel) {
                             await originalMessage.delete();
                         } catch (error) {
                             // Handle errors, e.g., message not found
-                            console.error('Catch: ', error.message);
+                            printLog('Catch [travelEmbedMessageId]: ' + error.message);
                         }
                     }
                 }

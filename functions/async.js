@@ -339,6 +339,8 @@ async function checkWar(warChannel) {
                 let faction1StatusText = '*waiting to start*';
                 let faction2StatusText = '*waiting to start*';
 
+                let lead = '';
+
                 let hasStarted = false;
                 const timestamp = factionJson.timestamp;
 
@@ -351,6 +353,7 @@ async function checkWar(warChannel) {
                     faction2StatusIcon = ':red_circle:';
                     faction1StatusText = '**winning**';
                     faction2StatusText = '**losing**';
+                    lead = faction1.score - faction2.score;
                 }
 
                 if (faction1.score < faction2.score) {
@@ -358,20 +361,26 @@ async function checkWar(warChannel) {
                     faction2StatusIcon = ':green_circle:';
                     faction1StatusText = '**losing**';
                     faction2StatusText = '**winning**';
+                    lead = faction2.score - faction1.score;
                 }
+
+                let description = `Starttime: <t:${war.start}:R>`;
+
+                if (hasStarted)
+                    description += `\nLead: ${lead}\nTarget: ${war.target}`;
 
                 let rwEmbed = new EmbedBuilder()
                     .setColor(0xdf691a)
                     .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
                     .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                    .setDescription(`Starttime: <t:${war.start}:R>`)
+                    .setDescription(description)
                     .setTimestamp()
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
 
-                rwEmbed.addFields({ name: `${faction1.name}`, value: `${faction1StatusIcon} ${faction1StatusText}\n\`Score:\` ${faction1.score} | ${war.target} \n\`Chain:\`  ${faction1.chain}`, inline: true });
-                rwEmbed.addFields({ name: `${faction2.name}`, value: `${faction2StatusIcon} ${faction2StatusText}\n\`Score:\` ${faction2.score} | ${war.target} \n\`Chain:\`  ${faction2.chain}`, inline: true });
+                rwEmbed.addFields({ name: `${faction1.name}`, value: `${faction1StatusIcon} ${faction1StatusText}\n\`Score:\` ${faction1.score}\n\`Chain:\`  ${faction1.chain}`, inline: true });
+                rwEmbed.addFields({ name: `${faction2.name}`, value: `${faction2StatusIcon} ${faction2StatusText}\n\`Score:\` ${faction2.score}\n\`Chain:\`  ${faction2.chain}`, inline: true });
 
                 let rwEmbedMessageId = readStoredMessageId('rwEmbedMessageID');
 
@@ -460,21 +469,6 @@ async function checkWar(warChannel) {
                         }
                     }
 
-                    let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
-
-                    if (travelEmbedMessageId) {
-                        // If there is an original message, attempt to delete it
-                        try {
-                            const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
-                            await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
-                        } catch (error) {
-                            // Handle errors, e.g., message not found
-                            console.error('Catch: ', error.message);
-                            const newMessage = await warChannel.send({ embeds: [travelEmbed], ephemeral: false });
-                            writeNewMessageId('travelEmbedMessageId', newMessage.id);
-                        }
-                    }
-
                     let hospitalEmbedMessageId = readStoredMessageId('hospitalEmbedMessageId');
 
                     if (hospitalEmbedMessageId) {
@@ -489,20 +483,22 @@ async function checkWar(warChannel) {
                             writeNewMessageId('hospitalEmbedMessageId', newMessage.id);
                         }
                     }
-                } else {
+
                     let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
 
                     if (travelEmbedMessageId) {
                         // If there is an original message, attempt to delete it
                         try {
                             const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
-                            await originalMessage.delete();
+                            await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
                         } catch (error) {
                             // Handle errors, e.g., message not found
                             console.error('Catch: ', error.message);
+                            const newMessage = await warChannel.send({ embeds: [travelEmbed], ephemeral: false });
+                            writeNewMessageId('travelEmbedMessageId', newMessage.id);
                         }
                     }
-
+                } else {
                     let hospitalEmbedMessageId = readStoredMessageId('hospitalEmbedMessageId');
 
                     if (hospitalEmbedMessageId) {
@@ -516,6 +512,18 @@ async function checkWar(warChannel) {
                         }
                     }
 
+                    let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
+
+                    if (travelEmbedMessageId) {
+                        // If there is an original message, attempt to delete it
+                        try {
+                            const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
+                            await originalMessage.delete();
+                        } catch (error) {
+                            // Handle errors, e.g., message not found
+                            console.error('Catch: ', error.message);
+                        }
+                    }
                 }
             }
         }

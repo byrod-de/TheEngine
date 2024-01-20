@@ -143,5 +143,22 @@ function sortByUntil(a, b) {
     }
 }
 
+async function updateOrDeleteEmbed(warChannel, embedType, embed, method = 'edit') {
+    const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
 
-module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil };
+    if (embedMessageId) {
+        try {
+            const originalMessage = await warChannel.messages.fetch(embedMessageId);
+            await originalMessage[method]({ embeds: [embed], ephemeral: false });
+        } catch (error) {
+            printLog(`Catch [${embedType}EmbedMessageId]: ${error.message}`);
+            if (method !== 'delete') {
+                const newMessage = await warChannel.send({ embeds: [embed], ephemeral: false });
+                writeNewMessageId(`${embedType}EmbedMessageId`, newMessage.id);
+            }
+        }
+    }
+}
+
+
+module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed };

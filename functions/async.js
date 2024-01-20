@@ -2,7 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog, writeNewMessageId, readStoredMessageId, getFlagIcon, sortByUntil } = require('../helper/misc');
+const { printLog, writeNewMessageId, readStoredMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
 const { callTornApi } = require('../functions/api');
 const { homeFaction } = require('../conf/config.json');
 const apiConfigPath = './conf/apiConfig.json';
@@ -344,7 +344,7 @@ async function checkWar(warChannel) {
                 let hasStarted = false;
                 const timestamp = factionJson.timestamp;
 
-                if (war.start < timestamp) {
+                if (war.start < timestamp || war.end < 0) {
                     hasStarted = true;
                 }
 
@@ -469,61 +469,12 @@ async function checkWar(warChannel) {
                         }
                     }
 
-                    let hospitalEmbedMessageId = readStoredMessageId('hospitalEmbedMessageId');
+                    await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed); // Defaults to 'edit'
+                    await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed); // Defaults to 'edit'
 
-                    if (hospitalEmbedMessageId) {
-                        // If there is an original message, attempt to delete it
-                        try {
-                            const originalMessage = await warChannel.messages.fetch(hospitalEmbedMessageId);
-                            await originalMessage.edit({ embeds: [hospitalEmbed], ephemeral: false });
-                        } catch (error) {
-                            // Handle errors, e.g., message not found
-                            printLog('Catch [hospitalEmbedMessageId]: ' + error.message);
-                            const newMessage = await warChannel.send({ embeds: [hospitalEmbed], ephemeral: false });
-                            writeNewMessageId('hospitalEmbedMessageId', newMessage.id);
-                        }
-                    }
-
-                    let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
-
-                    if (travelEmbedMessageId) {
-                        // If there is an original message, attempt to delete it
-                        try {
-                            const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
-                            await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
-                        } catch (error) {
-                            // Handle errors, e.g., message not found
-                            printLog('Catch [travelEmbedMessageId]: ' + error.message);
-                            const newMessage = await warChannel.send({ embeds: [travelEmbed], ephemeral: false });
-                            writeNewMessageId('travelEmbedMessageId', newMessage.id);
-                        }
-                    }
                 } else {
-                    let hospitalEmbedMessageId = readStoredMessageId('hospitalEmbedMessageId');
-
-                    if (hospitalEmbedMessageId) {
-                        // If there is an original message, attempt to delete it
-                        try {
-                            const originalMessage = await warChannel.messages.fetch(hospitalEmbedMessageId);
-                            await originalMessage.delete();
-                        } catch (error) {
-                            // Handle errors, e.g., message not found
-                            printLog('Catch [hospitalEmbedMessageId]: ' + error.message);
-                        }
-                    }
-
-                    let travelEmbedMessageId = readStoredMessageId('travelEmbedMessageId');
-
-                    if (travelEmbedMessageId) {
-                        // If there is an original message, attempt to delete it
-                        try {
-                            const originalMessage = await warChannel.messages.fetch(travelEmbedMessageId);
-                            await originalMessage.delete();
-                        } catch (error) {
-                            // Handle errors, e.g., message not found
-                            printLog('Catch [travelEmbedMessageId]: ' + error.message);
-                        }
-                    }
+                    await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete');
+                    await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete');
                 }
             }
         }

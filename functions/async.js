@@ -320,6 +320,10 @@ async function checkWar(warChannel) {
 
             let rankedWars = factionJson['ranked_wars'];
 
+            let rwEmbed = new EmbedBuilder();
+            let travelEmbed = new EmbedBuilder();
+            let hospitalEmbed = new EmbedBuilder();
+
             if (rankedwars) {
 
                 const rankedWar = Object.values(rankedWars)[0];
@@ -394,8 +398,7 @@ async function checkWar(warChannel) {
                 if (isActive || hasEnded)
                     description += `\nLead: ${lead}`;
 
-                let rwEmbed = new EmbedBuilder()
-                    .setColor(0xdf691a)
+                rwEmbed.setColor(0xdf691a)
                     .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
                     .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
@@ -407,34 +410,18 @@ async function checkWar(warChannel) {
                 rwEmbed.addFields({ name: `${faction1.name}`, value: `${faction1StatusIcon} ${faction1StatusText}\n\`Score:\` ${faction1.score}\n\`Chain:\`  ${faction1.chain}`, inline: true });
                 rwEmbed.addFields({ name: `${faction2.name}`, value: `${faction2StatusIcon} ${faction2StatusText}\n\`Score:\` ${faction2.score}\n\`Chain:\`  ${faction2.chain}`, inline: true });
 
-                let rwEmbedMessageId = readStoredMessageId('rwEmbedMessageID');
-
-                if (rwEmbedMessageId) {
-                    // If there is an original message, attempt to delete it
-                    try {
-                        const originalMessage = await warChannel.messages.fetch(rwEmbedMessageId);
-                        await originalMessage.edit({ embeds: [rwEmbed], ephemeral: false });
-                    } catch (error) {
-                        // Handle errors, e.g., message not found
-                        console.error('Catch: ', error.message);
-                        const newMessage = await warChannel.send({ embeds: [rwEmbed], ephemeral: false });
-                        writeNewMessageId('rwEmbedMessageID', newMessage.id);
-                    }
-                }
-
+                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 
                 // Check Status of faction members from faction1:
                 if (isActive) {
 
-                    let travelEmbed = new EmbedBuilder()
-                        .setColor(0xdf691a)
+                    travelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
                         .setDescription(`List of members from both factions, which are traveling`)
                         .setTimestamp()
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                    let hospitalEmbed = new EmbedBuilder()
-                        .setColor(0xdf691a)
+                    hospitalEmbed.setColor(0xdf691a)
                         .setTitle(`:hospital: Members in hospital`)
                         .setDescription(`List of the next 10 members which will be out of hospital`)
                         .setTimestamp()
@@ -501,6 +488,8 @@ async function checkWar(warChannel) {
                     await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete');
                     await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete');
                 }
+            } else {
+                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
             }
         }
 

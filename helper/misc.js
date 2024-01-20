@@ -144,8 +144,8 @@ function sortByUntil(a, b) {
 }
 
 async function updateOrDeleteEmbed(warChannel, embedType, embed, method = 'edit') {
-    const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
 
+    const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
     if (embedMessageId) {
         try {
             const originalMessage = await warChannel.messages.fetch(embedMessageId);

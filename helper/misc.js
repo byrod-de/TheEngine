@@ -113,6 +113,7 @@ function getFlagIcon(travelStatus, destinationText) {
     let direction = '>';
     
     if (travelStatus == 'Abroad') direction = '=';
+    if (destinationText.includes('Returning'))  direction = '<';
 
     let flag = `:flag_black: \` ${direction} \``;
 
@@ -127,7 +128,6 @@ function getFlagIcon(travelStatus, destinationText) {
     if (destinationText.includes('Switzerland')) flag = `:flag_ch: \` ${direction} \``;
     if (destinationText.includes('UAE'))         flag = `:flag_ae: \` ${direction} \``;
     if (destinationText.includes('Kingdom'))     flag = `:flag_gb: \` ${direction} \``;
-    if (destinationText.includes('Returning'))   flag = `:pirate_flag: \` < \``;
 
     return flag;
 

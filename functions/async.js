@@ -341,32 +341,57 @@ async function checkWar(warChannel) {
 
                 let lead = '';
 
-                let hasStarted = false;
+                let isActive = false;
+                let hasEnded = false;
                 const timestamp = factionJson.timestamp;
 
-                if (war.start < timestamp || war.end < 0) {
-                    hasStarted = true;
+                if (war.start < timestamp) {
+                    isActive = true;
+                    if (war.end > 0) {
+                        isActive = false;
+                        hasEnded = true;
+                    }
                 }
 
                 if (faction1.score > faction2.score) {
-                    faction1StatusIcon = ':green_circle:';
-                    faction2StatusIcon = ':red_circle:';
-                    faction1StatusText = '**winning**';
-                    faction2StatusText = '**losing**';
                     lead = faction1.score - faction2.score;
+                    if (isActive) {
+                        faction1StatusIcon = ':green_circle:';
+                        faction2StatusIcon = ':red_circle:';
+                        faction1StatusText = '**winning**';
+                        faction2StatusText = '**losing**';
+                    }
+
+                    if (hasEnded) {
+                        faction1StatusIcon = ':trophy:';
+                        faction2StatusIcon = ':skull_crossbones:';
+                        faction1StatusText = '**Winner!**';
+                        faction2StatusText = '**Loser!**';
+                    }
+
+
                 }
 
                 if (faction1.score < faction2.score) {
-                    faction1StatusIcon = ':red_circle:';
-                    faction2StatusIcon = ':green_circle:';
-                    faction1StatusText = '**losing**';
-                    faction2StatusText = '**winning**';
                     lead = faction2.score - faction1.score;
+                    if (isActive) {
+                        faction1StatusIcon = ':red_circle:';
+                        faction2StatusIcon = ':green_circle:';
+                        faction1StatusText = '**losing**';
+                        faction2StatusText = '**winning**';
+                    }
+                    if (hasEnded) {
+                        faction1StatusIcon = ':skull_crossbones:';
+                        faction2StatusIcon = ':trophy:';
+                        faction1StatusText = '**Loser!**';
+                        faction2StatusText = '**Winner!**';
+                    }
+
                 }
 
                 let description = `Starttime: <t:${war.start}:R>\nTarget: ${war.target}`;
 
-                if (hasStarted)
+                if (isActive || hasEnded)
                     description += `\nLead: ${lead}`;
 
                 let rwEmbed = new EmbedBuilder()
@@ -399,7 +424,7 @@ async function checkWar(warChannel) {
 
 
                 // Check Status of faction members from faction1:
-                if (hasStarted) {
+                if (isActive) {
 
                     let travelEmbed = new EmbedBuilder()
                         .setColor(0xdf691a)
@@ -456,7 +481,7 @@ async function checkWar(warChannel) {
                                         if (memberCount < 10) {
                                             const entry = `:syringe: [${member.name}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
                                             hospitalMembers += entry;
-                                         }
+                                        }
                                     }
                                 }
 

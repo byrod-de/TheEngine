@@ -90,6 +90,30 @@ function readStoredMessageId(key) {
     }
 }
 
+function deleteStoredMessageId(key) {
+    // Read the content of the JSON file
+    const data = fs.readFileSync(messageIdFile, 'utf8');
+    
+    try {
+      // Parse the JSON data
+      const messageIds = JSON.parse(data);
+      
+      // Check if the key exists in the messageIds object
+      if (messageIds.hasOwnProperty(key)) {
+        // Delete the message ID associated with the key
+        delete messageIds[key];
+        
+        // Write the updated JSON data back to the file
+        fs.writeFileSync(messageIdFile, JSON.stringify(messageIds, null, 2), 'utf8');
+        printLog(`Message ID associated with key '${key}' has been deleted.`);
+      } else {
+        printLog(`Key '${key}' does not exist in the stored message IDs.`);
+      }
+    } catch (error) {
+      // Handle JSON parsing errors
+      console.error('Error deleting stored message ID:', error.message);
+    }
+  }
 
 
 function writeNewMessageId(key, newMessageId) {
@@ -151,10 +175,12 @@ async function updateOrDeleteEmbed(warChannel, embedType, embed, method = 'edit'
             const originalMessage = await warChannel.messages.fetch(embedMessageId);
             await originalMessage[method]({ embeds: [embed], ephemeral: false });
         } catch (error) {
-            printLog(`Catch [${embedType}EmbedMessageId]: ${error.message}`);
+            //printLog(`Catch [${embedType}EmbedMessageId]: ${error.message}`);
             if (method !== 'delete') {
                 const newMessage = await warChannel.send({ embeds: [embed], ephemeral: false });
                 writeNewMessageId(`${embedType}EmbedMessageId`, newMessage.id);
+            } else {
+                //deleteStoredMessageId(`${embedType}EmbedMessageId`);
             }
         }
     }

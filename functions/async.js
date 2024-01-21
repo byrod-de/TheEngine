@@ -329,7 +329,6 @@ async function checkWar(warChannel) {
             if (rankedWar) {
 
                 const rankedWar = Object.values(rankedWars)[0];
-                console.log(rankedWar);
                 const factionIDs = Object.keys(rankedWar.factions);
 
                 const faction1ID = factionIDs[0];
@@ -440,13 +439,7 @@ async function checkWar(warChannel) {
 
                         description += `\n**Ended:** <t:${war.start}:R>`;
 
-                        rwEmbed.setColor(0xdf691a)
-                            .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
-                            .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
-                            .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                            .setDescription(description)
-                            .setTimestamp()
-                            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
 
                         fieldFaction1 += `\n**Rewards:**\n${faction1Items}`;
                         fieldFaction2 += `\n**Rewards:**\n${faction2Items}`;
@@ -456,6 +449,14 @@ async function checkWar(warChannel) {
                     fieldFaction1 += `\n**Chain:**  ${faction1.chain}`;
                     fieldFaction2 += `\n**Chain:**  ${faction2.chain}`;
                 }
+
+                rwEmbed.setColor(0xdf691a)
+                .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
+                .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
+                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                .setDescription(description)
+                .setTimestamp()
+                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                 rwEmbed.addFields({ name: faction1.name, value: fieldFaction1, inline: true });
                 rwEmbed.addFields({ name: faction2.name, value: fieldFaction2, inline: true });

@@ -337,6 +337,9 @@ async function checkWar(warChannel) {
 
                 const war = rankedWar.war;
 
+                let fieldFaction1 = '';
+                let fieldFaction2 = '';
+
                 let faction1StatusIcon = ':hourglass:';
                 let faction2StatusIcon = ':hourglass:';
 
@@ -393,22 +396,66 @@ async function checkWar(warChannel) {
 
                 }
 
-                let description = `Starttime: <t:${war.start}:R>\nTarget: ${war.target}`;
+                let description = `**Starttime:** <t:${war.start}:R>\n**Target:** ${war.target}`;
 
                 if (isActive || hasEnded)
                     description += `\nLead: ${lead}`;
 
-                rwEmbed.setColor(0xdf691a)
-                    .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
-                    .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
-                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                    .setDescription(description)
-                    .setTimestamp()
-                    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n**Score:** ${faction1.score}`;
+                fieldFaction2 = `${faction2StatusIcon} ${faction2StatusText}\n**Score:** ${faction2.score}`;
+
+                if (hasEnded) {
+                    let rwId = Object.keys(rankedWars)[0];
+
+                    let responseReport = await callTornApi('torn', 'rankedwarreport', rwId);
+
+                    if (responseReport[0]) {
+                        let jsonRwReportResponse = responseReport[2];
+
+                        let rankedWarReport = jsonRwReportResponse['rankedwarreport'];
+
+                        let faction1Items = '';
+                        let faction2Items = '';
 
 
-                rwEmbed.addFields({ name: `${faction1.name}`, value: `${faction1StatusIcon} ${faction1StatusText}\n\`Score:\` ${faction1.score}\n\`Chain:\`  ${faction1.chain}`, inline: true });
-                rwEmbed.addFields({ name: `${faction2.name}`, value: `${faction2StatusIcon} ${faction2StatusText}\n\`Score:\` ${faction2.score}\n\`Chain:\`  ${faction2.chain}`, inline: true });
+                        for (let itemsId in rankedWarReport.factions[faction1ID].rewards.items) {
+                            if (faction1Items == '') {
+                                faction1Items = rankedWarReport.factions[faction1ID].rewards.items[itemsId].quantity.toString().padStart(3) + 'x ' + rankedWarReport.factions[faction1ID].rewards.items[itemsId].name.padEnd(15) + '\n';
+                            } else {
+                                faction1Items = faction1Items + rankedWarReport.factions[faction1ID].rewards.items[itemsId].quantity.toString().padStart(11) + 'x ' + rankedWarReport.factions[faction1ID].rewards.items[itemsId].name.padEnd(15) + '\n';
+                            }
+                        }
+
+                        for (let itemsId in rankedWarReport.factions[faction2ID].rewards.items) {
+                            if (faction2Items == '') {
+                                faction2Items = rankedWarReport.factions[faction2ID].rewards.items[itemsId].quantity.toString().padStart(3) + 'x ' + rankedWarReport.factions[faction2ID].rewards.items[itemsId].name.padEnd(15) + '\n';
+                            } else {
+                                faction2Items = faction2Items + rankedWarReport.factions[faction2ID].rewards.items[itemsId].quantity.toString().padStart(11) + 'x ' + rankedWarReport.factions[faction2ID].rewards.items[itemsId].name.padEnd(15) + '\n';
+                            }
+                        }
+
+                        description += `\n**Ended:** <t:${war.start}:R>`;
+
+                        rwEmbed.setColor(0xdf691a)
+                            .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
+                            .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
+                            .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                            .setDescription(description)
+                            .setTimestamp()
+                            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                        fieldFaction1 += `\n**Rewards:**\n${faction1Items}`;
+                        fieldFaction2 += `\n**Rewards:**\n${faction2Items}`;
+                    }
+
+                } else {
+                    fieldFaction1 += `\n**Chain:**  ${faction1.chain}`;
+                    fieldFaction2 += `\n**Chain:**  ${faction2.chain}`;
+                }
+
+                rwEmbed.addFields({ name: faction1.name, value: fieldFaction1, inline: true });
+                rwEmbed.addFields({ name: faction2.name, value: fieldFaction2, inline: true });
 
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 

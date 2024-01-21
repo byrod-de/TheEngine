@@ -2,7 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog, writeNewMessageId, readStoredMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
+const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
 const { callTornApi } = require('../functions/api');
 const { homeFaction } = require('../conf/config.json');
 const apiConfigPath = './conf/apiConfig.json';
@@ -324,9 +324,12 @@ async function checkWar(warChannel) {
             let travelEmbed = new EmbedBuilder();
             let hospitalEmbed = new EmbedBuilder();
 
-            if (rankedwars) {
+            const rankedWar = Object.values(rankedWars)[0];
+
+            if (rankedWar) {
 
                 const rankedWar = Object.values(rankedWars)[0];
+                console.log(rankedWar);
                 const factionIDs = Object.keys(rankedWar.factions);
 
                 const faction1ID = factionIDs[0];
@@ -399,7 +402,7 @@ async function checkWar(warChannel) {
                 let description = `**Starttime:** <t:${war.start}:R>\n**Target:** ${war.target}`;
 
                 if (isActive || hasEnded)
-                    description += `\nLead: ${lead}`;
+                    description += `\n**Lead:** ${lead}`;
 
 
                 fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n**Score:** ${faction1.score}`;

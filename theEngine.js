@@ -47,14 +47,14 @@ client.on('ready', () => {
 	let territoryChannel = client.channels.cache.get(territoryChannelId);
 	if (territoryChannel !== undefined) {
 		let statusMessage = `${currentDate} > Territory stalker started!`;
-		territoryChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		//territoryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkTerritories(territoryChannel), 1000 * 60 * territoryUpdateInterval);
 	}
 
 	let armouryChannel = client.channels.cache.get(armouryChannelId);
 	if (armouryChannel !== undefined) {
 		let statusMessage = `${currentDate} > Armoury logger started!`;
-		armouryChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		//armouryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkArmoury(armouryChannel), 1000 * 60 * armouryUpdateInterval);
 	}
 
@@ -62,7 +62,7 @@ client.on('ready', () => {
 
 	if (retalChannel !== undefined) {
 		let statusMessage = `${currentDate} > Retal bot started!`;
-		retalChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		//retalChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkRetals(retalChannel), 1000 * 60 * retalUpdateInterval);
 	}
 

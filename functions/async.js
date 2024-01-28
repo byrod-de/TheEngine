@@ -3,6 +3,7 @@ const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
 const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
+
 const { callTornApi } = require('../functions/api');
 const { homeFaction } = require('../conf/config.json');
 const apiConfigPath = './conf/apiConfig.json';
@@ -398,7 +399,7 @@ async function checkWar(warChannel) {
 
                 }
 
-                let description = `**Starttime:** <t:${war.start}:R>\n**Target:** ${war.target}`;
+                let description = `**Starttime:** <t:${war.start}:f> <t:${war.start}:R>\n**Target:** ${war.target}`;
 
                 if (isActive || hasEnded)
                     description += `\n**Lead:** ${lead}`;

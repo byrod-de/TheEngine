@@ -7,6 +7,19 @@ const { apiKeys } = require('../conf/apiConfig.json');
 const apiConfigPath = './conf/apiConfig.json';
 const errorCodesToDeactivate = [1, 2, 10, 13]
 
+/**
+ * An asynchronous function to call the Torn API with specified parameters and key usage.
+ *
+ * @param {string} endpoint - the API endpoint to be called
+ * @param {string} selections - the data to be selected from the API response
+ * @param {string} [criteria=''] - the search criteria for the API request
+ * @param {number} [fromTS=0] - the starting timestamp for the API request
+ * @param {number} [toTS=0] - the ending timestamp for the API request
+ * @param {number} [timestampTS=0] - the specific timestamp for the API request
+ * @param {string} [stats=''] - the additional stats to be included in the request
+ * @param {string} [keyUsage='default'] - the usage type of the API key
+ * @return {Array} an array containing the status, status message, and API response JSON
+ */
 async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default') {
     let statusMessage;
     let apiJson = '';
@@ -78,6 +91,12 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     }
 }
 
+/**
+ * Retrieves the key associated with the given id from the apiKeys array.
+ *
+ * @param {number} id - The id of the key to retrieve
+ * @return {string|null} The key associated with the given id, or null if not found
+ */
 function getKeyById(id) {
   const keyObj = apiKeys.find(key => key.id === id);
   return keyObj ? keyObj.key : null;

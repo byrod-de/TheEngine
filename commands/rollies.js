@@ -18,40 +18,45 @@ module.exports = {
                 { name: 'Coinflip', value: 2 },
             )),
 
+    /**
+     * Asynchronously executes the interaction by rolling a dice and generating a result based on the dice value. 
+     *
+     * @param {Object} interaction - the interaction object
+     * @return {Promise<void>} a promise that resolves when the interaction is executed
+     */
     async execute(interaction) {
         const dice = interaction.options.getInteger('dice') ?? 20;
 
         let result = Math.floor(Math.random() * dice) + 1;
-
-        const rolliesEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
-        .setTitle(`Rollies!`)
-        .setDescription(`Roll the dice!`)
-        .setTimestamp()
-        .setFooter({ text: 'powered by TornEngine, inspired be Critical Role', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+        let value = '';
 
         if (dice == 2) {
             if (result == 1) {
-                rolliesEmbed.addFields(
-                    { name: 'Heads', value: 'Result Coinflip', inline: false },
-                );
+                result = 'Heads';
+                value = 'Coinflip Result';
             } else {
-                rolliesEmbed.addFields(
-                    { name: 'Tails', value: 'Result Coinflip', inline: false },
-                );
+                result = 'Tails';
+                value = 'Coinflip Result';
             }
         } else {
-            if (result == 1) {
+            if (result == 1 && dice == 20) {
                 result = 'Natural 1 *sad trombone*';
             }
 
             if (result == 20) {
                 result = 'Natural fucking 20!';
             }
-            rolliesEmbed.addFields(
-                { name: `${result}`, value: `Result dice roll D${dice}`, inline: false },
-            );
+
+            value = 'Result dice roll D' + dice;
         }
-        await interaction.reply({ embeds: [rolliesEmbed], ephemeral: true });
+
+        const rolliesEmbed = new EmbedBuilder()
+        .setColor(0xdf691a)
+        .setTitle(`Rollies!`)
+        .setDescription(`${value} - **${result}**`)
+        .setTimestamp()
+        .setFooter({ text: 'powered by TornEngine, inspired by D&D', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+        await interaction.reply({ embeds: [rolliesEmbed], ephemeral: false });
     }
 };

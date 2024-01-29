@@ -18,6 +18,12 @@ const os = require('os');
 const rankedwars = require('../commands/rankedwars');
 const hostname = os.hostname();
 
+/**
+ * Asynchronously sends a message to the specified status channel. 
+ *
+ * @param {type} statusChannel - the status channel to send the message to
+ * @return {type} the result of sending the message
+ */
 async function send_msg(statusChannel) {
     let currentDate = moment().format().replace('T', ' ');
     let statusMessage = `${currentDate} > Still running on ${hostname}!`;
@@ -27,7 +33,12 @@ async function send_msg(statusChannel) {
     statusChannel.send(`\`\`\`${statusMessage}\n${result[1]}\`\`\``);
 }
 
-
+/**
+ * Asynchronously checks territories for a given territory channel.
+ *
+ * @param {Object} territoryChannel - the channel to check territories in
+ * @return {Promise} a Promise that resolves to the result of the function
+ */
 async function checkTerritories(territoryChannel) {
 
     let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
@@ -105,6 +116,12 @@ async function checkTerritories(territoryChannel) {
     }
 }
 
+/**
+ * Asynchronously checks the armoury for news and updates, and sends the information to the specified channel if available.
+ *
+ * @param {string} armouryChannel - The channel to send the armoury information to
+ * @return {Promise<void>} A promise that resolves once the armoury information has been processed and sent
+ */
 async function checkArmoury(armouryChannel) {
 
     let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
@@ -126,9 +143,6 @@ async function checkArmoury(armouryChannel) {
     if (response[0]) {
         let armouryJson = response[2];
 
-        let faction_name = armouryJson['name'];
-        let faction_tag = armouryJson['tag'];
-        let faction_id = armouryJson['ID'];
         let faction_icon = `https://factiontags.torn.com/` + armouryJson['tag_image'];
 
         let armouryNews = armouryJson['armorynews'];
@@ -183,6 +197,12 @@ async function checkArmoury(armouryChannel) {
     }
 }
 
+/**
+ * Asynchronously checks and handles retaliations based on a given timestamp.
+ *
+ * @param {Object} retalChannel - The channel for sending retaliation notifications
+ * @return {Promise} A Promise representing the completion of the function
+ */
 async function checkRetals(retalChannel) {
 
     let currentTimestamp = Math.floor(Date.now() / 1000);
@@ -254,6 +274,15 @@ async function checkRetals(retalChannel) {
     }
 }
 
+/**
+ * Verifies the API key by making a request to the Torn API server with the provided 
+ * API key and comment.
+ *
+ * @param {object} apiKey - The API key object containing the key value.
+ * @param {string} comment - The comment to pass along with the API key for verification.
+ * @return {Promise<void>} The function does not return a value directly, but it updates 
+ * the state of the apiKey object.
+ */
 async function verifyAPIKey(apiKey, comment) {
     const verificationURL = `https://api.torn.com/key/?selections=info&key=${apiKey.key}&comment=${comment}`;
     printLog(`>> ${verificationURL}`);
@@ -285,7 +314,12 @@ async function verifyAPIKey(apiKey, comment) {
 }
 
 
-
+/**
+ * Asynchronously verifies API keys and updates the status message in the provided channel.
+ *
+ * @param {Object} statusChannel - the channel where the status message will be sent
+ * @return {Promise<void>} a promise that resolves once the keys are verified and status message is updated
+ */
 async function verifyKeys(statusChannel) {
     let currentDate = moment().format().replace('T', ' ');
     const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
@@ -307,6 +341,12 @@ async function verifyKeys(statusChannel) {
     statusChannel.send(`\`\`\`${currentDate} > ${statusMessage}\`\`\``);
 }
 
+/**
+ * Asynchronous function to check the war status and update war-related information in the specified war channel.
+ *
+ * @param {string} warChannel - The channel where war-related information will be updated
+ * @return {Promise<void>} A promise that resolves when the war status information is updated in the specified channel
+ */
 async function checkWar(warChannel) {
 
     if (warChannel) {
@@ -356,7 +396,8 @@ async function checkWar(warChannel) {
                 let hasEnded = false;
                 const timestamp = factionJson.timestamp;
 
-                if (war.start < timestamp) {
+                //start 30 min before
+                if (war.start - 1800 < timestamp) {
                     isActive = true;
                     if (war.end > 0) {
                         isActive = false;
@@ -400,13 +441,15 @@ async function checkWar(warChannel) {
 
                 }
 
-                let description = `**Starttime:** <t:${war.start}:f> <t:${war.start}:R>\n**Target:** ${war.target}`;
-
-                if (isActive || hasEnded) {
-                    description += `\n**Lead:** ${lead}`;
+                let description = `**Starttime:** <t:${war.start}:f> (<t:${war.start}:R>)`;
+                if (isActive && !hasEnded && lead > 0) {
+                    let remainingTime = getRemainingTime(war.start, war.target, lead, timestamp);
+                    description += `\n**Projected End:** <t:${remainingTime}:f> (<t:${remainingTime}:R>)`;
                 }
-                if (isActive && !hasEnded) {
-                    description += `\n**Projected End:** <t:${getRemainingTime(war.start, war.target, lead, timestamp)}:f>`;
+                description += `\n**Target:** ${war.target}`;
+
+                if ((isActive || hasEnded) && lead > 0) {
+                    description += `\n**Lead:** ${lead}`;
                 }
 
                 fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n**Score:** ${faction1.score}`;
@@ -442,7 +485,7 @@ async function checkWar(warChannel) {
                             }
                         }
 
-                        description += `\n**Ended:** <t:${war.start}:R>`;
+                        description += `\n**Ended:** <t:${war.end}:f> (<t:${war.end}:R>)`;
 
                         fieldFaction1 += `\n**Rewards:**\n${faction1Items}`;
                         fieldFaction2 += `\n**Rewards:**\n${faction2Items}`;

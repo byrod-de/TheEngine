@@ -1,3 +1,9 @@
+/**
+ * Abbreviates a large number and adds a suffix (k, m, b, t, wtf).
+ *
+ * @param {number} value - The number to be abbreviated
+ * @return {string} The abbreviated number with suffix
+ */
 function abbreviateNumber(value) {
   value = Math.abs(value);
   var newValue = value;
@@ -20,16 +26,34 @@ function abbreviateNumber(value) {
   return newValue;
 }
 
+/**
+ * Function to add a sign to a value if it is positive.
+ *
+ * @param {number} value - the input value
+ * @return {string} the value with a sign added
+ */
 function addSign(value) {
   if (value < 0 ) return value;
   else return '+ ' + value;
 }
 
+/**
+ * Adds commas to a number for every three digits.
+ *
+ * @param {number} x - the number to add commas to
+ * @return {string} the number with commas added
+ */
 function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-// Function to create formatted cooldown time strings
+/**
+ * Formats the Discord time with the given offset.
+ *
+ * @param {number} apiTime - The time from the API
+ * @param {number} offset - The offset to apply to the API time
+ * @return {Object} An object containing formattedTime and relativeTime
+ */
 function formatDiscordTimeWithOffset(apiTime, offset) {
   const discordTime = apiTime + offset;
   const ts = new Date(discordTime * 1000);
@@ -38,6 +62,16 @@ function formatDiscordTimeWithOffset(apiTime, offset) {
   return { formattedTime, relativeTime };
 }
 
+/**
+ * Calculates the remaining time until the projected end time based on the start time, current target score,
+ * lead score, and current time.
+ *
+ * @param {number} startTime - The start time in seconds
+ * @param {number} currentTargetScore - The current target score
+ * @param {number} leadScore - The lead score
+ * @param {number} currentTime - The current time in seconds
+ * @return {number} The projected end time in seconds
+ */
 function getRemainingTime(startTime, currentTargetScore, leadScore, currentTime) {
   let elapsedTime = Math.floor((currentTime - startTime) / 3600);
   let initialTargetScore;
@@ -55,7 +89,5 @@ function getRemainingTime(startTime, currentTargetScore, leadScore, currentTime)
 
   return projectedEndTime;
 }
-
-
 
 module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime };

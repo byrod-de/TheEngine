@@ -1,7 +1,14 @@
 const { apiKey, storeMethod } = require('../conf/config.json');
 const moment = require('moment');
 const fs = require('fs');
+const messageIdFile = './conf/messageIds.json';
 
+/**
+ * Function to check the validity of an API key.
+ *
+ * @param {string} apikey - The API key to be checked.
+ * @return {string} The status message indicating the validity of the API key.
+ */
 function checkAPIKey(apikey) {
 
     if (apikey.length != 16)
@@ -13,6 +20,12 @@ function checkAPIKey(apikey) {
     return 'Okay';
 }
 
+/**
+ * Store the API key information in a file if the store method is set to "File".
+ *
+ * @param {string} jsonText - The JSON text containing the API key information
+ * @return {void} 
+ */
 function storeAPIKey(jsonText) {
     let keyinfo = JSON.parse(jsonText).keyinfo;
     printLog(keyinfo.userID);
@@ -30,6 +43,12 @@ function storeAPIKey(jsonText) {
     }
 }
 
+/**
+ * Retrieves the API key for the given user ID from a file or a store method.
+ *
+ * @param {string} userID - The user ID for which to retrieve the API key
+ * @return {string} The retrieved API key
+ */
 function getAPIKey(userID) {
 
     var userApiKey = '';
@@ -65,6 +84,12 @@ function getAPIKey(userID) {
 
 }
 
+/**
+ * Prints the log text along with the current date and time, and logs it to the console.
+ *
+ * @param {string} logtext - The text to be logged
+ * @return {string} The logged message
+ */
 function printLog(logtext) {
     let currentDate = moment().format().replace('T', ' ');
     let message = currentDate + ' > '  + logtext
@@ -72,8 +97,12 @@ function printLog(logtext) {
     return message;
 }
 
-const messageIdFile = './conf/messageIds.json';
-
+/**
+ * Read the content of the JSON file
+ *
+ * @param {string} key - the key to look for in the JSON data
+ * @return {string} the value associated with the specified key, or null if there's an error
+ */
 function readStoredMessageId(key) {
     // Read the content of the JSON file
     const data = fs.readFileSync(messageIdFile, 'utf8');
@@ -90,6 +119,12 @@ function readStoredMessageId(key) {
     }
 }
 
+/**
+ * Delete a stored message ID from the JSON file based on the provided key.
+ *
+ * @param {string} key - The key of the message ID to be deleted
+ * @return {void} 
+ */
 function deleteStoredMessageId(key) {
     // Read the content of the JSON file
     const data = fs.readFileSync(messageIdFile, 'utf8');
@@ -116,6 +151,13 @@ function deleteStoredMessageId(key) {
   }
 
 
+/**
+ * Write a new message ID to the JSON file.
+ *
+ * @param {string} key - The key to update in the JSON data
+ * @param {string} newMessageId - The new message ID to write
+ * @return {void} 
+ */
 function writeNewMessageId(key, newMessageId) {
     try {
         // Read the content of the JSON file
@@ -132,6 +174,13 @@ function writeNewMessageId(key, newMessageId) {
     }
 }
 
+/**
+ * Returns a flag icon based on the travel status and destination text.
+ *
+ * @param {string} travelStatus - the travel status
+ * @param {string} destinationText - the destination text
+ * @return {string} the flag icon
+ */
 function getFlagIcon(travelStatus, destinationText) {
     
     let direction = '>';
@@ -157,6 +206,13 @@ function getFlagIcon(travelStatus, destinationText) {
 
 }
 
+/**
+ * Sorts the input objects based on the 'until' property of their 'status' object.
+ *
+ * @param {Object} a - The first input object
+ * @param {Object} b - The second input object
+ * @return {number} 1 if a.until < b.until, -1 if a.until > b.until, 0 otherwise
+ */
 function sortByUntil(a, b) {
     if (a.status.until < b.status.until) {
         return 1;
@@ -167,6 +223,14 @@ function sortByUntil(a, b) {
     }
 }
 
+/**
+ * Updates or deletes an embed message in a war channel.
+ *
+ * @param {Object} warChannel - The war channel to update or delete the embed message in.
+ * @param {string} embedType - The type of the embed message.
+ * @param {Object} embed - The embed message to update or delete.
+ * @param {string} [method='edit'] - The method to use for updating or deleting the embed message.
+ */
 async function updateOrDeleteEmbed(warChannel, embedType, embed, method = 'edit') {
 
     const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
@@ -185,6 +249,5 @@ async function updateOrDeleteEmbed(warChannel, embedType, embed, method = 'edit'
         }
     }
 }
-
 
 module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed };

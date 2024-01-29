@@ -7,3 +7,4 @@ config.json
 tornParams.json
 apiConfig.json
 messageIds.json
+testScript.js

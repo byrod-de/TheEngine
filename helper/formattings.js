@@ -38,4 +38,24 @@ function formatDiscordTimeWithOffset(apiTime, offset) {
   return { formattedTime, relativeTime };
 }
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset };
+function getRemainingTime(startTime, currentTargetScore, leadScore, currentTime) {
+  let elapsedTime = Math.floor((currentTime - startTime) / 3600);
+  let initialTargetScore;
+
+  if (elapsedTime <= 23) {
+    initialTargetScore = currentTargetScore;
+  } else {
+    initialTargetScore = currentTargetScore / (1 - ((elapsedTime - 23 ) * 0.01));
+  }
+  const scoreDecay = initialTargetScore * 0.01;
+
+  const hoursToGo = Math.floor((currentTargetScore - leadScore) / scoreDecay) + 1;
+
+  let projectedEndTime =Math.floor(startTime + elapsedTime * 3600 + hoursToGo * 3600);
+
+  return projectedEndTime;
+}
+
+
+
+module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime };

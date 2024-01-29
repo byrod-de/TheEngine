@@ -3,6 +3,7 @@ const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
 const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
+const { getRemainingTime} = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 const { homeFaction } = require('../conf/config.json');
@@ -401,9 +402,12 @@ async function checkWar(warChannel) {
 
                 let description = `**Starttime:** <t:${war.start}:f> <t:${war.start}:R>\n**Target:** ${war.target}`;
 
-                if (isActive || hasEnded)
+                if (isActive || hasEnded) {
                     description += `\n**Lead:** ${lead}`;
-
+                }
+                if (isActive && !hasEnded) {
+                    description += `\n**Projected End:** <t:${getRemainingTime(war.start, war.target, lead, timestamp)}:f>`;
+                }
 
                 fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n**Score:** ${faction1.score}`;
                 fieldFaction2 = `${faction2StatusIcon} ${faction2StatusText}\n**Score:** ${faction2.score}`;
@@ -440,8 +444,6 @@ async function checkWar(warChannel) {
 
                         description += `\n**Ended:** <t:${war.start}:R>`;
 
-
-
                         fieldFaction1 += `\n**Rewards:**\n${faction1Items}`;
                         fieldFaction2 += `\n**Rewards:**\n${faction2Items}`;
                     }
@@ -464,7 +466,6 @@ async function checkWar(warChannel) {
 
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 
-                // Check Status of faction members from faction1:
                 if (isActive) {
 
                     travelEmbed.setColor(0xdf691a)

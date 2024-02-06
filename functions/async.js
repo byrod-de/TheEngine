@@ -365,6 +365,8 @@ async function checkWar(warChannel) {
             let rwEmbed = new EmbedBuilder();
             let travelEmbed = new EmbedBuilder();
             let hospitalEmbed = new EmbedBuilder();
+            let statusEmbed = new EmbedBuilder();
+
 
             const rankedWar = Object.values(rankedWars)[0];
 
@@ -509,7 +511,7 @@ async function checkWar(warChannel) {
 
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 
-                if (isActive) {
+                if (isActive && !hasEnded) {	
 
                     travelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
@@ -523,16 +525,28 @@ async function checkWar(warChannel) {
                         .setTimestamp()
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
+                    statusEmbed.setColor(0xdf691a)
+                        .setTitle(`:bar_chart: Member Overview`)
+                        .setDescription(`Some details about the member status of each faction`)
+                        .setTimestamp()
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
                     for (var factionID in rankedWar.factions) {
                         let responseMembers = await callTornApi('faction', 'basic', factionID);
 
                         if (responseMembers[0]) {
                             let travelingMembers = '';
                             let hospitalMembers = '';
-                            let memberCount = 0;
+                            let hospitalMemberCount = 0;
+                            let okayMemberCount = 0;
+                            let travelingMemberCount = 0;
+                            let abroadMemberCount = 0;
+
 
                             const faction = responseMembers[2];
                             const membersList = faction.members;
+                            const memberCount = Object.keys(membersList).length;
+
 
                             let memberIndex = {}
 
@@ -550,9 +564,18 @@ async function checkWar(warChannel) {
 
                                 //check Traveling status
                                 if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad') {
-                                    const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                                    const entry = `${flagIcon} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
-                                    travelingMembers += entry;
+
+                                    if (memberStatusState == 'Traveling') {
+                                        travelingMemberCount++;
+                                    } else {
+                                        abroadMemberCount++;
+                                    }
+
+                                    if (travelingMemberCount + abroadMemberCount < 12) {
+                                        const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+                                        const entry = `${flagIcon} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                                        travelingMembers += entry;
+                                    }
                                 }
 
                                 //check Hospital status
@@ -560,27 +583,35 @@ async function checkWar(warChannel) {
                                     let timeDifference = (member.status.until - timestamp) / 60;
 
                                     if (timeDifference < 60) {
-                                        memberCount++;
-                                        if (memberCount < 10) {
+                                        hospitalMemberCount++;
+                                        if (hospitalMemberCount < 10) {
                                             const entry = `:syringe: [${member.name}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
                                             hospitalMembers += entry;
                                         }
                                     }
                                 }
 
+                                if (memberStatusState == 'Okay') {
+                                    okayMemberCount++;
+                                }
+
                             }
 
                             if (travelingMembers == '') travelingMembers = '*none*';
                             if (hospitalMembers == '') hospitalMembers = '*none*';
-                            travelEmbed.addFields({ name: `${faction.name}`, value: `${travelingMembers}`, inline: false });
-                            hospitalEmbed.addFields({ name: `${faction.name}`, value: `${hospitalMembers}`, inline: false });
+
+                            statusEmbed.addFields({ name: `${faction.name}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
+                            travelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+                            hospitalEmbed.addFields({ name: `${faction.name}\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
                         }
                     }
 
+                    await updateOrDeleteEmbed(warChannel, 'status', statusEmbed); // Defaults to 'edit'
                     await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed); // Defaults to 'edit'
                     await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed); // Defaults to 'edit'
 
                 } else {
+                    await updateOrDeleteEmbed(warChannel, 'status', statusEmbed, 'delete');
                     await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete');
                     await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete');
                 }

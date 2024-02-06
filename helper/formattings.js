@@ -78,6 +78,7 @@ function getRemainingTime(startTime, currentTargetScore, leadScore, currentTime)
 
   if (elapsedTime <= 23) {
     initialTargetScore = currentTargetScore;
+    elapsedTime = 23;
   } else {
     initialTargetScore = currentTargetScore / (1 - ((elapsedTime - 23 ) * 0.01));
   }

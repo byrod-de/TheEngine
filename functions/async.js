@@ -626,4 +626,48 @@ async function checkWar(warChannel) {
 }
 
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, send_msg, verifyKeys, verifyAPIKey };
+async function checkMembers(memberChannel) {
+
+    if (memberChannel) {
+
+        let response = await callTornApi('faction', 'basic,timestamp');
+        let jailEmbed = new EmbedBuilder();
+
+        if (response[0]) {
+            let factionJson = response[2];
+            let faction_name = factionJson['name'];
+            let faction_tag = factionJson['tag'];
+            let faction_id = factionJson['ID'];
+            let faction_icon = `https://factiontags.torn.com/` + factionJson['tag_image'];
+    
+            let members = factionJson['members'];
+            let jailMembers = '';
+
+            for (var id in members) {
+                let member = members[id];
+
+                if (member.status.state == 'Jail') {
+                    const entry = `:police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id})\n`;
+                    jailMembers += entry;
+                }
+            
+            }
+            if (jailMembers) {
+                jailEmbed.setColor(0xdf691a)
+                .setTitle('Bust a fox!')
+                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                .setDescription('Faction members in jail')
+                .setTimestamp()
+                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                jailEmbed.addFields({ name: 'Members', value: `${jailMembers}`, inline: true });
+
+                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed);
+            } else {
+                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');
+            }
+        }
+    }
+}
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, send_msg, verifyKeys, verifyAPIKey };

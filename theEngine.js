@@ -2,13 +2,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval,
-	armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval, warChannelId, warUpdateInterval } = require('./conf/config.json');
+	armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval, warChannelId, warUpdateInterval, memberChannelId, memberUpdateInterval } = require('./conf/config.json');
 
 const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const { checkTerritories, checkArmoury, checkRetals, checkWar, send_msg, verifyKeys } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, send_msg, verifyKeys } = require('./functions/async');
 
 const { printLog } = require('./helper/misc');
 
@@ -36,7 +36,7 @@ client.once(Events.ClientReady, c => {
 	}
 
 	client.user.setPresence({
-		activities: [{ name: "running wild" }],
+		activities: [{ name: "Torn(dot)com and the API of Doom", type: "Watching" }],
 		status: "online",
 	})
 });
@@ -72,6 +72,14 @@ client.on('ready', () => {
 		let statusMessage = `${currentDate} > War status check!`;
 		//warChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkWar(warChannel), 1000 * 60 * warUpdateInterval);
+	}
+
+	let memberChannel = client.channels.cache.get(memberChannelId);
+
+	if (memberChannel !== undefined) {
+		let statusMessage = `${currentDate} > Member status check!`;
+		//warChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		setInterval(() => checkMembers(memberChannel), 1000 * 60 * memberUpdateInterval);
 	}
 
 	// Run the API key verification once every 24 hours after the start of the script

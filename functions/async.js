@@ -3,7 +3,7 @@ const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
 const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
-const { getRemainingTime} = require('../helper/formattings');
+const { getRemainingTime } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 const { homeFaction } = require('../conf/config.json');
@@ -262,7 +262,11 @@ async function checkRetals(retalChannel) {
 
 
                 if (retalChannel) {
-                    retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
+                    const message = await retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
+                    setTimeout(() => {
+                        message.delete();
+                    }, 10 * 60 * 1000); // Delete after 10 minutes (600,000 milliseconds)
+
                 } else {
                     printLog('retalChannel is undefined');
                 }
@@ -499,19 +503,19 @@ async function checkWar(warChannel) {
                 }
 
                 rwEmbed.setColor(0xdf691a)
-                .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
-                .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
-                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setDescription(description)
-                .setTimestamp(timestamp * 1000)
-                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+                    .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
+                    .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
+                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                    .setDescription(description)
+                    .setTimestamp(timestamp * 1000)
+                    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                 rwEmbed.addFields({ name: faction1.name, value: fieldFaction1, inline: true });
                 rwEmbed.addFields({ name: faction2.name, value: fieldFaction2, inline: true });
 
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 
-                if (isActive && !hasEnded) {	
+                if (isActive && !hasEnded) {
 
                     travelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
@@ -657,15 +661,15 @@ async function checkMembers(memberChannel) {
                     const entry = `:police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id}) <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
                 }
-            
+
             }
             if (jailMembers) {
                 jailEmbed.setColor(0xdf691a)
-                .setTitle('Bust a fox!')
-                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setDescription('Faction members in jail')
-                .setTimestamp(timestamp * 1000)
-                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+                    .setTitle('Bust a fox!')
+                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                    .setDescription('Faction members in jail')
+                    .setTimestamp(timestamp * 1000)
+                    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                 jailEmbed.addFields({ name: 'Members', value: `${jailMembers}`, inline: true });
 

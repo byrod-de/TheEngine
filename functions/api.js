@@ -74,7 +74,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
                     }
                 }
             } else {
-                statusMessage = `Torn API available!`;
+                statusMessage = `Torn API available! ${endpoint} - ${selections}`;
                 status = true;
             }
         } else {

@@ -36,7 +36,7 @@ client.once(Events.ClientReady, c => {
 	}
 
 	client.user.setPresence({
-		activities: [{ name: "Torn(dot)com and the API of Doom", type: "Watching" }],
+		activities: [{ name: "Torn(dot)com and the API of Doom", type: 0 }],
 		status: "online",
 	})
 });

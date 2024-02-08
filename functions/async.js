@@ -249,7 +249,7 @@ async function checkRetals(retalChannel) {
                     .setURL(`https://www.torn.com/loader.php?sid=attack&user2ID=${attacker_id}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                     .setDescription(`Retal deadline <t:${deadline}:R>`)
-                    .setTimestamp()
+                    .setTimestamp(timestamp_ended * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
 
 
@@ -503,7 +503,7 @@ async function checkWar(warChannel) {
                 .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setDescription(description)
-                .setTimestamp()
+                .setTimestamp(timestamp * 1000)
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                 rwEmbed.addFields({ name: faction1.name, value: fieldFaction1, inline: true });
@@ -516,19 +516,19 @@ async function checkWar(warChannel) {
                     travelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
                         .setDescription(`List of members from both factions, which are traveling`)
-                        .setTimestamp()
+                        .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     hospitalEmbed.setColor(0xdf691a)
                         .setTitle(`:hospital: Members in hospital`)
                         .setDescription(`List of the next 10 members which will be out of hospital`)
-                        .setTimestamp()
+                        .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     statusEmbed.setColor(0xdf691a)
                         .setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of each faction`)
-                        .setTimestamp()
+                        .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     for (var factionID in rankedWar.factions) {
@@ -626,6 +626,12 @@ async function checkWar(warChannel) {
 }
 
 
+/**
+ * Function to check faction members in jail and update or delete the embed in the given memberChannel.
+ *
+ * @param {Object} memberChannel - The Discord channel to update or delete the embed in.
+ * @return {Promise} A promise that resolves when the embed is updated or deleted.
+ */
 async function checkMembers(memberChannel) {
 
     if (memberChannel) {
@@ -639,7 +645,8 @@ async function checkMembers(memberChannel) {
             let faction_tag = factionJson['tag'];
             let faction_id = factionJson['ID'];
             let faction_icon = `https://factiontags.torn.com/` + factionJson['tag_image'];
-    
+            const timestamp = factionJson['timestamp'];
+
             let members = factionJson['members'];
             let jailMembers = '';
 
@@ -647,7 +654,7 @@ async function checkMembers(memberChannel) {
                 let member = members[id];
 
                 if (member.status.state == 'Jail') {
-                    const entry = `:police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id})\n`;
+                    const entry = `:police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id}) <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
                 }
             
@@ -657,7 +664,7 @@ async function checkMembers(memberChannel) {
                 .setTitle('Bust a fox!')
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setDescription('Faction members in jail')
-                .setTimestamp()
+                .setTimestamp(timestamp * 1000)
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                 jailEmbed.addFields({ name: 'Members', value: `${jailMembers}`, inline: true });

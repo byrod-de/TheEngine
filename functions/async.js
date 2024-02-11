@@ -357,7 +357,7 @@ async function checkWar(warChannel, memberChannel) {
 
     if (warChannel) {
 
-        const responseRW = await callTornApi('faction', 'basic,timestamp', 8520);
+        const responseRW = await callTornApi('faction', 'basic,timestamp');
 
         if (responseRW[0]) {
             const factionJson = responseRW[2];

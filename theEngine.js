@@ -36,7 +36,7 @@ client.once(Events.ClientReady, c => {
 	}
 
 	client.user.setPresence({
-		activities: [{ name: "Torn(dot)com and the API of Doom", type: 0 }],
+		activities: [{ name: "Torn(dot)com", type: 3 }],
 		status: "online",
 	})
 });
@@ -45,40 +45,28 @@ client.on('ready', () => {
 	let currentDate = moment().format().replace('T', ' ');
 
 	let territoryChannel = client.channels.cache.get(territoryChannelId);
+	let armouryChannel = client.channels.cache.get(armouryChannelId);
+	let memberChannel = client.channels.cache.get(memberChannelId);
+	let retalChannel = client.channels.cache.get(retalChannelId);
+	let warChannel = client.channels.cache.get(warChannelId);
+
 	if (territoryChannel !== undefined) {
-		let statusMessage = `${currentDate} > Territory stalker started!`;
-		//territoryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkTerritories(territoryChannel), 1000 * 60 * territoryUpdateInterval);
 	}
 
-	let armouryChannel = client.channels.cache.get(armouryChannelId);
 	if (armouryChannel !== undefined) {
-		let statusMessage = `${currentDate} > Armoury logger started!`;
-		//armouryChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkArmoury(armouryChannel), 1000 * 60 * armouryUpdateInterval);
 	}
 
-	let retalChannel = client.channels.cache.get(retalChannelId);
-
 	if (retalChannel !== undefined) {
-		let statusMessage = `${currentDate} > Retal bot started!`;
-		//retalChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkRetals(retalChannel), 1000 * 60 * retalUpdateInterval);
 	}
 
-	let warChannel = client.channels.cache.get(warChannelId);
-
 	if (warChannel !== undefined) {
-		let statusMessage = `${currentDate} > War status check!`;
-		//warChannel.send(`\`\`\`${statusMessage}\`\`\``);
-		setInterval(() => checkWar(warChannel), 1000 * 60 * warUpdateInterval);
+		setInterval(() => checkWar(warChannel, memberChannel), 1000 * 60 * warUpdateInterval);
 	}
 
-	let memberChannel = client.channels.cache.get(memberChannelId);
-
 	if (memberChannel !== undefined) {
-		let statusMessage = `${currentDate} > Member status check!`;
-		//warChannel.send(`\`\`\`${statusMessage}\`\`\``);
 		setInterval(() => checkMembers(memberChannel), 1000 * 60 * memberUpdateInterval);
 	}
 

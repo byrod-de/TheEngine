@@ -345,31 +345,38 @@ async function verifyKeys(statusChannel) {
     statusChannel.send(`\`\`\`${currentDate} > ${statusMessage}\`\`\``);
 }
 
+
 /**
- * Asynchronous function to check the war status and update war-related information in the specified war channel.
+ * Check the status of a war and update the war channel with relevant information.
  *
- * @param {string} warChannel - The channel where war-related information will be updated
- * @return {Promise<void>} A promise that resolves when the war status information is updated in the specified channel
+ * @param {string} warChannel - The channel where the war information will be updated
+ * @param {string} memberChannel - The channel where the member information will be updated
+ * @return {Promise<void>} - A promise that resolves when the war and member information are updated
  */
-async function checkWar(warChannel) {
+async function checkWar(warChannel, memberChannel) {
 
     if (warChannel) {
 
-        let responseRW = await callTornApi('faction', 'basic,timestamp');
+        const responseRW = await callTornApi('faction', 'basic,timestamp', 8520);
 
         if (responseRW[0]) {
-            let factionJson = responseRW[2];
-            let faction_name = factionJson['name'];
-            let faction_tag = factionJson['tag'];
-            let faction_id = factionJson['ID'];
-            let faction_icon = `https://factiontags.torn.com/` + factionJson['tag_image'];
+            const factionJson = responseRW[2];
+            const ownFactionName = factionJson['name'];
+            const ownFactionTag = factionJson['tag'];
+            const ownFactionID = factionJson['ID'];
+            const ownFactionIcon = `https://factiontags.torn.com/` + factionJson['tag_image'];
 
-            let rankedWars = factionJson['ranked_wars'];
+            const rankedWars = factionJson['ranked_wars'];
 
-            let rwEmbed = new EmbedBuilder();
-            let travelEmbed = new EmbedBuilder();
-            let hospitalEmbed = new EmbedBuilder();
-            let statusEmbed = new EmbedBuilder();
+            const rwEmbed = new EmbedBuilder();
+            const travelEmbed = new EmbedBuilder();
+            const hospitalEmbed = new EmbedBuilder();
+            const statusEmbed = new EmbedBuilder();
+            const ownTravelEmbed = new EmbedBuilder();
+            const ownHospitalEmbed = new EmbedBuilder();
+            const ownStatusEmbed = new EmbedBuilder();
+
+            const memberLimitForEmbed = 10;
 
 
             const rankedWar = Object.values(rankedWars)[0];
@@ -504,8 +511,8 @@ async function checkWar(warChannel) {
 
                 rwEmbed.setColor(0xdf691a)
                     .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
-                    .setURL(`https://www.torn.com/factions.php?step=profile&ID=${faction_id}#/war/rank`)
-                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                    .setURL(`https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}#/war/rank`)
+                    .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                     .setDescription(description)
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
@@ -519,13 +526,13 @@ async function checkWar(warChannel) {
 
                     travelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
-                        .setDescription(`List of members from both factions, which are traveling`)
+                        .setDescription(`List of opponent members, which are traveling`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     hospitalEmbed.setColor(0xdf691a)
                         .setTitle(`:hospital: Members in hospital`)
-                        .setDescription(`List of the next 10 members which will be out of hospital`)
+                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -535,8 +542,30 @@ async function checkWar(warChannel) {
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
+
+                    ownTravelEmbed.setColor(0xdf691a)
+                        .setTitle(`:airplane: Members traveling`)
+                        .setDescription(`List of ${ownFactionName} members, which are traveling`)
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
+                        .setTimestamp(timestamp * 1000)
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                    ownHospitalEmbed.setColor(0xdf691a)
+                        .setTitle(`:hospital: Members in hospital`)
+                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital`)
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
+                        .setTimestamp(timestamp * 1000)
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                    ownStatusEmbed.setColor(0xdf691a)
+                        .setTitle(`:bar_chart: Member Overview`)
+                        .setDescription(`Some details about the member status of ${ownFactionName}`)
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
+                        .setTimestamp(timestamp * 1000)
+                        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+                    
                     for (var factionID in rankedWar.factions) {
-                        let responseMembers = await callTornApi('faction', 'basic', factionID);
+                        const responseMembers = await callTornApi('faction', 'basic', factionID);
 
                         if (responseMembers[0]) {
                             let travelingMembers = '';
@@ -545,6 +574,7 @@ async function checkWar(warChannel) {
                             let okayMemberCount = 0;
                             let travelingMemberCount = 0;
                             let abroadMemberCount = 0;
+                            let jailMembersCount = 0;
 
 
                             const faction = responseMembers[2];
@@ -560,7 +590,6 @@ async function checkWar(warChannel) {
 
                             const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
 
-
                             for (var id in sortedMembers) {
 
                                 let member = sortedMembers[id];
@@ -575,7 +604,7 @@ async function checkWar(warChannel) {
                                         abroadMemberCount++;
                                     }
 
-                                    if (travelingMemberCount + abroadMemberCount < 12) {
+                                    if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
                                         const flagIcon = getFlagIcon(memberStatusState, member.status.description);
                                         const entry = `${flagIcon} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
                                         travelingMembers += entry;
@@ -588,7 +617,7 @@ async function checkWar(warChannel) {
 
                                     if (timeDifference < 60) {
                                         hospitalMemberCount++;
-                                        if (hospitalMemberCount < 10) {
+                                        if (hospitalMemberCount < memberLimitForEmbed) {
                                             const entry = `:syringe: [${member.name}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
                                             hospitalMembers += entry;
                                         }
@@ -599,25 +628,54 @@ async function checkWar(warChannel) {
                                     okayMemberCount++;
                                 }
 
+                                if (memberStatusState == 'Jail') {
+                                    jailMembersCount++;
+                                }
+
                             }
 
                             if (travelingMembers == '') travelingMembers = '*none*';
                             if (hospitalMembers == '') hospitalMembers = '*none*';
 
-                            statusEmbed.addFields({ name: `${faction.name}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
-                            travelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-                            hospitalEmbed.addFields({ name: `${faction.name}\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                            statusEmbed.addFields({ name: `${faction.name}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}`, inline: true });
+
+                            if (factionID != ownFactionID) {
+                                travelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+                                hospitalEmbed.addFields({ name: `${faction.name}\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                            }
+
+                            if (factionID == ownFactionID) {
+                                ownTravelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+                                ownHospitalEmbed.addFields({ name: `${faction.name}\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                                ownStatusEmbed.addFields({ name: `${faction.name}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
+                            }
                         }
                     }
 
-                    await updateOrDeleteEmbed(warChannel, 'status', statusEmbed); // Defaults to 'edit'
-                    await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed); // Defaults to 'edit'
-                    await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed); // Defaults to 'edit'
+                    if (warChannel) {
+                        await updateOrDeleteEmbed(warChannel, 'status', statusEmbed); // Defaults to 'edit'
+                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed); // Defaults to 'edit'
+                        await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed); // Defaults to 'edit'
+                    }
+
+                    if (memberChannel) {
+                        await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed); // Defaults to 'edit'
+                        await updateOrDeleteEmbed(memberChannel, 'ownTravel', ownTravelEmbed); // Defaults to 'edit'
+                        await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed); // Defaults to 'edit'
+                    }
 
                 } else {
-                    await updateOrDeleteEmbed(warChannel, 'status', statusEmbed, 'delete');
-                    await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete');
-                    await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete');
+                    if (warChannel) {
+                        await updateOrDeleteEmbed(warChannel, 'status', statusEmbed, 'delete');
+                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete');
+                        await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete');
+                    }
+
+                    if (memberChannel) {
+                        await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed, 'delete');
+                        await updateOrDeleteEmbed(memberChannel, 'ownTravel', ownTravelEmbed, 'delete');
+                        await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed, 'delete');
+                    }
                 }
             } else {
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
@@ -658,20 +716,19 @@ async function checkMembers(memberChannel) {
                 let member = members[id];
 
                 if (member.status.state == 'Jail') {
-                    const entry = `:police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id}) <t:${member.status.until}:R>\n`;
+                    const entry = `:oncoming_police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id}) out <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
                 }
 
             }
             if (jailMembers) {
                 jailEmbed.setColor(0xdf691a)
-                    .setTitle('Bust a fox!')
+                    .setTitle(':oncoming_police_car: Bust a fox!')
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                    .setDescription('Faction members in jail')
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                jailEmbed.addFields({ name: 'Members', value: `${jailMembers}`, inline: true });
+                jailEmbed.addFields({ name: 'Members in jail', value: `${jailMembers}`, inline: true });
 
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed);
             } else {

@@ -226,22 +226,23 @@ function sortByUntil(a, b) {
 /**
  * Updates or deletes an embed message in a war channel.
  *
- * @param {Object} warChannel - The war channel to update or delete the embed message in.
+ * @param {Object} channel - The war channel to update or delete the embed message in.
  * @param {string} embedType - The type of the embed message.
  * @param {Object} embed - The embed message to update or delete.
  * @param {string} [method='edit'] - The method to use for updating or deleting the embed message.
  */
-async function updateOrDeleteEmbed(warChannel, embedType, embed, method = 'edit') {
+async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit') {
 
     const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
+    
     if (embedMessageId) {
         try {
-            const originalMessage = await warChannel.messages.fetch(embedMessageId);
+            const originalMessage = await channel.messages.fetch(embedMessageId);
             await originalMessage[method]({ embeds: [embed], ephemeral: false });
         } catch (error) {
             //printLog(`Catch [${embedType}EmbedMessageId]: ${error.message}`);
             if (method !== 'delete') {
-                const newMessage = await warChannel.send({ embeds: [embed], ephemeral: false });
+                const newMessage = await channel.send({ embeds: [embed], ephemeral: false });
                 writeNewMessageId(`${embedType}EmbedMessageId`, newMessage.id);
             } else {
                 //deleteStoredMessageId(`${embedType}EmbedMessageId`);

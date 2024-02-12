@@ -677,7 +677,65 @@ async function checkWar(warChannel, memberChannel) {
                     }
                 }
             } else {
-                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
+
+                const responseMainNews = await callTornApi('faction', 'mainnews,timestamp', '', '', '', '', '', 'default');
+
+                if (responseMainNews[0]) {
+                    const newsJson = responseMainNews[2];
+                    const mainnews = newsJson['mainnews'];
+                    const timestamp = newsJson.timestamp;
+                    let isEnlisted = false;
+                    let enlistedTimestamp = 0;
+                    let description = '';
+                    for (var newsID in mainnews) {
+                        let news = mainnews[newsID];
+
+                        if (news['news'].includes(' could not be matched with a suitable opponent')) {
+                            description = `**${ownFactionName}** could not be matched with a suitable opponent - we remain enlisted for priority matchmaking next week.\n\n`;
+                        }
+
+                        if (news['news'].includes(' enlisted the faction')) {
+                            isEnlisted = true;
+                            enlistedTimestamp = `<t:${news['timestamp']}:f>`;
+                            description += `*Faction is enlisted since ${enlistedTimestamp}*`;
+                            break;
+                        }
+
+                        if (news['news'].includes(' unenlisted the faction')) {
+                            break;
+                        }
+
+                        if (news['news'].includes('defeated') && news['news'].includes('in a ranked war')) {
+                            break;
+                        }
+                    }
+
+                    if (isEnlisted) {
+
+                        printLog('Faction is enlisted!');
+
+                        rwEmbed.setColor(0xdf691a)
+                            .setTitle(`Faction is currently enlisted!`)
+                            .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
+                            .setDescription(description)
+                            .setTimestamp(timestamp * 1000)
+                            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+                        if (warChannel) {
+                            await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                        }
+
+                    } else {
+                        if (warChannel) {
+                            await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
+                        }
+                    }
+                } else {
+                    if (warChannel) {
+                        await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
+                    }
+                }
+
             }
         }
 
@@ -758,7 +816,7 @@ async function checkMembers(memberChannel) {
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
             ownStatusEmbed.addFields({ name: `${ownFactionName}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
-            
+
             await updateOrDeleteEmbed(memberChannel, 'status', ownStatusEmbed);
         }
     }

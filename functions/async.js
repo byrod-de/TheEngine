@@ -691,13 +691,13 @@ async function checkWar(warChannel, memberChannel) {
                         let news = mainnews[newsID];
 
                         if (news['news'].includes(' could not be matched with a suitable opponent')) {
-                            description = `**${ownFactionName}** could not be matched with a suitable opponent - we remain enlisted for priority matchmaking next week.\n\n`;
+                            description = `:warning: **${ownFactionName}** could not be matched with a suitable opponent - we remain enlisted for priority matchmaking next week.\n\n`;
                         }
 
                         if (news['news'].includes(' enlisted the faction')) {
                             isEnlisted = true;
                             enlistedTimestamp = `<t:${news['timestamp']}:f>`;
-                            description += `*Faction is enlisted since ${enlistedTimestamp}*`;
+                            description += `:ballot_box_with_check: Faction is enlisted since ${enlistedTimestamp}`;
                             break;
                         }
 

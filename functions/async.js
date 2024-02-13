@@ -266,8 +266,9 @@ async function checkRetals(retalChannel) {
 
                     setTimeout(() => {
                         attackEmbed.setDescription('Retal expired')
-                        .setTitle(`~~Retal on ${attacker_name} [${attacker_id}]~~ > Expired!`)
+                        .setTitle(`~~Retal on ${attacker_name} [${attacker_id}]~~`)
                         .setURL();
+                        attackEmbed.spliceFields(0, 2);
                         message.edit( { embeds: [attackEmbed] } );
                     }, 5 * 60 * 1000); // Update after 5 minutes
 

@@ -25,10 +25,6 @@ module.exports = {
         const historymoment = thismoment.subtract(days, 'days');
         const historyDate = historymoment.format().replace('T', ' ');
 
-        let replyMsg = 'Let\'s try this...';
-
-        //printLog(getAPIKey(userID));
-
         const [response, responseHist] = await Promise.all([
             callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
             callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity,energydrinkused', 'rotate')
@@ -58,25 +54,33 @@ module.exports = {
 
             const tornUser = playerHistJson['name'];
             const tornId = playerHistJson['player_id'];
+            const profileImage = playerHistJson['profile_image']
+            const awards = playerHistJson['awards'];
+
             const position = playerHistJson['faction']['position'];
             const faction_name = he.decode(playerHistJson['faction']['faction_name']);
             const faction_tag = playerHistJson['faction']['faction_tag'];
             const faction_id = playerHistJson['faction']['faction_id'];
-            const faction_icon = faction_id !== 0 ? `https://factiontags.torn.com/${playerHistJson['faction']['tag_image']}` : 'https://tornengine.netlify.app/images/logo-100x100.png';
+            let iconUrl = 'https://tornengine.netlify.app/images/logo-100x100.png';
 
             const last_action = playerHistJson['last_action']['relative'];
             const status = playerHistJson['last_action']['status'];
             const revivable = playerHistJson['revivable'] === 0 ? 'false' : 'true';
 
             const networthDiff = networthCur - networthHist;
-            //const sign = 
+
+            if (profileImage !== undefined) {
+                iconUrl = profileImage;
+              } else {
+                printLog(`Profile image not available for ${tornId}`);
+              }
 
             const statsEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
                 .setTitle(`${tornUser} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
-                .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}`)
+                .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                .setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}\nAwards: ${awards}`)
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 

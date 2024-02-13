@@ -265,7 +265,7 @@ async function checkRetals(retalChannel) {
                     const message = await retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
 
                     setTimeout(() => {
-                        attackEmbed.setDescription()
+                        attackEmbed.setDescription('Retal expired')
                         .setTitle(`~~Retal on ${attacker_name} [${attacker_id}]~~ > Expired!`)
                         .setURL();
                         message.edit( { embeds: [attackEmbed] } );

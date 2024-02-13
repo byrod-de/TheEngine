@@ -263,9 +263,17 @@ async function checkRetals(retalChannel) {
 
                 if (retalChannel) {
                     const message = await retalChannel.send({ embeds: [attackEmbed], ephemeral: false });
+
+                    setTimeout(() => {
+                        attackEmbed.setDescription()
+                        .setTitle(`~~Retal on ${attacker_name} [${attacker_id}]~~ > Expired!`)
+                        .setURL();
+                        message.edit( { embeds: [attackEmbed] } );
+                    }, 5 * 60 * 1000); // Update after 5 minutes
+
                     setTimeout(() => {
                         message.delete();
-                    }, 7 * 60 * 1000); // Delete after 7 minutes
+                    }, 15 * 60 * 1000); // Delete after 15 minutes
 
                 } else {
                     printLog('retalChannel is undefined');
@@ -691,7 +699,7 @@ async function checkWar(warChannel, memberChannel) {
                         let news = mainnews[newsID];
 
                         if (news['news'].includes(' could not be matched with a suitable opponent')) {
-                            description = `:warning: **${ownFactionName}** could not be matched with a suitable opponent - we remain enlisted for priority matchmaking next week.\n\n`;
+                            description = `:warning: **${ownFactionName}** could not be matched with a suitable opponent - we remain enlisted for priority matchmaking.\n\n`;
                         }
 
                         if (news['news'].includes(' enlisted the faction')) {

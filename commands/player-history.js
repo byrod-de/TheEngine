@@ -42,7 +42,7 @@ module.exports = {
             const xantakenCur = personalstats['xantaken'];
             const statenhancersusedCur = personalstats['statenhancersused'];
             const energydrinkusedCur = personalstats['energydrinkused'];
-            const useractivityCur = personalstats['useractivity']/60/60;
+            const useractivityCur = personalstats['useractivity'] / 60 / 60;
 
 
             const networthHist = personalstatsHist['networth'];
@@ -50,54 +50,64 @@ module.exports = {
             const xantakenHist = personalstatsHist['xantaken'];
             const statenhancersusedHist = personalstatsHist['statenhancersused'];
             const energydrinkusedHist = personalstatsHist['energydrinkused'];
-            const useractivityHist = personalstatsHist['useractivity']/60/60;
+            const useractivityHist = personalstatsHist['useractivity'] / 60 / 60;
 
             const tornUser = playerHistJson['name'];
             const tornId = playerHistJson['player_id'];
             const profileImage = playerHistJson['profile_image']
+            const gender = playerHistJson['gender'];
             const awards = playerHistJson['awards'];
 
             const position = playerHistJson['faction']['position'];
             const faction_name = he.decode(playerHistJson['faction']['faction_name']);
             const faction_tag = playerHistJson['faction']['faction_tag'];
             const faction_id = playerHistJson['faction']['faction_id'];
-            let iconUrl = 'https://tornengine.netlify.app/images/logo-100x100.png';
+
+            let iconUrl = (gender == 'Male') ? 'https://www.torn.com/images/profile_man.jpg' : 'https://www.torn.com/images/profile_girl.jpg';
+
 
             const last_action = playerHistJson['last_action']['relative'];
             const status = playerHistJson['last_action']['status'];
-            const revivable = playerHistJson['revivable'] === 0 ? 'false' : 'true';
+            const revivable = playerHistJson['revivable'] === 0 ? 'not revivable' : 'revivable';
+
+            let statusIcon = (status === 'Online') ? ':green_circle:' :
+              (status === 'Idle') ? ':yellow_circle:' :
+              ':black_circle:';
 
             const networthDiff = networthCur - networthHist;
 
             if (profileImage !== undefined) {
                 iconUrl = profileImage;
-              } else {
+            } else {
                 printLog(`Profile image not available for ${tornId}`);
-              }
+            }
 
             const statsEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
                 .setTitle(`${tornUser} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
                 .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}\nAwards: ${awards}`)
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
             let replyMsg = 'Stat'.padEnd(7) + ` | ${days}${'d ago'.padEnd(5)} | ${'Today'.padEnd(7)} | ${'Diff'.padEnd(7)} | ${'Daily'.padEnd(7)}\n`;
             replyMsg += '-'.padEnd(9 + 9 + 9 + 9 + 11, '-') + '\n';
 
+            statsEmbed.addFields({ name: 'Last Activity', value: `${statusIcon} ${status}\n${last_action}`, inline: true });
+            statsEmbed.addFields({ name: 'Info', value: `${revivable}\n${awards} Awards`, inline: true });
+            //.setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}\nAwards: ${awards}`)
+
             const statArray = [
                 { name: 'Activty', hist: useractivityHist, cur: useractivityCur, sign: ' ' },
-                { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: ' '  },
-                { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: ' '  },
-                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: ' '  },
-                { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: ' '  },
-                { name: 'Netwrth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+'}
+                { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: ' ' },
+                { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: ' ' },
+                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: ' ' },
+                { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: ' ' },
+                { name: 'Netwrth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+' }
             ];
 
             for (const stat of statArray) {
-                const diff = stat.cur - stat.hist ;
+                const diff = stat.cur - stat.hist;
                 replyMsg += `${stat.name.padEnd(7)} | ${abbreviateNumber(stat.hist).toString().padStart(7)} | ${abbreviateNumber(stat.cur).toString().padStart(7)} | ${stat.sign}${abbreviateNumber(diff).toString().padStart(6)} | ${stat.sign}${abbreviateNumber(diff / days).toString().padStart(6)}\n`;
             }
 

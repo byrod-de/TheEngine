@@ -584,7 +584,7 @@ async function checkWar(warChannel, memberChannel) {
                             let travelingMemberCount = 0;
                             let abroadMemberCount = 0;
                             let jailMembersCount = 0;
-
+                            let federalMembersCount = 0;
 
                             const faction = responseMembers[2];
                             const membersList = faction.members;
@@ -641,12 +641,18 @@ async function checkWar(warChannel, memberChannel) {
                                     jailMembersCount++;
                                 }
 
+                                if (memberStatusState == 'Federal') {
+                                    federalMembersCount++;
+                                }
+
+                                
+
                             }
 
                             if (travelingMembers == '') travelingMembers = '*none*';
                             if (hospitalMembers == '') hospitalMembers = '*none*';
 
-                            statusEmbed.addFields({ name: `${faction.name}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}`, inline: true });
+                            statusEmbed.addFields({ name: `${faction.name}`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}`, inline: true });
 
                             if (factionID != ownFactionID) {
                                 travelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
@@ -782,11 +788,17 @@ async function checkMembers(memberChannel) {
             let travelingMemberCount = 0;
             let abroadMemberCount = 0;
             let jailMembersCount = 0;
+            let federalMembersCount = 0;
             let jailMembers = '';
+            
+                            let membersOnline = 0;
+                            let membersOffline = 0;
+                            let membersIdle = 0;
 
             for (var id in members) {
                 let member = members[id];
                 let memberStatusState = member.status.state;
+                let lastActionStatus = member.last_action.status;
 
                 if (memberStatusState == 'Jail') {
                     const entry = `:oncoming_police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id}) out <t:${member.status.until}:R>\n`;
@@ -799,6 +811,14 @@ async function checkMembers(memberChannel) {
                     case 'Traveling': travelingMemberCount++; break;
                     case 'Abroad': abroadMemberCount++; break;
                     case 'Jail': jailMembersCount++; break;
+                    case 'Federal': federalMembersCount++; break;
+                    default: break;
+                }
+
+                switch (lastActionStatus) {
+                    case 'Online': membersOnline++; break;
+                    case 'Offline': membersOffline++; break;
+                    case 'Idle': membersIdle++; break;
                     default: break;
                 }
 
@@ -824,7 +844,8 @@ async function checkMembers(memberChannel) {
                 .setTimestamp(timestamp * 1000)
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-            ownStatusEmbed.addFields({ name: `${ownFactionName}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
+            ownStatusEmbed.addFields({ name: `Member Status`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}`, inline: true });
+            ownStatusEmbed.addFields({ name: `Online Status`, value: `:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
 
             await updateOrDeleteEmbed(memberChannel, 'status', ownStatusEmbed);
         }

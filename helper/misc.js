@@ -234,7 +234,6 @@ function sortByUntil(a, b) {
 async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit') {
 
     const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
-    
     if (embedMessageId) {
         try {
             const originalMessage = await channel.messages.fetch(embedMessageId);

@@ -7,9 +7,16 @@ const { printLog } = require('./helper/misc');
 const commands = [];
 // Grab all the command files from the commands directory you created earlier
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const activeModules = fs.readFileSync('./conf/activeModules.conf', 'utf8');
+
 
 // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
 for (const file of commandFiles) {
+	if (!activeModules.includes(file)) {
+		console.log(`${file} --> Skipped...`);
+		continue;
+	}
+	console.log(`Deploying --> ${file}`);
 	const command = require(`./commands/${file}`);
 	commands.push(command.data.toJSON());
 }

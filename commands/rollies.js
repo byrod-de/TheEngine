@@ -44,7 +44,7 @@ module.exports = {
             }
 
             if (result == 20) {
-                result = 'Natural *f\*cking* 20!';
+                result = 'Natural *f-cking* 20!';
             }
 
             value = 'Result dice roll D' + dice;

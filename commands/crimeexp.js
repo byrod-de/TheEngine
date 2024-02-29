@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
+const { limitedAccessChannelIds } = require('../conf/config.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,6 +8,13 @@ module.exports = {
         .setDescription('Gets CE Ranking for your faction! You need to store a key with Minimal Access first.'),
 
     async execute(interaction) {
+
+        if (!limitedAccessChannelIds.includes(interaction.channelId)) {
+            const channelList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
+            await interaction.reply({ content: `Nice try! This command can only be used in ${channelList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
+            return;
+        }
+
         const response = await callTornApi('faction', 'basic,crimeexp,timestamp');
 
         if (!response[0]) {

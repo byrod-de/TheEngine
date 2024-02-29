@@ -30,7 +30,16 @@ async function send_msg(statusChannel) {
 
     let result = await callTornApi('torn', 'timestamp');
 
-    statusChannel.send(`\`\`\`${statusMessage}\n${result[1]}\`\`\``);
+    const botStatusEmbed = new EmbedBuilder()
+    .setColor(0xdf691a)
+    .setTitle('Bot Status')
+    .setTimestamp()
+    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+    botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${statusMessage}\``, inline: false });
+    botStatusEmbed.addFields({ name: 'API Status', value: `\`${result[1]}\``, inline: false });
+
+    await updateOrDeleteEmbed(statusChannel, 'botStatus', botStatusEmbed);
 }
 
 /**
@@ -806,13 +815,25 @@ async function checkMembers(memberChannel) {
             let membersOffline = 0;
             let membersIdle = 0;
 
-            for (var id in members) {
-                let member = members[id];
+            const faction = response[2];
+            const membersList = faction.members;
+
+            let memberIndex = {}
+
+            for (var id in membersList) {
+                memberIndex[membersList[id].name] = id;
+            }
+            const sortedMembers = Object.values(membersList).sort(sortByUntil);
+
+
+            for (var id in sortedMembers) {
+
+                let member = sortedMembers[id];
                 let memberStatusState = member.status.state;
                 let lastActionStatus = member.last_action.status;
 
                 if (memberStatusState == 'Jail') {
-                    const entry = `:oncoming_police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${id}) out <t:${member.status.until}:R>\n`;
+                    const entry = `:oncoming_police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) out <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
                 }
 
@@ -841,8 +862,28 @@ async function checkMembers(memberChannel) {
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                jailEmbed.addFields({ name: 'Members in jail', value: `${jailMembers}`, inline: true });
+                const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value
 
+                // Split jailMembers into multiple chunks
+                const chunks = [];
+                let currentChunk = '';
+                const lines = jailMembers.split('\n');
+                for (const line of lines) {
+                    if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
+                        chunks.push(currentChunk);
+                        currentChunk = line + '\n';
+                    } else {
+                        currentChunk += line + '\n';
+                    }
+                }
+                if (currentChunk !== '') {
+                    chunks.push(currentChunk);
+                }
+
+                // Add each chunk as a separate field
+                chunks.forEach((chunk, index) => {
+                    jailEmbed.addFields({ name: `Members in jail (${index + 1}/${chunks.length})`, value: chunk, inline: true });
+                });
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed);
             } else {
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');

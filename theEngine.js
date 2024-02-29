@@ -10,7 +10,7 @@ const hostname = os.hostname();
 
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, send_msg, verifyKeys } = require('./functions/async');
 
-const { printLog } = require('./helper/misc');
+const { printLog, updateOrDeleteEmbed } = require('./helper/misc');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -32,6 +32,7 @@ client.once(Events.ClientReady, c => {
 	let statusChannel = client.channels.cache.get(statusChannelId);
 	if (statusChannel !== undefined) {
 		statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
+		updateOrDeleteEmbed(statusChannel, 'botStatus', undefined, 'delete');
 		setInterval(() => send_msg(statusChannel), 1000 * 60 * statusUpdateInterval);
 	}
 

@@ -1,7 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { abbreviateNumber } = require('../helper/formattings');
-const { getAPIKey, printLog } = require('../helper/misc');
+const { printLog } = require('../helper/misc');
+const { limitedAccessChannelIds } = require('../conf/config.json');
+
 
 const he = require('he');
 const moment = require('moment');
@@ -18,6 +20,12 @@ module.exports = {
                 .setDescription('Number of days')),
 
     async execute(interaction) {
+        if (!limitedAccessChannelIds.includes(interaction.channelId)) {
+            const channelList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
+            await interaction.reply({ content: `Nice try! This command can only be used in ${channelList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
+            return;
+        }
+
         const userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
         const days = interaction.options.getInteger('days') ?? 30;
 
@@ -93,25 +101,31 @@ module.exports = {
             let replyMsg = 'Stat'.padEnd(7) + ` | ${days}${'d ago'.padEnd(5)} | ${'Today'.padEnd(7)} | ${'Diff'.padEnd(7)} | ${'Daily'.padEnd(7)}\n`;
             replyMsg += '-'.padEnd(9 + 9 + 9 + 9 + 11, '-') + '\n';
 
-            statsEmbed.addFields({ name: 'Last Activity', value: `${statusIcon} ${status}\n${last_action}`, inline: true });
+            replyMsg = '';
+
+            //statsEmbed.addFields({ name: 'Last Activity', value: `${statusIcon} ${status}\n${last_action}`, inline: true });
             statsEmbed.addFields({ name: 'Info', value: `${revivable}\n${awards} Awards`, inline: true });
-            //.setDescription(`Last action: ${last_action}\nStatus: ${status} \nRevivable: ${revivable}\nAwards: ${awards}`)
 
             const statArray = [
-                { name: 'Activty', hist: useractivityHist, cur: useractivityCur, sign: ' ' },
-                { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: ' ' },
-                { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: ' ' },
-                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: ' ' },
-                { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: ' ' },
-                { name: 'Netwrth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+' }
+                { name: 'Activity', hist: useractivityHist, cur: useractivityCur, sign: '+', icon: ':hourglass:' },
+                { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: '+', icon: ':pill:' },
+                { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: '+', icon: ':boxing_glove:' },
+                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: '+', icon: ':canned_food:' },
+                { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: '+', icon: ':recycle:' },
+                { name: 'Networth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+', icon: ':dollar:' },
             ];
 
             for (const stat of statArray) {
                 const diff = stat.cur - stat.hist;
-                replyMsg += `${stat.name.padEnd(7)} | ${abbreviateNumber(stat.hist).toString().padStart(7)} | ${abbreviateNumber(stat.cur).toString().padStart(7)} | ${stat.sign}${abbreviateNumber(diff).toString().padStart(6)} | ${stat.sign}${abbreviateNumber(diff / days).toString().padStart(6)}\n`;
+                replyMsg += `${stat.icon} **${stat.name}**: `;
+                replyMsg += `*(${stat.sign}${abbreviateNumber(diff / days).toString()} per day)* \n`;
+
+                replyMsg += `\`Current: ${abbreviateNumber(stat.cur).toString()}\`\n`;
+                replyMsg += `\`Change : ${stat.sign}${abbreviateNumber(diff).toString()}\`\n`;
+
             }
 
-            statsEmbed.addFields({ name: 'Personal Stats', value: `\`\`\`${replyMsg}\`\`\``, inline: false });
+            statsEmbed.addFields({ name: `Personal Stats compared to ${days}d ago`, value: `${replyMsg}`, inline: false });
 
             await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
         } else {

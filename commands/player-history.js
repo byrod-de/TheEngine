@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { abbreviateNumber } = require('../helper/formattings');
 const { printLog } = require('../helper/misc');
-const { limitedAccessChannelIds } = require('../conf/config.json');
+const { limitedAccessChannelIds, limitedAccessCategories } = require('../conf/config.json');
 
 
 const he = require('he');
@@ -20,9 +20,21 @@ module.exports = {
                 .setDescription('Number of days')),
 
     async execute(interaction) {
-        if (!limitedAccessChannelIds.includes(interaction.channelId)) {
-            const channelList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
-            await interaction.reply({ content: `Nice try! This command can only be used in ${channelList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
+        if (!limitedAccessChannelIds.includes(interaction.channelId) && !limitedAccessCategories.includes(interaction.channel.parentId)) {
+            
+            let accessList = '';
+
+            if (limitedAccessChannelIds.length > 0) {
+              accessList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
+            }
+            
+            if (limitedAccessCategories.length > 0) {
+              if (accessList) {
+                accessList += ' or the ';
+              } 
+              accessList += limitedAccessCategories.map(id => `<#${id}>`).join(' or ') + ' category';
+            }
+            await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
             return;
         }
 

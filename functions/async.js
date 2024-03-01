@@ -40,7 +40,7 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
     .setColor(0xdf691a)
     .setTitle('Bot Status')
     .setTimestamp()
-    .setDescription(`Update interval: ${statusUpdateInterval} minutes.\n Next status update: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
+    .setDescription(`Status check interval: every ${statusUpdateInterval} minutes.\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
     botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });

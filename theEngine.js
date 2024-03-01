@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval,
 	armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval, warChannelId, warUpdateInterval, memberChannelId, memberUpdateInterval } = require('./conf/config.json');
 
@@ -9,8 +9,6 @@ const os = require('os');
 const hostname = os.hostname();
 
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys } = require('./functions/async');
-
-const { printLog, updateOrDeleteEmbed } = require('./helper/misc');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -26,23 +24,32 @@ for (const file of commandFiles) {
 
 
 client.once(Events.ClientReady, c => {
-	let currentDate = moment().format().replace('T', ' ');
 	let statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
-	
+
 	let statusChannel = client.channels.cache.get(statusChannelId);
+
 	if (statusChannel !== undefined) {
 		sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage);
 		setInterval(() => sendStatusMsg(statusChannel, statusUpdateInterval), 1000 * 60 * statusUpdateInterval);
 	}
 
+	const activityPool = [
+		{ name: "Feeling adventurous!", type: 1 },
+		{ name: "Ready for action!", type: 2 },
+		{ name: "Exploring the unknown!", type: 3 },
+		{ name: "On a mission!", type: 0 },
+		{ name: "Torn(dot)com!", type: 0 },
+	];
+
+	const randomActivity = activityPool[Math.floor(Math.random() * activityPool.length)];
+
 	client.user.setPresence({
-		activities: [{ name: "Torn(dot)com", type: 3 }],
+		activities: [{ name: randomActivity.name, type: randomActivity.type }],
 		status: "online",
-	})
+	});
 });
 
 client.on('ready', () => {
-	let currentDate = moment().format().replace('T', ' ');
 
 	let territoryChannel = client.channels.cache.get(territoryChannelId);
 	let armouryChannel = client.channels.cache.get(armouryChannelId);

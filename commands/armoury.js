@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { limitedAccessChannelIds } = require('../conf/config.json');
+const { limitedAccessChannelIds, limitedAccessCategories } = require('../conf/config.json');
 
 
 module.exports = {
@@ -19,8 +19,20 @@ module.exports = {
     async execute(interaction) {
 
         if (!limitedAccessChannelIds.includes(interaction.channelId)) {
-            const channelList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
-            await interaction.reply({ content: `Nice try! This command can only be used in ${channelList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
+            
+            let accessList = '';
+
+            if (limitedAccessChannelIds.length > 0) {
+              accessList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
+            }
+            
+            if (limitedAccessCategories.length > 0) {
+              if (accessList) {
+                accessList += ' or the ';
+              } 
+              accessList += limitedAccessCategories.map(id => `<#${id}>`).join(' or ') + ' category';
+            }
+            await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
             return;
         }
         

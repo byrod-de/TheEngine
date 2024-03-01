@@ -24,9 +24,15 @@ const hostname = os.hostname();
  * @param {type} statusChannel - the status channel to send the message to
  * @return {type} the result of sending the message
  */
-async function send_msg(statusChannel) {
-    let currentDate = moment().format().replace('T', ' ');
-    let statusMessage = `${currentDate} > Still running on ${hostname}!`;
+async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage = undefined) {
+    const now = moment();
+    const currentDate = now.format().replace('T', ' ');
+
+    if (statusMessage === undefined) {
+        statusMessage = `Still running on ${hostname}!`;
+    }
+
+    printLog(statusMessage);
 
     let result = await callTornApi('torn', 'timestamp');
 
@@ -34,9 +40,10 @@ async function send_msg(statusChannel) {
     .setColor(0xdf691a)
     .setTitle('Bot Status')
     .setTimestamp()
+    .setDescription(`Update interval: ${statusUpdateInterval} minutes.\n Next status update: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-    botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${statusMessage}\``, inline: false });
+    botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });
     botStatusEmbed.addFields({ name: 'API Status', value: `\`${result[1]}\``, inline: false });
 
     await updateOrDeleteEmbed(statusChannel, 'botStatus', botStatusEmbed);
@@ -904,4 +911,4 @@ async function checkMembers(memberChannel) {
     }
 }
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, send_msg, verifyKeys, verifyAPIKey };
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys, verifyAPIKey };

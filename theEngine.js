@@ -8,7 +8,7 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, send_msg, verifyKeys } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys } = require('./functions/async');
 
 const { printLog, updateOrDeleteEmbed } = require('./helper/misc');
 
@@ -27,13 +27,12 @@ for (const file of commandFiles) {
 
 client.once(Events.ClientReady, c => {
 	let currentDate = moment().format().replace('T', ' ');
-	let statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag} at ${currentDate}`;
-	printLog(statusMessage);
+	let statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
+	
 	let statusChannel = client.channels.cache.get(statusChannelId);
 	if (statusChannel !== undefined) {
-		statusChannel.send(`\`\`\`${statusMessage}\`\`\``);
-		updateOrDeleteEmbed(statusChannel, 'botStatus', undefined, 'delete');
-		setInterval(() => send_msg(statusChannel), 1000 * 60 * statusUpdateInterval);
+		sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage);
+		setInterval(() => sendStatusMsg(statusChannel, statusUpdateInterval), 1000 * 60 * statusUpdateInterval);
 	}
 
 	client.user.setPresence({

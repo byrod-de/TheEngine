@@ -5,7 +5,7 @@ const { calculateMonthTimestamps, printLog } = require('../helper/misc');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('oc-stats')
+        .setName('oc-summary')
         .setDescription('Gets Organized Crime Stats for your faction! You need to store a key with Minimal Access first.')
         .addIntegerOption(option =>
             option.setName('month')

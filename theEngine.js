@@ -42,7 +42,7 @@ client.once(Events.ClientReady, c => {
 		{ name: "in the basement", type: 0 },
 		{ name: "Torn(dot)com!", type: 0 },
 		{ name: "nothing", type: 1 },
-		{ name: "to people blaming Ched", type: 2 },
+		{ name: "people blaming Ched", type: 2 },
 		{ name: "Crimes 2.0", type: 3 },
 	];
 

@@ -20,7 +20,7 @@ const errorCodesToDeactivate = [1, 2, 10, 13]
  * @param {string} [keyUsage='default'] - the usage type of the API key
  * @return {Array} an array containing the status, status message, and API response JSON
  */
-async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default') {
+async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '') {
     let statusMessage;
     let apiJson = '';
     let status = false;
@@ -45,6 +45,8 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         const randomIndex = Math.floor(Math.random() * activeKeys.length);
         selectedKey = activeKeys[randomIndex].key;
         seletedID = activeKeys[randomIndex].id;
+    } else if (keyUsage === 'external') {
+        selectedKey = externalApIKey;
     } else if (keyUsage === 'default') {
         selectedKey = apiKey;
     }

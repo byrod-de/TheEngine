@@ -11,68 +11,94 @@ const apiConfigPath = './conf/apiConfig.json';
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('addkey')
-        .setDescription('Add your API key to the configuration.')
+        .setDescription('Add an API key to the configuration.')
         .addStringOption(option =>
-            option.setName('mykey')
+            option.setName('apikey')
                 .setDescription('Torn API Key')
                 .setRequired(true)),
 
     async execute(interaction) {
-        //Get Dicord ID of the user executing the command
-        const userID = interaction.user.id;
-        const mykey = interaction.options.getString('mykey');
+        const keyToAdd = interaction.options.getString('apikey');
+
+        let embed = new EmbedBuilder()
+        .setTimestamp()
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
         //Check entered API key if valid
-        let checkedAPIKey = checkAPIKey(mykey);
+        let checkedAPIKey = checkAPIKey(keyToAdd);
         if (checkedAPIKey.includes('Error')) {
-            await interaction.reply(`\`\`\`${checkedAPIKey}\`\`\``);
+            embed.setColor(0xd9534f)
+            .setDescription('API Key not valid or inactive!');
+
+            embed.addFields(
+                { name: 'Error Message', value: checkedAPIKey, inline: false },
+            );
+
+            await interaction.reply({ embeds: [embed], ephemeral: true })
         } else {
 
-            let response = await callTornApi('user', 'basic,discord', userID, undefined, undefined, undefined, undefined, "rotate");
+            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
 
-            if (response[0]) {
-                let playerJson = response[2];
+            let tornId = 0;
+            let tornUser = 'dummy';
+            let discordId = 0;
 
-                let tornUser = playerJson['name'];
-                let tornId = playerJson['player_id'];
+            let newKey = {
+                key: keyToAdd,
+                id: tornId,
+                active: false,
+                discordId: 0,
+            };
 
-                const newKey = {
-                    key: mykey,
-                    id: tornId,
-                    active: false,
-                    discordId: userID,
-                };
+            await verifyAPIKey(newKey, comment);
+            printLog(`Verified API Key: ${newKey.key}`, newKey.active);
 
-                const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
-
-                await verifyAPIKey(newKey, comment);
-                printLog(`Verified API Key: ${newKey.key}.`);
-
-                apiConfig.apiKeys.push(newKey);
-
-                fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
-
-                const embed = new EmbedBuilder()
-                    .setColor(0xdf691a)
-                    .setTitle(`${tornUser} [${tornId}]`)
-                    .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
-                    .setDescription(`API Key Stored`)
-                    .setTimestamp()
-                    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+            if (!newKey.active) {
+                embed.setColor(0xd9534f)
+                .setDescription('API Key not valid or inactive!');
 
                 embed.addFields(
-                    { name: 'Torn User', value: tornUser, inline: false },
-                    { name: 'Torn ID', value: tornId.toString(), inline: false },
-                    { name: 'Access Level', value: newKey.access_level.toString(), inline: false },
-                    { name: 'Access Type', value: newKey.access_type.toString(), inline: false },
+                    { name: 'Active', value: newKey.active.toString(), inline: false },
                     { name: 'API Key', value: newKey.key, inline: false },
-
                 );
 
                 await interaction.reply({ embeds: [embed], ephemeral: true })
-
+                return;
             }
+
+            const response = await callTornApi('user', 'basic,discord', undefined, undefined, undefined, undefined, undefined, "external", newKey.key);
+
+            if (response[0]) {
+                const playerJson = response[2];
+                tornUser = playerJson['name'];
+                tornId = playerJson['player_id'];
+                discordId = playerJson.discord['discordID'];
+            }
+
+            newKey.id = tornId;
+            newKey.discordId = discordId;
+            newKey.name = tornUser;
+
+            apiConfig.apiKeys.push(newKey);
+
+            fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
+
+            embed.setColor(0x5cb85c)
+            .setTitle(`${tornUser} [${tornId}]`)
+            .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
+            .setDescription(`API Key Stored`);
+
+            embed.addFields(
+                { name: 'Torn User', value: tornUser, inline: false },
+                { name: 'Torn ID', value: tornId.toString(), inline: false },
+                { name: 'Discord ID', value: newKey.discordId.toString(), inline: false },
+                { name: 'Access Level', value: newKey.access_level.toString(), inline: false },
+                { name: 'Access Type', value: newKey.access_type.toString(), inline: false },
+                { name: 'API Key', value: newKey.key, inline: false },
+            );
+
+            await interaction.reply({ embeds: [embed], ephemeral: true })
+
         }
     }
-
 }

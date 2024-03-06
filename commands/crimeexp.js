@@ -5,7 +5,7 @@ const { limitedAccessChannelIds, limitedAccessCategories } = require('../conf/co
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('crimeexp')
-        .setDescription('Gets CE Ranking for your faction! You need to store a key with Minimal Access first.'),
+        .setDescription('Gets CE Ranking for your faction!'),
 
     async execute(interaction) {
 

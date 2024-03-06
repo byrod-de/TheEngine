@@ -17,7 +17,10 @@ module.exports = {
                 .setDescription('Torn user ID'))
         .addIntegerOption(option =>
             option.setName('days')
-                .setDescription('Number of days')),
+                .setDescription('Number of days'))
+        .addBooleanOption(option =>
+            option.setName('hide')
+                .setDescription('Hide response')),
 
     async execute(interaction) {
         if (!limitedAccessChannelIds.includes(interaction.channelId) && !limitedAccessCategories.includes(interaction.channel.parentId)) {
@@ -40,6 +43,7 @@ module.exports = {
 
         const userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
         const days = interaction.options.getInteger('days') ?? 30;
+        const hide = interaction.options.getBoolean('hide') ?? false;
 
         const thismoment = moment();
         const historymoment = thismoment.subtract(days, 'days');
@@ -140,7 +144,7 @@ module.exports = {
 
             statsEmbed.addFields({ name: `Personal Stats compared to ${days}d ago`, value: `${replyMsg}`, inline: false });
 
-            await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
+            await interaction.reply({ embeds: [statsEmbed], ephemeral: hide });
         } else {
             await interaction.reply(`\`\`\`${response[1]}\n${responseHist[1]}\`\`\``);
         }

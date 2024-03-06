@@ -312,17 +312,19 @@ async function checkRetals(retalChannel) {
  */
 async function verifyAPIKey(apiKey, comment) {
     const verificationURL = `https://api.torn.com/key/?selections=info&key=${apiKey.key}&comment=${comment}`;
-    printLog(`>> ${verificationURL}`);
+    printLog(`verificationURL >> ${verificationURL}`);
     try {
         const response = await axios.get(verificationURL);
         if (response.status === 200) {
             const verificationJson = response.data;
             if (verificationJson.hasOwnProperty('error')) {
                 printLog(`Error Code ${verificationJson['error'].code},  ${v['error'].error}.`);
-                if (verificationJson['error'].code === 1 || // 1 => Key is empty : Private key is empty in current request.
-                    verificationJson['error'].code === 2 || // 2 => Incorrect Key : Private key is wrong/incorrect format.
+                if (verificationJson['error'].code === 1  || // 1 => Key is empty : Private key is empty in current request.
+                    verificationJson['error'].code === 2  || // 2 => Incorrect Key : Private key is wrong/incorrect format.
                     verificationJson['error'].code === 10 || //10 => Key owner is in federal jail : Current key can't be used because owner is in federal jail.
-                    verificationJson['error'].code === 13    //13 => The key is temporarily disabled due to owner inactivity : The key owner hasn't been online for more than 7 days.
+                    verificationJson['error'].code === 13 ||   //13 => The key is temporarily disabled due to owner inactivity : The key owner hasn't been online for more than 7 days.
+                    verificationJson['error'].code === 14 ||   //14 => Monthly read limit reached : Too many records have been pulled in total from our cloud services.
+                    verificationJson['error'].code === 18    //18 => API key has been paused by the owner.
                 ) {
                     apiKey.active = false;
                     apiKey.errorReason = `${verificationJson['error'].code} = ${verificationJson['error'].error}`;

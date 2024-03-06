@@ -188,8 +188,6 @@ async function checkArmoury(armouryChannel) {
                 if (tornParams.armouryFilter.some(i => item.includes(i))) {
                     let armouryEmbed = new EmbedBuilder()
                         .setColor(0xdf691a)
-                        // .setTitle(`${tornUser} [${tornId}]`)
-                        // .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
                         .setAuthor({ name: `${tornUser} [${tornId}]`, iconURL: faction_icon, url: `https://www.torn.com/profiles.php?XID=${tornId}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
@@ -496,7 +494,7 @@ async function checkWar(warChannel, memberChannel) {
                 if (hasEnded) {
                     let rwId = Object.keys(rankedWars)[0];
 
-                    let responseReport = await callTornApi('torn', 'rankedwarreport', rwId);
+                    let responseReport = await callTornApi('torn', 'rankedwarreport', rwId, undefined, undefined, undefined, undefined, 'rotate');
 
                     if (responseReport[0]) {
                         let jsonRwReportResponse = responseReport[2];
@@ -590,7 +588,7 @@ async function checkWar(warChannel, memberChannel) {
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     for (var factionID in rankedWar.factions) {
-                        const responseMembers = await callTornApi('faction', 'basic', factionID);
+                        const responseMembers = await callTornApi('faction', 'basic', factionID, undefined, undefined, undefined, undefined, 'rotate');
 
                         if (responseMembers[0]) {
                             let travelingMembers = '';
@@ -720,7 +718,7 @@ async function checkWar(warChannel, memberChannel) {
                 }
             } else {
 
-                const responseMainNews = await callTornApi('faction', 'mainnews,timestamp', '', '', '', '', '', 'default');
+                const responseMainNews = await callTornApi('faction', 'mainnews,timestamp', undefined, undefined, undefined, undefined, undefined, 'default');
 
                 if (responseMainNews[0]) {
                     const newsJson = responseMainNews[2];
@@ -797,7 +795,7 @@ async function checkMembers(memberChannel) {
 
     if (memberChannel) {
 
-        const response = await callTornApi('faction', 'basic,timestamp');
+        const response = await callTornApi('faction', 'basic,timestamp', homeFaction);
         let jailEmbed = new EmbedBuilder();
         let ownStatusEmbed = new EmbedBuilder();
 

@@ -1,4 +1,4 @@
-const { apiKey, storeMethod } = require('../conf/config.json');
+const { apiKey } = require('../conf/config.json');
 const moment = require('moment');
 const fs = require('fs');
 const messageIdFile = './conf/messageIds.json';
@@ -18,70 +18,6 @@ function checkAPIKey(apikey) {
         return 'Error, key contains invalid characters.'
 
     return 'Okay';
-}
-
-/**
- * Store the API key information in a file if the store method is set to "File".
- *
- * @param {string} jsonText - The JSON text containing the API key information
- * @return {void} 
- */
-function storeAPIKey(jsonText) {
-    let keyinfo = JSON.parse(jsonText).keyinfo;
-    printLog(keyinfo.userID);
-
-    if (storeMethod === "File") {
-
-        const fs = require('fs');
-
-        fs.writeFile("tmp/keys.csv", `${keyinfo.userID};${keyinfo.tornUser};${keyinfo.tornId};${keyinfo.mykey};${keyinfo.access_level};${keyinfo.access_type}`, function (err) {
-            if (err) {
-                return printLog(err);
-            }
-            printLog("The file was saved!");
-        });
-    }
-}
-
-/**
- * Retrieves the API key for the given user ID from a file or a store method.
- *
- * @param {string} userID - The user ID for which to retrieve the API key
- * @return {string} The retrieved API key
- */
-function getAPIKey(userID) {
-
-    var userApiKey = '';
-
-    if (storeMethod === "File") {
-
-        const fs = require('fs');
-        const readline = require('readline');
-
-        const fileStream = fs.createReadStream('tmp/keys.csv');
-
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-        });
-
-
-        rl.on('line', (line) => {
-            var csv = line.split(";");
-            if (csv[0] === userID || csv[2] === userID) {
-                userApiKey = csv[3];
-                return userApiKey;
-            }
-
-        });
-
-        rl.on('close', () => {
-            printLog('Finished reading the file.');
-        });
-    } else {
-        return apiKey;
-    } 
-
 }
 
 /**
@@ -239,7 +175,6 @@ async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit') {
             const originalMessage = await channel.messages.fetch(embedMessageId);
             await originalMessage[method]({ embeds: [embed], ephemeral: false });
         } catch (error) {
-            //printLog(`Catch [${embedType}EmbedMessageId]: ${error.message}`);
             if (method !== 'delete') {
                 const newMessage = await channel.send({ embeds: [embed], ephemeral: false });
                 writeNewMessageId(`${embedType}EmbedMessageId`, newMessage.id);
@@ -250,4 +185,25 @@ async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit') {
     }
 }
 
-module.exports = { checkAPIKey, storeAPIKey, getAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed };
+
+// Function to calculate Unix timestamps for the first and last day of a selected month
+function calculateMonthTimestamps(selectedMonth, offsetInHours = 0) {
+    // Get the year
+    var currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    if (selectedMonth > currentMonth) {
+        currentYear--;
+    }
+  
+    var firstDayOfMonth = new Date(currentYear, selectedMonth, 1).getTime() / 1000;
+    let dummy = new Date(currentYear, selectedMonth, 1);
+    var lastDayOfMonth = new Date(currentYear, selectedMonth + 1, 0, 23, 59, 59).getTime() / 1000;
+    let dummy2 = new Date(currentYear, selectedMonth + 1, 0, 23, 59, 59);
+    if (offsetInHours > 0) {
+      firstDayOfMonth -= (offsetInHours + 36) * 60 * 60;
+    //  lastDayOfMonth -= offsetInHours * 60 * 60;
+    }
+    return { firstDay: firstDayOfMonth, lastDay: lastDayOfMonth };
+  }
+
+module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed, calculateMonthTimestamps };

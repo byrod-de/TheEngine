@@ -15,7 +15,7 @@ module.exports = {
       .setURL(`https://tornengine.netlify.app/`)
       .setDescription('TheEngine Slash Commands Overview')
       .setTimestamp()
-      .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
+      .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
     // Grab all the command files from the commands directory you created earlier
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));

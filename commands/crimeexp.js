@@ -21,7 +21,7 @@ module.exports = {
               if (accessList) {
                 accessList += ' or the ';
               } 
-              accessList += limitedAccessCategories.map(id => `<#${id}>`).join(' or ') + ' category';
+              accessList += limitedAccessCategories.map(id => `**<#${id}>**`).join(' or ') + ' category';
             }
             await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
             return;

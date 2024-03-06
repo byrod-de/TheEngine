@@ -16,7 +16,7 @@ for (const file of commandFiles) {
 		console.log(`${file} --> Skipped...`);
 		continue;
 	}
-	console.log(`Deploying --> ${file}`);
+	console.log(`--> Deploying: ${file} <--`);
 	const command = require(`./commands/${file}`);
 	commands.push(command.data.toJSON());
 }

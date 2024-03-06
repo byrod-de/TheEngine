@@ -32,7 +32,7 @@ module.exports = {
               if (accessList) {
                 accessList += ' or the ';
               } 
-              accessList += limitedAccessCategories.map(id => `<#${id}>`).join(' or ') + ' category';
+              accessList += limitedAccessCategories.map(id => `**<#${id}>**`).join(' or ') + ' category';
             }
             await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
             return;
@@ -122,7 +122,7 @@ module.exports = {
                 { name: 'Activity', hist: useractivityHist, cur: useractivityCur, sign: '+', icon: ':hourglass:' },
                 { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: '+', icon: ':pill:' },
                 { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: '+', icon: ':boxing_glove:' },
-                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: '+', icon: ':canned_food:' },
+                { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: '+', icon: ':battery:' },
                 { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: '+', icon: ':recycle:' },
                 { name: 'Networth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+', icon: ':dollar:' },
             ];
@@ -130,10 +130,11 @@ module.exports = {
             for (const stat of statArray) {
                 const diff = stat.cur - stat.hist;
                 replyMsg += `${stat.icon} **${stat.name}**: `;
-                replyMsg += `*(${stat.sign}${abbreviateNumber(diff / days).toString()} per day)* \n`;
-
+                replyMsg += `*${stat.sign}${abbreviateNumber(diff / days).toString()} per day* \n`;
                 replyMsg += `\`Current: ${abbreviateNumber(stat.cur).toString()}\`\n`;
                 replyMsg += `\`Change : ${stat.sign}${abbreviateNumber(diff).toString()}\`\n`;
+
+                replyMsg += '\n';
 
             }
 

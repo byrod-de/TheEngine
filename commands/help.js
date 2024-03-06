@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('node:fs');
-const config = require('../conf/config.json'); 
+const config = require('../conf/config.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,7 +13,7 @@ module.exports = {
       .setColor(0xdf691a)
       .setTitle(`TornEngine`)
       .setURL(`https://tornengine.netlify.app/`)
-      .setDescription('TheEngine Slash Commands Overview')
+      .setDescription('Slash Commands Overview')
       .setTimestamp()
       .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -33,34 +33,32 @@ module.exports = {
 
     // Check if each channel ID exists
     // Check if each channel ID exists
-const existingChannelsSet = new Set(); // Set to store unique channel IDs
-for (const key of Object.keys(config)) {
-    if (!key.includes('ChannelId')) continue;
-    if (key.includes('statusChannelId')) continue;
+    const existingChannelsSet = new Set(); // Set to store unique channel IDs
+    for (const key of Object.keys(config)) {
+      if (!key.includes('ChannelId')) continue;
+      if (key.includes('statusChannelId')) continue;
 
 
-    const channelId = config[key];
-    // Skip non-channel ID values
-    if (!channelId || typeof channelId !== 'string' || !channelId.match(/^\d+$/)) continue;
-    
-    const channel = interaction.guild.channels.cache.get(channelId);
-    
-    if (channel) {
+      const channelId = config[key];
+      // Skip non-channel ID values
+      if (!channelId || typeof channelId !== 'string' || !channelId.match(/^\d+$/)) continue;
+
+      const channel = interaction.guild.channels.cache.get(channelId);
+
+      if (channel) {
         existingChannelsSet.add(`<#${channel.id}>`); // Add channel ID to the Set
         console.log(`Channel with ID ${channelId} exists: ${channel.name}`);
-    } else {
+      } else {
         console.log(`Channel with ID ${channelId} does not exist.`);
+      }
     }
-}
 
-// Convert the Set back to an array
-const existingChannels = Array.from(existingChannelsSet);
-
-  
+    // Convert the Set back to an array
+    const existingChannels = Array.from(existingChannelsSet);
 
     // Add a field with the list of existing channels
     if (existingChannels.length > 0) {
-      helpEmbed.addFields({name: 'Bot Channels', value: existingChannels.join('\n')});
+      helpEmbed.addFields({ name: 'Bot Channels', value: existingChannels.join('\n') });
     }
 
     await interaction.reply({ embeds: [helpEmbed], ephemeral: false });

@@ -24,21 +24,26 @@ for (const file of commandFiles) {
 
 
 client.once(Events.ClientReady, c => {
-	let statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
+	const statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
 
-	let statusChannel = client.channels.cache.get(statusChannelId);
+	const statusChannel = client.channels.cache.get(statusChannelId);
 
 	if (statusChannel !== undefined) {
 		sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage);
 		setInterval(() => sendStatusMsg(statusChannel, statusUpdateInterval), 1000 * 60 * statusUpdateInterval);
 	}
 
+
+	//0: Playing
+	//1: Streaming
+	//2: Listening
+	//3: Watching
 	const activityPool = [
-		{ name: "Feeling adventurous!", type: 1 },
-		{ name: "Ready for action!", type: 2 },
-		{ name: "Exploring the unknown!", type: 3 },
-		{ name: "On a mission!", type: 0 },
+		{ name: "in the basement", type: 0 },
 		{ name: "Torn(dot)com!", type: 0 },
+		{ name: "nothing", type: 1 },
+		{ name: "to people blaming Ched", type: 2 },
+		{ name: "Crimes 2.0", type: 3 },
 	];
 
 	const randomActivity = activityPool[Math.floor(Math.random() * activityPool.length)];
@@ -51,11 +56,15 @@ client.once(Events.ClientReady, c => {
 
 client.on('ready', () => {
 
-	let territoryChannel = client.channels.cache.get(territoryChannelId);
-	let armouryChannel = client.channels.cache.get(armouryChannelId);
-	let memberChannel = client.channels.cache.get(memberChannelId);
-	let retalChannel = client.channels.cache.get(retalChannelId);
-	let warChannel = client.channels.cache.get(warChannelId);
+	const territoryChannel = client.channels.cache.get(territoryChannelId);
+	const armouryChannel = client.channels.cache.get(armouryChannelId);
+	const memberChannel = client.channels.cache.get(memberChannelId);
+	const retalChannel = client.channels.cache.get(retalChannelId);
+	const warChannel = client.channels.cache.get(warChannelId);
+	const statusChannel = client.channels.cache.get(statusChannelId);
+
+	// Run the API key verification once every 24 hours after the start of the script
+	const verificationInterval = 24; // 24 hours
 
 	if (territoryChannel !== undefined) {
 		setInterval(() => checkTerritories(territoryChannel), 1000 * 60 * territoryUpdateInterval);
@@ -76,12 +85,9 @@ client.on('ready', () => {
 	if (memberChannel !== undefined) {
 		setInterval(() => checkMembers(memberChannel), 1000 * 60 * memberUpdateInterval);
 	}
-
-	// Run the API key verification once every 24 hours after the start of the script
-	const verificationInterval = 60 * 24; // 24 hours
-	let statusChannel = client.channels.cache.get(statusChannelId);
+	
 	if (statusChannel !== undefined) {
-		setInterval(() => verifyKeys(statusChannel), 1000 * 60 * verificationInterval);
+		setInterval(() => verifyKeys(statusChannel, verificationInterval), 1000 * 60 * 60 * verificationInterval);
 	}
 });
 

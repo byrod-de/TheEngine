@@ -347,12 +347,13 @@ async function verifyAPIKey(apiKey, comment) {
  * @param {Object} statusChannel - the channel where the status message will be sent
  * @return {Promise<void>} a promise that resolves once the keys are verified and status message is updated
  */
-async function verifyKeys(statusChannel) {
-    let currentDate = moment().format().replace('T', ' ');
+async function verifyKeys(statusChannel, verificationInterval) {
+    const now = moment();
+    const currentDate = now.format().replace('T', ' ');
     const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
 
     let verificationCount = 0;
-    let totalKeys = apiConfig.apiKeys.length;
+    const totalKeys = apiConfig.apiKeys.length;
 
     for (const apiKey of apiConfig.apiKeys) {
         if (apiKey.active || !apiKey.hasOwnProperty('active')) {
@@ -363,9 +364,19 @@ async function verifyKeys(statusChannel) {
     }
 
     fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
-    let statusMessage = `API Key verification executed for ${verificationCount} active of ${totalKeys} total keys!`;
+    const statusMessage = `API Key verification executed for ${verificationCount} active of ${totalKeys} total keys!`;
     printLog(statusMessage);
-    statusChannel.send(`\`\`\`${currentDate} > ${statusMessage}\`\`\``);
+
+    const verifyEmbed = new EmbedBuilder()
+    .setColor(0xdf691a)
+    .setTitle('APE Key Status')
+    .setTimestamp()
+    .setDescription(`API Key veritifaction interval: every ${verificationInterval} hours.\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
+    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+    verifyEmbed.addFields({ name: 'Last check result', value: `\`${statusMessage}\``, inline: false });
+
+    await updateOrDeleteEmbed(statusChannel, 'verifyStatus', verifyEmbed);
 }
 
 

@@ -40,6 +40,7 @@ module.exports = {
                     key: mykey,
                     id: tornId,
                     active: false,
+                    discordId: userID,
                 };
 
                 const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));

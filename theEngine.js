@@ -8,7 +8,7 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, verifyKeys } = require('./functions/async');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -42,6 +42,7 @@ client.once(Events.ClientReady, c => {
 		{ name: "in the basement", type: 0 },
 		{ name: "Torn(dot)com!", type: 0 },
 		{ name: "nothing", type: 1 },
+		{ name: "from the attic", type: 1 },
 		{ name: "people blaming Ched", type: 2 },
 		{ name: "Crimes 2.0", type: 3 },
 	];
@@ -67,23 +68,24 @@ client.on('ready', () => {
 	const verificationInterval = 24; // 24 hours
 
 	if (territoryChannel !== undefined) {
-		setInterval(() => checkTerritories(territoryChannel), 1000 * 60 * territoryUpdateInterval);
+		setInterval(() => checkTerritories(territoryChannel, territoryUpdateInterval), 1000 * 60 * territoryUpdateInterval);
 	}
 
 	if (armouryChannel !== undefined) {
-		setInterval(() => checkArmoury(armouryChannel), 1000 * 60 * armouryUpdateInterval);
+		setInterval(() => checkArmoury(armouryChannel, armouryUpdateInterval), 1000 * 60 * armouryUpdateInterval);
 	}
 
 	if (retalChannel !== undefined) {
-		setInterval(() => checkRetals(retalChannel), 1000 * 60 * retalUpdateInterval);
+		setInterval(() => checkRetals(retalChannel, retalUpdateInterval), 1000 * 60 * retalUpdateInterval);
 	}
 
 	if (warChannel !== undefined) {
-		setInterval(() => checkWar(warChannel, memberChannel), 1000 * 60 * warUpdateInterval);
+		setInterval(() => checkWar(warChannel, memberChannel, warUpdateInterval), 1000 * 60 * warUpdateInterval);
 	}
 
 	if (memberChannel !== undefined) {
-		setInterval(() => checkMembers(memberChannel), 1000 * 60 * memberUpdateInterval);
+		setInterval(() => checkMembers(memberChannel, memberUpdateInterval), 1000 * 60 * memberUpdateInterval);
+		setInterval(() => checkOCs(memberChannel, memberUpdateInterval), 1000 * 60 * 60 * memberUpdateInterval);
 	}
 	
 	if (statusChannel !== undefined) {

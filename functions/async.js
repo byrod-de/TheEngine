@@ -2,7 +2,7 @@ const fs = require('fs');
 const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed } = require('../helper/misc');
+const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed, calculateMonthTimestamps } = require('../helper/misc');
 const { getRemainingTime } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
@@ -15,7 +15,6 @@ const timestampCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
-const rankedwars = require('../commands/rankedwars');
 const hostname = os.hostname();
 
 /**
@@ -55,7 +54,7 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
  * @param {Object} territoryChannel - the channel to check territories in
  * @return {Promise} a Promise that resolves to the result of the function
  */
-async function checkTerritories(territoryChannel) {
+async function checkTerritories(territoryChannel, territoryUpdateInterval) {
 
     let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
 
@@ -138,7 +137,7 @@ async function checkTerritories(territoryChannel) {
  * @param {string} armouryChannel - The channel to send the armoury information to
  * @return {Promise<void>} A promise that resolves once the armoury information has been processed and sent
  */
-async function checkArmoury(armouryChannel) {
+async function checkArmoury(armouryChannel, armouryUpdateInterval) {
 
     let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
 
@@ -217,7 +216,7 @@ async function checkArmoury(armouryChannel) {
  * @param {Object} retalChannel - The channel for sending retaliation notifications
  * @return {Promise} A Promise representing the completion of the function
  */
-async function checkRetals(retalChannel) {
+async function checkRetals(retalChannel, retalUpdateInterval) {
 
     let currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
@@ -351,7 +350,6 @@ async function verifyAPIKey(apiKey, comment) {
  */
 async function verifyKeys(statusChannel, verificationInterval) {
     const now = moment();
-    const currentDate = now.format().replace('T', ' ');
     const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
 
     let verificationCount = 0;
@@ -389,7 +387,7 @@ async function verifyKeys(statusChannel, verificationInterval) {
  * @param {string} memberChannel - The channel where the member information will be updated
  * @return {Promise<void>} - A promise that resolves when the war and member information are updated
  */
-async function checkWar(warChannel, memberChannel) {
+async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
     if (warChannel) {
 
@@ -804,7 +802,7 @@ async function checkWar(warChannel, memberChannel) {
  * @param {Object} memberChannel - The Discord channel to update or delete the embed in.
  * @return {Promise} A promise that resolves when the embed is updated or deleted.
  */
-async function checkMembers(memberChannel) {
+async function checkMembers(memberChannel, memberUpdateInterval) {
 
     if (memberChannel) {
 
@@ -922,4 +920,118 @@ async function checkMembers(memberChannel) {
     }
 }
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys, verifyAPIKey };
+async function getOCStats(selectedMonthValue) {
+
+    var today = new Date();
+    var firstDayOfMonth, lastDayOfMonth;
+    let title = '';
+    
+    if (!selectedMonthValue) {
+        selectedMonthValue = today.getMonth();
+        title = `*Current Month*`;
+    } else {
+        selectedMonthValue--;
+    }
+
+    // Calculate timestamps using the offset
+    var timestamps = calculateMonthTimestamps(selectedMonthValue, 192);
+
+    var firstDayOfMonth = timestamps.firstDay;
+    var lastDayOfMonth = timestamps.lastDay;
+
+    const response = await callTornApi('faction', 'basic,crimes,timestamp', undefined, firstDayOfMonth, lastDayOfMonth);
+
+    if (!response[0]) {
+        await interaction.reply({ content: response[1], ephemeral: true });
+        return;
+    }
+
+    const factionJson = response[2];
+
+    const members = factionJson?.members || [];
+    const crimeData = factionJson?.crimes || [];
+
+
+    if (members.length === 0) {
+        await interaction.reply({ content: 'No members found!', ephemeral: false });
+        return;
+    }
+
+    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+
+    const faction_icon_URL = `https://factiontags.torn.com/${factionJson['tag_image']}`;
+    const crimeList = [8];
+
+    const lastDateFormatted = (new Date(lastDayOfMonth * 1000)).toISOString().replace('T', ' ').replace('.000Z', '');
+
+    if (title === '') {
+        title = `*${lastDateFormatted.substring(0, 7)}*`;
+    }
+
+    const ocEmbed = new EmbedBuilder()
+        .setColor(0xdf691a)
+        .setTitle(`OC Overview for ${title}`)
+        .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+        .setTimestamp()
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+
+    const crimeSummary = {};
+
+
+    for (const id in crimeData) {
+
+        const crime = crimeData[id];
+
+
+        if (crimeList.includes(crime.crime_id)) {
+
+            if (crime.initiated === 1) {
+
+                var ts = new Date(crime.time_completed * 1000);
+                var formatted_date = ts.toISOString().replace('T', ' ').replace('.000Z', '');
+
+                if (crime.time_completed >= firstDayOfMonth && crime.time_completed <= lastDayOfMonth) {
+                    printLog("---> " + formatted_date + " " + crime.crime_name + " " + crime.respect_gain);
+
+                    if (!crimeSummary[crime.crime_name]) {
+                        crimeSummary[crime.crime_name] = {
+                            total: 0,
+                            success: 0,
+                            failed: 0,
+                            money_gain: 0
+                        };
+                    }
+
+                    crimeSummary[crime.crime_name].total++;
+                    crimeSummary[crime.crime_name].money_gain += crime.money_gain;
+
+                    if (crime.success === 1) {
+                        crimeSummary[crime.crime_name].success++;
+                    } else {
+                        crimeSummary[crime.crime_name].failed++;
+                    }
+                }
+            }
+        }
+    }
+
+    for (const crimeName in crimeSummary) {
+        const { total, success, failed } = crimeSummary[crimeName];
+        const successRate = (success / total) * 100;
+
+        ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
+    }
+
+    return ocEmbed;
+    
+}
+
+async function checkOCs(memberChannel, memberUpdateInterval) {
+
+    const ownStatusEmbed = await getOCStats();
+
+    await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
+}
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys, verifyAPIKey, getOCStats, checkOCs };

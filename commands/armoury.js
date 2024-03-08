@@ -14,31 +14,40 @@ module.exports = {
                     { name: 'Temporaries', value: 'temporary' },
                     { name: 'Boosters', value: 'boosters' },
                     { name: 'Medical Items', value: 'medical' },
+                    { name: 'Totals', value: 'totals' }
                 )),
 
     async execute(interaction) {
 
         if (!limitedAccessChannelIds.includes(interaction.channelId)) {
-            
+
             let accessList = '';
 
             if (limitedAccessChannelIds.length > 0) {
-              accessList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
+                accessList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
             }
-            
+
             if (limitedAccessCategories.length > 0) {
-              if (accessList) {
-                accessList += ' or the ';
-              } 
-              accessList += limitedAccessCategories.map(id => `**<#${id}>**`).join(' or ') + ' category';
+                if (accessList) {
+                    accessList += ' or the ';
+                }
+                accessList += limitedAccessCategories.map(id => `**<#${id}>**`).join(' or ') + ' category';
             }
             await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
             return;
         }
-        
+
         const type = interaction.options.getString('type') ?? 'temporary';
-        const name = interaction.options.getString('name') ?? '';
-        const response = await callTornApi('faction', `basic,${type},timestamp`);
+        const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+        let selection = type;
+
+        if (type === 'totals') {
+            selection = 'armor,boosters,caches,cesium,drugs,medical,temporary,weapons';
+        }
+
+        const response = await callTornApi('faction', `basic,${selection},timestamp`);
+
+
 
         if (response[0]) {
             const factionJson = response[2];
@@ -49,7 +58,7 @@ module.exports = {
 
             const armouryEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
-                .setTitle('Armoury Overview - ' + name)
+                .setTitle('Armoury Overview - ' + capitalizedType)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setDescription('Overview of armoury stock')
                 .setTimestamp()
@@ -67,7 +76,7 @@ module.exports = {
                         || item.name === 'Melatonin'
                         || item.name === 'Serotonin'
                         || item.name === 'Tyrosine') {
-                            armouryEmbed.addFields({ name: `:syringe: ${item.name}`, value: `\`\`\`Quantity: ${item.quantity}\nAvailable: ${item.available}\nLoaned: ${item.loaned}\`\`\``, inline: true });
+                        armouryEmbed.addFields({ name: `:syringe: ${item.name}`, value: `\`\`\`Quantity: ${item.quantity}\nAvailable: ${item.available}\nLoaned: ${item.loaned}\`\`\``, inline: true });
                     } else {
                         miscTemps += `* ${item.name} - ${item.quantity}\n`;
                     }
@@ -117,17 +126,58 @@ module.exports = {
                         miscMed += `* ${item.name} - ${item.quantity}\n`;
                     }
                 }
-                
+
                 armouryEmbed.addFields({ name: `:stethoscope: Special Blood Bags`, value: `\`\`\`${specialBloodBags}\`\`\``, inline: true });
                 armouryEmbed.addFields({ name: `:syringe: Other Meds`, value: `\`\`\`${miscMed}\`\`\``, inline: true });
                 armouryEmbed.addFields({ name: `:drop_of_blood: Blood Bags`, value: `\`\`\`${bloodBags}\`\`\``, inline: false });
-
-                
             }
-        
-        await interaction.reply({ embeds: [armouryEmbed], ephemeral: false });
-    } else {
-        await interaction.reply(`\`\`\`${response[1]}\n${responseHist[1]}\`\`\``);
-    }
-},
+
+            if (type === 'totals') {
+                const totals = {};
+                const highestQuantityItems = {};
+
+                const selectionArray = selection.split(',');
+
+                selectionArray.forEach(element => {
+                    const subElements = factionJson[element];
+                    let totalQuantity = 0;
+                    let highestQuantityItem = { name: '', quantity: 0 }; // Initialize with default values
+                    if (subElements) {
+                        subElements.forEach(item => {
+                            totalQuantity += item.quantity;
+                            if (item.quantity > highestQuantityItem.quantity) {
+                                highestQuantityItem = { name: item.name, quantity: item.quantity };
+                            }
+                        });
+                    }
+                    totals[element] = totalQuantity;
+                    highestQuantityItems[element] = highestQuantityItem;
+                });
+
+                let totalsString = '';
+                let grandTotal = 0;
+                for (const element in totals) {
+                    const capitalizedElement = element.charAt(0).toUpperCase() + element.slice(1);
+                    totalsString += `${capitalizedElement.padEnd(10, ' ')}: ${totals[element].toLocaleString('en').padStart(7, ' ')}\n`;
+                    grandTotal += totals[element];
+                }
+                totalsString += `-----------------------\nTotal 0 : ${grandTotal.toLocaleString('en').padStart(7, ' ')}`;
+
+                let highestQuantityItemsString = '';
+                for (const element in highestQuantityItems) {
+                    const capitalizedElement = element.charAt(0).toUpperCase() + element.slice(1);
+                    highestQuantityItemsString += `${capitalizedElement.padEnd(10, ' ')}- ${highestQuantityItems[element].name.padEnd(20, ' ')}: ${highestQuantityItems[element].quantity.toLocaleString('en').padStart(7, ' ')}\n`;
+                }
+
+                armouryEmbed.addFields(
+                    { name: 'Totals', value: `\`\`\`${totalsString}\`\`\``, inline: false },
+                    { name: 'Highest Quantity Items per Category', value: `\`\`\`${highestQuantityItemsString}\`\`\``, inline: false }
+                );
+            }
+
+            await interaction.reply({ embeds: [armouryEmbed], ephemeral: false });
+        } else {
+            await interaction.reply(`\`\`\`${response[1]}\n${responseHist[1]}\`\`\``);
+        }
+    },
 };

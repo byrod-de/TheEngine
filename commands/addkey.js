@@ -51,11 +51,12 @@ module.exports = {
             };
 
             await verifyAPIKey(newKey, comment);
+
             printLog(`Verified API Key: ${newKey.key}`, newKey.active);
 
             if (!newKey.active) {
                 embed.setColor(0xd9534f)
-                .setDescription('API Key not valid or inactive!');
+                .setDescription(newKey.errorReason);
 
                 embed.addFields(
                     { name: 'Active', value: newKey.active.toString(), inline: false },

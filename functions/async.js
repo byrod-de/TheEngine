@@ -17,11 +17,14 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
+
 /**
- * Asynchronously sends a message to the specified status channel. 
+ * Send a status message to the specified channel at regular intervals.
  *
- * @param {type} statusChannel - the status channel to send the message to
- * @return {type} the result of sending the message
+ * @param {Object} statusChannel - The channel to send the status message to
+ * @param {number} statusUpdateInterval - The interval at which to send status updates, in minutes
+ * @param {string} statusMessage - The message to include in the status update
+ * @return {Promise<void>} A promise that resolves once the status message is sent
  */
 async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage = undefined) {
     const now = moment();
@@ -48,11 +51,13 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
     await updateOrDeleteEmbed(statusChannel, 'botStatus', botStatusEmbed);
 }
 
+
 /**
- * Asynchronously checks territories for a given territory channel.
+ * Asynchronously checks territories for updates and sends a message to the territory channel.
  *
- * @param {Object} territoryChannel - the channel to check territories in
- * @return {Promise} a Promise that resolves to the result of the function
+ * @param {string} territoryChannel - The channel for territory updates
+ * @param {number} territoryUpdateInterval - The interval for territory updates
+ * @return {Promise<void>} A promise that resolves when the function completes
  */
 async function checkTerritories(territoryChannel, territoryUpdateInterval) {
 
@@ -131,11 +136,13 @@ async function checkTerritories(territoryChannel, territoryUpdateInterval) {
     }
 }
 
+
 /**
- * Asynchronously checks the armoury for news and updates, and sends the information to the specified channel if available.
+ * Asynchronously checks the armoury for updates and posts relevant information to the specified channel.
  *
- * @param {string} armouryChannel - The channel to send the armoury information to
- * @return {Promise<void>} A promise that resolves once the armoury information has been processed and sent
+ * @param {string} armouryChannel - The channel where the armoury updates will be posted
+ * @param {number} armouryUpdateInterval - The interval at which the armoury will be checked for updates
+ * @return {Promise<void>} A promise that resolves once the armoury check is completed
  */
 async function checkArmoury(armouryChannel, armouryUpdateInterval) {
 
@@ -210,11 +217,12 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
     }
 }
 
+
 /**
- * Asynchronously checks and handles retaliations based on a given timestamp.
+ * Asynchronously checks the retals based on the provided retals channel and retals update interval.
  *
- * @param {Object} retalChannel - The channel for sending retaliation notifications
- * @return {Promise} A Promise representing the completion of the function
+ * @param {string} retalChannel - The channel to send retals to
+ * @param {number} retalUpdateInterval - The interval at which to update retals
  */
 async function checkRetals(retalChannel, retalUpdateInterval) {
 
@@ -342,11 +350,13 @@ async function verifyAPIKey(apiKey, comment) {
 }
 
 
+
 /**
- * Asynchronously verifies API keys and updates the status message in the provided channel.
+ * Verifies the API keys and updates the status message in the specified channel.
  *
- * @param {Object} statusChannel - the channel where the status message will be sent
- * @return {Promise<void>} a promise that resolves once the keys are verified and status message is updated
+ * @param {string} statusChannel - The channel where the status message will be updated.
+ * @param {number} verificationInterval - The interval in hours for verifying the API keys.
+ * @return {Promise<void>} A promise that resolves when the API keys are verified and the status message is updated.
  */
 async function verifyKeys(statusChannel, verificationInterval) {
     const now = moment();
@@ -380,12 +390,14 @@ async function verifyKeys(statusChannel, verificationInterval) {
 }
 
 
+
 /**
- * Check the status of a war and update the war channel with relevant information.
+ * Asynchronously checks the war status and updates the war-related information in the specified warChannel and memberChannel.
  *
- * @param {string} warChannel - The channel where the war information will be updated
- * @param {string} memberChannel - The channel where the member information will be updated
- * @return {Promise<void>} - A promise that resolves when the war and member information are updated
+ * @param {string} warChannel - The channel for displaying war-related information.
+ * @param {string} memberChannel - The channel for displaying member-related information.
+ * @param {number} warUpdateInterval - The interval for updating war-related information.
+ * @return {Promise} A promise that resolves when the war status is checked and the information is updated.
  */
 async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
@@ -796,11 +808,13 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 }
 
 
+
 /**
- * Function to check faction members in jail and update or delete the embed in the given memberChannel.
+ * Asynchronously checks the members of a faction and updates their status and information in Discord embeds.
  *
- * @param {Object} memberChannel - The Discord channel to update or delete the embed in.
- * @return {Promise} A promise that resolves when the embed is updated or deleted.
+ * @param {string} memberChannel - The Discord channel where the member status and information will be updated.
+ * @param {number} memberUpdateInterval - The interval in milliseconds at which the member status and information will be updated.
+ * @return {Promise<void>} A promise that resolves once the member status and information are updated in the Discord embeds.
  */
 async function checkMembers(memberChannel, memberUpdateInterval) {
 
@@ -920,6 +934,12 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
     }
 }
 
+/**
+ * Asynchronously retrieves OC (Organized Crime) statistics for the specified month and generates an embed with the statistics.
+ *
+ * @param {number} selectedMonthValue - The value representing the selected month.
+ * @return {EmbedBuilder} An embed containing OC statistics for the specified month.
+ */
 async function getOCStats(selectedMonthValue) {
 
     var today = new Date();
@@ -1027,6 +1047,13 @@ async function getOCStats(selectedMonthValue) {
     
 }
 
+/**
+ * Asynchronously checks the OCs for the member channel and updates the OC status embed.
+ *
+ * @param {Object} memberChannel - The member channel to check for OCs
+ * @param {number} memberUpdateInterval - The interval for updating the member channel
+ * @return {Promise<void>} A Promise that resolves once the embed is updated or deleted
+ */
 async function checkOCs(memberChannel, memberUpdateInterval) {
 
     const ownStatusEmbed = await getOCStats();

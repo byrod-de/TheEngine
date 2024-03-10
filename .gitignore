@@ -3,9 +3,7 @@ node_modules
 tmp
 package-lock.json
 package.json
-config.json
-tornParams.json
-apiConfig.json
-messageIds.json
+conf/**.json
+**.conf
+**.yaml
 testScript.js
-activeModules.conf

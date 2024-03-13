@@ -1,12 +1,11 @@
-const fs = require('fs');
+const fs = require('node:fs');
 const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed, calculateMonthTimestamps } = require('../helper/misc');
+const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed, readConfig } = require('../helper/misc');
 const { getRemainingTime } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
-const { homeFaction } = require('../conf/config.json');
 const apiConfigPath = './conf/apiConfig.json';
 
 const NodeCache = require("node-cache");
@@ -17,6 +16,7 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
+const homeFaction = readConfig().apiConf.homeFaction;
 
 /**
  * Send a status message to the specified channel at regular intervals.

@@ -1,11 +1,14 @@
-const fs = require('fs');
+const fs = require('node:fs');
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { verifyAPIKey } = require('../functions/async');
-const { printLog, checkAPIKey } = require('../helper/misc');
-const { comment } = require('../conf/config.json');
+const { printLog, checkAPIKey, readConfig } = require('../helper/misc');
 
 const apiConfigPath = './conf/apiConfig.json';
+
+const comment = readConfig().apiConf.comment;
+
 
 
 module.exports = {
@@ -48,6 +51,7 @@ module.exports = {
                 id: tornId,
                 active: false,
                 discordId: 0,
+                reviver: false,
             };
 
             await verifyAPIKey(newKey, comment);
@@ -74,6 +78,14 @@ module.exports = {
                 tornUser = playerJson['name'];
                 tornId = playerJson['player_id'];
                 discordId = playerJson.discord['discordID'];
+
+                const reviveResponse = await callTornApi('user', '', '2', undefined, undefined, undefined, undefined, "external", newKey.key);
+                if (response[0]) {
+                    const reviveJson = reviveResponse[2];
+                    if (reviveJson.revivable == 1) {
+                        newKey.reviver = true;
+                    }
+                }
             }
 
             newKey.id = tornId;
@@ -96,6 +108,7 @@ module.exports = {
                 { name: 'Access Level', value: newKey.access_level.toString(), inline: false },
                 { name: 'Access Type', value: newKey.access_type.toString(), inline: false },
                 { name: 'API Key', value: newKey.key, inline: false },
+                { name: 'Reviver', value: newKey.reviver.toString(), inline: false },
             );
 
             await interaction.reply({ embeds: [embed], ephemeral: true })

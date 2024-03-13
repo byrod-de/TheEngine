@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { limitedAccessChannelIds, limitedAccessCategories } = require('../conf/config.json');
+const { verifyChannelAccess } = require('../helper/misc');
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,23 +10,8 @@ module.exports = {
 
     async execute(interaction) {
 
-        if (!limitedAccessChannelIds.includes(interaction.channelId) && !limitedAccessCategories.includes(interaction.channel.parentId)) {
-            
-            let accessList = '';
-
-            if (limitedAccessChannelIds.length > 0) {
-              accessList = limitedAccessChannelIds.map(id => `<#${id}>`).join(' or ');
-            }
-            
-            if (limitedAccessCategories.length > 0) {
-              if (accessList) {
-                accessList += ' or the ';
-              } 
-              accessList += limitedAccessCategories.map(id => `**<#${id}>**`).join(' or ') + ' category';
-            }
-            await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel, you are not meant to use this command :wink:`, ephemeral: true });
-            return;
-        }
+        // Check if the user has access to the channel and category
+        if (!await verifyChannelAccess(interaction, true, true)) return;
 
         const response = await callTornApi('faction', 'basic,crimeexp,timestamp');
 

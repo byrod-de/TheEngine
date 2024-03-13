@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { printLog } = require('../helper/misc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,7 +15,10 @@ module.exports = {
                 { name: 'Roll a D6', value: 6 },
                 { name: 'Roll a D4', value: 4 },
                 { name: 'Coinflip', value: 2 },
-            )),
+            ))
+            .addBooleanOption(option =>
+                option.setName('show')
+                    .setDescription('Show response')),
 
     /**
      * Asynchronously executes the interaction by rolling a dice and generating a result based on the dice value. 
@@ -26,6 +28,7 @@ module.exports = {
      */
     async execute(interaction) {
         const dice = interaction.options.getInteger('dice') ?? 20;
+        const show = interaction.options.getBoolean('show') ?? false;
 
         let result = Math.floor(Math.random() * dice) + 1;
         let value = '';
@@ -57,6 +60,6 @@ module.exports = {
         .setTimestamp()
         .setFooter({ text: 'powered by TornEngine, inspired by D&D', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-        await interaction.reply({ embeds: [rolliesEmbed], ephemeral: false });
+        await interaction.reply({ embeds: [rolliesEmbed], ephemeral: !show });
     }
 };

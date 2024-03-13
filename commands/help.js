@@ -1,6 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('node:fs');
-const config = require('../conf/config.json');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { readConfig } = require('../helper/misc');
+
+const config = readConfig();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -32,14 +34,12 @@ module.exports = {
     }
 
     // Check if each channel ID exists
-    // Check if each channel ID exists
     const existingChannelsSet = new Set(); // Set to store unique channel IDs
     for (const key of Object.keys(config)) {
-      if (!key.includes('ChannelId')) continue;
-      if (key.includes('statusChannelId')) continue;
 
+      if (!config[key].channelId) continue;
 
-      const channelId = config[key];
+      const channelId = config[key].channelId;
       // Skip non-channel ID values
       if (!channelId || typeof channelId !== 'string' || !channelId.match(/^\d+$/)) continue;
 
@@ -47,9 +47,9 @@ module.exports = {
 
       if (channel) {
         existingChannelsSet.add(`<#${channel.id}>`); // Add channel ID to the Set
-        console.log(`Channel with ID ${channelId} exists: ${channel.name}`);
+        console.log(`${key.padEnd(20)}: Channel with ID ${channelId} exists: ${channel.name}`);
       } else {
-        console.log(`Channel with ID ${channelId} does not exist.`);
+        console.log(`${key.padEnd(20)}: Channel with ID ${channelId} does not exist.`);
       }
     }
 

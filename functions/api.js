@@ -1,11 +1,12 @@
 const axios = require('axios');
 const fs = require('fs');
 
-const { apiKey, comment } = require('../conf/config.json');
-const { printLog } = require('../helper/misc');
+const { printLog, readConfig } = require('../helper/misc');
 const { apiKeys } = require('../conf/apiConfig.json');
 const apiConfigPath = './conf/apiConfig.json';
 const errorCodesToDeactivate = [1, 2, 10, 13]
+
+const { apiKey, comment } = readConfig().apiConf;
 
 /**
  * An asynchronous function to call the Torn API with specified parameters and key usage.

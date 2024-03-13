@@ -1,8 +1,10 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { verifieRoleId } = require('../conf/config.json');
-const { callTornApi } = require('../functions/api');
-const { printLog } = require('../helper/misc');
+const fs = require('node:fs');
 
+const { SlashCommandBuilder } = require('discord.js');
+const { callTornApi } = require('../functions/api');
+const { printLog, readConfig } = require('../helper/misc');
+
+const verifieRoleId = readConfig().discordConf.verifieRoleId;
 
 module.exports = {
     data: new SlashCommandBuilder()

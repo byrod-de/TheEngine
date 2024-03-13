@@ -1,14 +1,14 @@
+const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const { token, statusChannelId, statusUpdateInterval, territoryChannelId, territoryUpdateInterval,
-	armouryChannelId, armouryUpdateInterval, retalChannelId, retalUpdateInterval, warChannelId, warUpdateInterval, memberChannelId, memberUpdateInterval } = require('./conf/config.json');
 
-const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
+const { readConfig } = require('./helper/misc');
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, verifyKeys } = require('./functions/async');
+
+const { discordConf, statusConf, territoryConf, armouryConf, retalConf, rankedWarConf, memberConf, verificationConf } = readConfig();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -26,11 +26,11 @@ for (const file of commandFiles) {
 client.once(Events.ClientReady, c => {
 	const statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
 
-	const statusChannel = client.channels.cache.get(statusChannelId);
+	const statusChannel = client.channels.cache.get(statusConf.channelId);
 
 	if (statusChannel !== undefined) {
-		sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage);
-		setInterval(() => sendStatusMsg(statusChannel, statusUpdateInterval), 1000 * 60 * statusUpdateInterval);
+		sendStatusMsg(statusChannel, statusConf.updateInterval, statusMessage);
+		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval), 1000 * 60 * statusConf.updateInterval);
 	}
 
 
@@ -57,39 +57,36 @@ client.once(Events.ClientReady, c => {
 
 client.on('ready', () => {
 
-	const territoryChannel = client.channels.cache.get(territoryChannelId);
-	const armouryChannel = client.channels.cache.get(armouryChannelId);
-	const memberChannel = client.channels.cache.get(memberChannelId);
-	const retalChannel = client.channels.cache.get(retalChannelId);
-	const warChannel = client.channels.cache.get(warChannelId);
-	const statusChannel = client.channels.cache.get(statusChannelId);
-
-	// Run the API key verification once every 24 hours after the start of the script
-	const verificationInterval = 24; // 24 hours
+	const territoryChannel = client.channels.cache.get(territoryConf.channelId);
+	const armouryChannel = client.channels.cache.get(armouryConf.channelId);
+	const memberChannel = client.channels.cache.get(memberConf.channelId);
+	const retalChannel = client.channels.cache.get(retalConf.channelId);
+	const rankedWarChannel = client.channels.cache.get(rankedWarConf.channelId);
+	const verificationChannel = client.channels.cache.get(verificationConf.channelId);
 
 	if (territoryChannel !== undefined) {
-		setInterval(() => checkTerritories(territoryChannel, territoryUpdateInterval), 1000 * 60 * territoryUpdateInterval);
+		setInterval(() => checkTerritories(territoryChannel, territoryConf.updateInterval), 1000 * 60 * territoryConf.updateInterval);
 	}
 
 	if (armouryChannel !== undefined) {
-		setInterval(() => checkArmoury(armouryChannel, armouryUpdateInterval), 1000 * 60 * armouryUpdateInterval);
+		setInterval(() => checkArmoury(armouryChannel, armouryConf.updateInterval), 1000 * 60 * armouryConf.updateInterval);
 	}
 
 	if (retalChannel !== undefined) {
-		setInterval(() => checkRetals(retalChannel, retalUpdateInterval), 1000 * 60 * retalUpdateInterval);
+		setInterval(() => checkRetals(retalChannel, retalConf.updateInterval), 1000 * 60 * retalConf.updateInterval);
 	}
 
-	if (warChannel !== undefined) {
-		setInterval(() => checkWar(warChannel, memberChannel, warUpdateInterval), 1000 * 60 * warUpdateInterval);
+	if (rankedWarChannel !== undefined) {
+		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval), 1000 * 60 * rankedWarConf.updateInterval);
 	}
 
 	if (memberChannel !== undefined) {
-		setInterval(() => checkMembers(memberChannel, memberUpdateInterval), 1000 * 60 * memberUpdateInterval);
-		setInterval(() => checkOCs(memberChannel, memberUpdateInterval), 1000 * 60 * 60 * memberUpdateInterval);
+		setInterval(() => checkMembers(memberChannel, memberConf.updateInterval), 1000 * 60 * memberConf.updateInterval);
+		setInterval(() => checkOCs(memberChannel, memberConf.updateInterval), 1000 * 60 * 60 * memberConf.updateInterval);
 	}
 	
-	if (statusChannel !== undefined) {
-		setInterval(() => verifyKeys(statusChannel, verificationInterval), 1000 * 60 * 60 * verificationInterval);
+	if (verificationChannel !== undefined) {
+		setInterval(() => verifyKeys(verificationChannel, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
 	}
 });
 
@@ -108,4 +105,4 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
-client.login(token);
+client.login(discordConf.token);

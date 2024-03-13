@@ -1,7 +1,8 @@
-const { apiKey } = require('../conf/config.json');
 const moment = require('moment');
 const fs = require('fs');
+const yaml = require('yaml');
 const messageIdFile = './conf/messageIds.json';
+const configFilename = './conf/config.yaml';
 
 /**
  * Function to check the validity of an API key.
@@ -28,7 +29,7 @@ function checkAPIKey(apikey) {
  */
 function printLog(logtext) {
     let currentDate = moment().format().replace('T', ' ');
-    let message = currentDate + ' > '  + logtext
+    let message = currentDate + ' > ' + logtext
     console.log(message);
     return message;
 }
@@ -42,7 +43,7 @@ function printLog(logtext) {
 function readStoredMessageId(key) {
     // Read the content of the JSON file
     const data = fs.readFileSync(messageIdFile, 'utf8');
-    
+
     try {
         // Parse the JSON data
         const messageIds = JSON.parse(data);
@@ -64,27 +65,27 @@ function readStoredMessageId(key) {
 function deleteStoredMessageId(key) {
     // Read the content of the JSON file
     const data = fs.readFileSync(messageIdFile, 'utf8');
-    
+
     try {
-      // Parse the JSON data
-      const messageIds = JSON.parse(data);
-      
-      // Check if the key exists in the messageIds object
-      if (messageIds.hasOwnProperty(key)) {
-        // Delete the message ID associated with the key
-        delete messageIds[key];
-        
-        // Write the updated JSON data back to the file
-        fs.writeFileSync(messageIdFile, JSON.stringify(messageIds, null, 2), 'utf8');
-        printLog(`Message ID associated with key '${key}' has been deleted.`);
-      } else {
-        printLog(`Key '${key}' does not exist in the stored message IDs.`);
-      }
+        // Parse the JSON data
+        const messageIds = JSON.parse(data);
+
+        // Check if the key exists in the messageIds object
+        if (messageIds.hasOwnProperty(key)) {
+            // Delete the message ID associated with the key
+            delete messageIds[key];
+
+            // Write the updated JSON data back to the file
+            fs.writeFileSync(messageIdFile, JSON.stringify(messageIds, null, 2), 'utf8');
+            printLog(`Message ID associated with key '${key}' has been deleted.`);
+        } else {
+            printLog(`Key '${key}' does not exist in the stored message IDs.`);
+        }
     } catch (error) {
-      // Handle JSON parsing errors
-      console.error('Error deleting stored message ID:', error.message);
+        // Handle JSON parsing errors
+        console.error('Error deleting stored message ID:', error.message);
     }
-  }
+}
 
 
 /**
@@ -118,25 +119,25 @@ function writeNewMessageId(key, newMessageId) {
  * @return {string} the flag icon
  */
 function getFlagIcon(travelStatus, destinationText) {
-    
+
     let direction = '>';
-    
+
     if (travelStatus == 'Abroad') direction = '=';
-    if (destinationText.includes('Returning'))  direction = '<';
+    if (destinationText.includes('Returning')) direction = '<';
 
     let flag = `:flag_black: \` ${direction} \``;
 
-    if (destinationText.includes('Argentina'))   flag = `:flag_ar: \` ${direction} \``;
-    if (destinationText.includes('Canada'))      flag = `:flag_ca: \` ${direction} \``;
-    if (destinationText.includes('Cayman'))      flag = `:flag_ky: \` ${direction} \``;
-    if (destinationText.includes('China'))       flag = `:flag_cn: \` ${direction} \``;
-    if (destinationText.includes('Hawaii'))      flag = `:flag_us: \` ${direction} \``;
-    if (destinationText.includes('Japan'))       flag = `:flag_jp: \` ${direction} \``;
-    if (destinationText.includes('Mexico'))      flag = `:flag_mx: \` ${direction} \``;
-    if (destinationText.includes('Africa'))      flag = `:flag_za: \` ${direction} \``;
+    if (destinationText.includes('Argentina')) flag = `:flag_ar: \` ${direction} \``;
+    if (destinationText.includes('Canada')) flag = `:flag_ca: \` ${direction} \``;
+    if (destinationText.includes('Cayman')) flag = `:flag_ky: \` ${direction} \``;
+    if (destinationText.includes('China')) flag = `:flag_cn: \` ${direction} \``;
+    if (destinationText.includes('Hawaii')) flag = `:flag_us: \` ${direction} \``;
+    if (destinationText.includes('Japan')) flag = `:flag_jp: \` ${direction} \``;
+    if (destinationText.includes('Mexico')) flag = `:flag_mx: \` ${direction} \``;
+    if (destinationText.includes('Africa')) flag = `:flag_za: \` ${direction} \``;
     if (destinationText.includes('Switzerland')) flag = `:flag_ch: \` ${direction} \``;
-    if (destinationText.includes('UAE'))         flag = `:flag_ae: \` ${direction} \``;
-    if (destinationText.includes('Kingdom'))     flag = `:flag_gb: \` ${direction} \``;
+    if (destinationText.includes('UAE')) flag = `:flag_ae: \` ${direction} \``;
+    if (destinationText.includes('Kingdom')) flag = `:flag_gb: \` ${direction} \``;
 
     return flag;
 
@@ -194,16 +195,64 @@ function calculateMonthTimestamps(selectedMonth, offsetInHours = 0) {
     if (selectedMonth > currentMonth) {
         currentYear--;
     }
-  
+
     var firstDayOfMonth = new Date(currentYear, selectedMonth, 1).getTime() / 1000;
     let dummy = new Date(currentYear, selectedMonth, 1);
     var lastDayOfMonth = new Date(currentYear, selectedMonth + 1, 0, 23, 59, 59).getTime() / 1000;
     let dummy2 = new Date(currentYear, selectedMonth + 1, 0, 23, 59, 59);
     if (offsetInHours > 0) {
-      firstDayOfMonth -= (offsetInHours + 36) * 60 * 60;
-    //  lastDayOfMonth -= offsetInHours * 60 * 60;
+        firstDayOfMonth -= (offsetInHours + 36) * 60 * 60;
+        //  lastDayOfMonth -= offsetInHours * 60 * 60;
     }
     return { firstDay: firstDayOfMonth, lastDay: lastDayOfMonth };
-  }
+}
 
-module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed, calculateMonthTimestamps };
+
+async function verifyChannelAccess(interaction, limitChannel = false, limitCategory = false) {
+
+    let accessGranted = false;
+    let accessList = '';
+
+    const limitedAccessConf = readConfig().limitedAccessConf;
+
+    if (limitChannel) {
+        if (!limitedAccessConf.channelIds.includes(interaction.channelId)) {
+            if (limitedAccessConf.channelIds.length > 0) {
+                accessList = limitedAccessConf.channelIds.map(id => `<#${id}>`).join(' or ');
+            }
+        } else {
+            accessGranted = true;
+        }
+    }
+
+    if (limitCategory) {
+        if (!limitedAccessConf.categories.includes(interaction.channel.parentId)) {
+            if (limitedAccessConf.categories.length > 0) {
+                if (accessList) {
+                    accessList += ' or the ';
+                }
+                accessList += limitedAccessConf.categories.map(id => `**<#${id}>**`).join(' or ') + ' category';
+            }
+        } else {
+            accessGranted = true;
+        }
+    }
+
+    if (!accessGranted) {
+        await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel or category, you are not meant to use this command :wink:`, ephemeral: true });
+    }
+
+    return accessGranted;
+}
+
+
+function readConfig() {
+    try {
+        return yaml.parse(fs.readFileSync(configFilename, 'utf8'));
+    } catch (e) {
+        console.log(e);
+        return null;
+    }
+}
+
+module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed, calculateMonthTimestamps, verifyChannelAccess, readConfig };

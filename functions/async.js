@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed, readConfig } = require('../helper/misc');
+const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps } = require('../helper/misc');
 const { getRemainingTime } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');

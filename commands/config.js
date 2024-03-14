@@ -16,7 +16,7 @@ module.exports = {
                 .addChoices(
                     { name: 'Display', value: 'display' },
                     { name: 'Change', value: 'change' },
-                    { name: 'Reload', value: 'reload' },
+                    //{ name: 'Reload', value: 'reload' },
                 )
                 .setRequired(true)
         )
@@ -33,16 +33,13 @@ module.exports = {
 
     async execute(interaction) {
         try {
-            const subcommand = interaction.options.getString('operation');
+            const operation = interaction.options.getString('operation');
 
-            switch (subcommand) {
+            switch (operation) {
                 case 'display':
-                    // Read the YAML configuration file
-                    const configData = fs.readFileSync(configFilename, 'utf8');
-                    // Parse the YAML data
-                    const configValues = yaml.parse(configData);
-                    await interaction.reply(`Current config values:\n\`\`\`${yaml.stringify(configValues)}\`\`\``);
+                    await interaction.reply(`Current config values:\n\`\`\`${yaml.stringify(config)}\`\`\``);
                     break;
+
                 case 'change':
                     const key = interaction.options.getString('key');
                     const value = interaction.options.getString('value');
@@ -50,38 +47,47 @@ module.exports = {
                         await interaction.reply('Usage: /config change --key <key> --value <value>');
                         return;
                     }
-                    // Read the YAML configuration file
-                    let configFile = yaml.parse(fs.readFileSync(configFilename, 'utf8'));
-                    console.log(configFile);
 
-                    // Handle request 2: If a key is named but no context, reply with a warning without changing the value
-                    const keyParts = key.split('.');
-                    if (keyParts.length > 1 && !configFile.hasOwnProperty(keyParts[0])) {
-                        await interaction.reply(`Warning: Context '${keyParts[0]}' does not exist for key '${key}'.`);
-                        return;
+                    // Split key into parentObject and propertyName
+                    let parentObject, propertyName;
+                    if (key.includes('.')) {
+                        const keyParts = key.split('.');
+                        parentObject = keyParts[0];
+                        propertyName = keyParts[1];
+                    } else {
+                        parentObject = null;
+                        propertyName = key;
                     }
 
-                    // Handle request 1: Do not add new keys if they do not exist
-                    if (!configFile.hasOwnProperty(key)) {
-                        await interaction.reply(`Key '${key}' does not exist in the config.`);
+                    // Handle request: If a key is named but no context, reply with a warning without changing the value
+                    if (parentObject && propertyName) {
+                        if (!config[parentObject]) {
+                            await interaction.reply(`Error: Parent object '${parentObject}' does not exist.`);
+                            return;
+                        }
+                        if (!config[parentObject][propertyName]) {
+                            await interaction.reply(`Error: Property '${propertyName}' does not exist in '${parentObject}'.`);
+                            return;
+                        }
+                        config[parentObject][propertyName] = value;
+                    } else if (!parentObject && propertyName) {
+                        if (!config[propertyName]) {
+                            await interaction.reply(`Error: Property '${propertyName}' does not exist.`);
+                            return;
+                        }
+                        config[propertyName] = value;
+                    } else {
+                        await interaction.reply(`Error: Invalid key '${key}'.`);
                         return;
                     }
-
-                    // Update the config value
-                    configFile[key] = value;
 
                     // Write the updated config back to file
-                    fs.writeFileSync(configFilename, yaml.stringify(configFile));
-
+                    fs.writeFileSync(configFilename, yaml.stringify(config));
                     await interaction.reply(`Config value for '${key}' updated to '${value}'.`);
                     break;
                 case 'reload':
-                    // Reload the cache
-                    delete require.cache[require.resolve('../' + configFilename)];
-                    configData = fs.readFileSync(configFilename, 'utf8');
-                    config = yaml.parse(configData);
-                    console.log(config);
-                    await interaction.reply('Config file reloaded successfully.');
+                    await interaction.reply('Hold on, bot will be restarted.');
+                    //restartBot();
                     break;
                 default:
                     await interaction.reply('Invalid subcommand.');

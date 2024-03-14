@@ -1,8 +1,10 @@
-const { Client, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
+const fs = require('fs');
 const moment = require('moment');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const { verifyKeys } = require('../functions/api');
+
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -15,5 +17,12 @@ module.exports = {
 
     let result = await callTornApi('torn', 'timestamp');
     await interaction.reply(`\`\`\`Bot Status: ${statusMessage}\nAPI Status: ${result[1]}\`\`\``);
+
+	//USE THIS TO TEST GEDOENS!
+
+	verifyKeys(undefined, undefined, true);
+
+	//END TESTING HERE
+
 	},
 };

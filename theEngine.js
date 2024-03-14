@@ -6,8 +6,8 @@ const os = require('os');
 const hostname = os.hostname();
 
 const { readConfig } = require('./helper/misc');
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, verifyKeys } = require('./functions/async');
-
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');
+const { verifyKeys } = require('./functions/api');
 const { discordConf, statusConf, territoryConf, armouryConf, retalConf, rankedWarConf, memberConf, verificationConf } = readConfig();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });

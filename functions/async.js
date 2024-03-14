@@ -6,7 +6,6 @@ const { printLog, getFlagIcon, sortByUntil, updateOrDeleteEmbed, readConfig, cal
 const { getRemainingTime } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
-const apiConfigPath = './conf/apiConfig.json';
 
 const NodeCache = require("node-cache");
 const myCache = new NodeCache();
@@ -307,89 +306,6 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
 
     }
 }
-
-/**
- * Verifies the API key by making a request to the Torn API server with the provided 
- * API key and comment.
- *
- * @param {object} apiKey - The API key object containing the key value.
- * @param {string} comment - The comment to pass along with the API key for verification.
- * @return {Promise<void>} The function does not return a value directly, but it updates 
- * the state of the apiKey object.
- */
-async function verifyAPIKey(apiKey, comment) {
-    const verificationURL = `https://api.torn.com/key/?selections=info&key=${apiKey.key}&comment=${comment}`;
-    printLog(`verificationURL >> ${verificationURL}`);
-    try {
-        const response = await axios.get(verificationURL);
-        if (response.status === 200) {
-            const verificationJson = response.data;
-            if (verificationJson.hasOwnProperty('error')) {
-                printLog(`Error Code ${verificationJson['error'].code},  ${v['error'].error}.`);
-                if (verificationJson['error'].code === 1  || // 1 => Key is empty : Private key is empty in current request.
-                    verificationJson['error'].code === 2  || // 2 => Incorrect Key : Private key is wrong/incorrect format.
-                    verificationJson['error'].code === 10 || //10 => Key owner is in federal jail : Current key can't be used because owner is in federal jail.
-                    verificationJson['error'].code === 13 ||   //13 => The key is temporarily disabled due to owner inactivity : The key owner hasn't been online for more than 7 days.
-                    verificationJson['error'].code === 14 ||   //14 => Monthly read limit reached : Too many records have been pulled in total from our cloud services.
-                    verificationJson['error'].code === 18    //18 => API key has been paused by the owner.
-                ) {
-                    apiKey.active = false;
-                    apiKey.errorReason = `${verificationJson['error'].code} = ${verificationJson['error'].error}`;
-                }
-            } else {
-                apiKey.access_level = verificationJson.access_level;
-                apiKey.access_type = verificationJson.access_type;
-                apiKey.active = true;
-            }
-        } else {
-            apiKey.active = false;
-        }
-    } catch (error) {
-        apiKey.active = false;
-    }
-}
-
-
-
-/**
- * Verifies the API keys and updates the status message in the specified channel.
- *
- * @param {string} statusChannel - The channel where the status message will be updated.
- * @param {number} verificationInterval - The interval in hours for verifying the API keys.
- * @return {Promise<void>} A promise that resolves when the API keys are verified and the status message is updated.
- */
-async function verifyKeys(statusChannel, verificationInterval) {
-    const now = moment();
-    const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
-
-    let verificationCount = 0;
-    const totalKeys = apiConfig.apiKeys.length;
-
-    for (const apiKey of apiConfig.apiKeys) {
-        if (apiKey.active || !apiKey.hasOwnProperty('active')) {
-            await verifyAPIKey(apiKey, apiConfig.comment);
-            printLog(`Verified API Key: ${apiKey.key}.`);
-            verificationCount++;
-        }
-    }
-
-    fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
-    const statusMessage = `API Key verification executed for ${verificationCount} active of ${totalKeys} total keys!`;
-    printLog(statusMessage);
-
-    const verifyEmbed = new EmbedBuilder()
-    .setColor(0xdf691a)
-    .setTitle('APE Key Status')
-    .setTimestamp()
-    .setDescription(`API Key veritifaction interval: every ${verificationInterval} hours.\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
-    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
-
-    verifyEmbed.addFields({ name: 'Last check result', value: `\`${statusMessage}\``, inline: false });
-
-    await updateOrDeleteEmbed(statusChannel, 'verifyStatus', verifyEmbed);
-}
-
-
 
 /**
  * Asynchronously checks the war status and updates the war-related information in the specified warChannel and memberChannel.
@@ -995,14 +911,11 @@ async function getOCStats(selectedMonthValue) {
         .setTimestamp()
         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-
     const crimeSummary = {};
-
 
     for (const id in crimeData) {
 
         const crime = crimeData[id];
-
 
         if (crimeList.includes(crime.crime_id)) {
 
@@ -1012,7 +925,7 @@ async function getOCStats(selectedMonthValue) {
                 var formatted_date = ts.toISOString().replace('T', ' ').replace('.000Z', '');
 
                 if (crime.time_completed >= firstDayOfMonth && crime.time_completed <= lastDayOfMonth) {
-                    printLog("---> " + formatted_date + " " + crime.crime_name + " " + crime.respect_gain);
+                    
 
                     if (!crimeSummary[crime.crime_name]) {
                         crimeSummary[crime.crime_name] = {
@@ -1039,7 +952,7 @@ async function getOCStats(selectedMonthValue) {
     for (const crimeName in crimeSummary) {
         const { total, success, failed } = crimeSummary[crimeName];
         const successRate = (success / total) * 100;
-
+        printLog(crimeName + " " + total + successRate.toFixed(2) + "%");
         ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
     }
 
@@ -1061,4 +974,4 @@ async function checkOCs(memberChannel, memberUpdateInterval) {
     await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
 }
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, verifyKeys, verifyAPIKey, getOCStats, checkOCs };
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs };

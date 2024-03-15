@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const moment = require('moment');
+const { EmbedBuilder } = require('discord.js');
 
 const { printLog, readConfig } = require('../helper/misc');
 
@@ -57,6 +58,19 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         const randomIndex = Math.floor(Math.random() * activeKeys.length);
         selectedKey = activeKeys[randomIndex].key;
         seletedID = activeKeys[randomIndex].id;
+
+    } else if (keyUsage === 'revive') {
+        const activeReviverKeys = apiKeys.filter(key => key.active && key.reviver);
+        
+        if (activeReviverKeys.length === 0) {
+            statusMessage = "No active keys available.";
+            printLog(statusMessage);
+            return [status, statusMessage, apiJson];
+        }
+        const randomIndex = Math.floor(Math.random() * activeReviverKeys.length);
+        selectedKey = activeReviverKeys[randomIndex].key;
+        seletedID = activeReviverKeys[randomIndex].id;
+        
     } else if (keyUsage === 'external') {
         selectedKey = externalApIKey;
     } else if (keyUsage === 'default') {
@@ -212,13 +226,14 @@ async function getAdditionalKeyInfo(apiKey) {
         const tornId = playerJson['player_id'];
         const discordId = playerJson.discord['discordID'];
 
-        const reviveResponse = await callTornApi('user', '', '2', undefined, undefined, undefined, undefined, "external", apiKey.key);
+        const reviveResponse = await callTornApi('user', 'profile', '2', undefined, undefined, undefined, undefined, "external", apiKey.key);
         if (reviveResponse[0]) {
             const reviveJson = reviveResponse[2];
             if (reviveJson.revivable == 1) {
                 apiKey.reviver = true;
+            } else {
+                apiKey.reviver = false;
             }
-
             
             apiKey.id = tornId;
             apiKey.discordId = discordId;

@@ -16,6 +16,8 @@ const os = require('os');
 const hostname = os.hostname();
 
 const homeFaction = readConfig().apiConf.homeFaction;
+const minDelay = readConfig().apiConf.minDelay;
+const apiConfigPath = './conf/apiConfig.json';
 
 /**
  * Send a status message to the specified channel at regular intervals.
@@ -38,11 +40,11 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
     let result = await callTornApi('torn', 'timestamp');
 
     const botStatusEmbed = new EmbedBuilder()
-    .setColor(0xdf691a)
-    .setTitle('Bot Status')
-    .setTimestamp()
-    .setDescription(`Status check interval: every ${statusUpdateInterval} minutes.\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
-    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+        .setColor(0xdf691a)
+        .setTitle('Bot Status')
+        .setTimestamp()
+        .setDescription(`Status check interval: every ${statusUpdateInterval} minutes.\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
     botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });
     botStatusEmbed.addFields({ name: 'API Status', value: `\`${result[1]}\``, inline: false });
@@ -88,6 +90,7 @@ async function checkTerritories(territoryChannel, territoryUpdateInterval) {
             let territoryEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                .setDescription(`Update every ${territoryUpdateInterval} minutes.`)
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -834,10 +837,10 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             } else {
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');
             }
-
+            const now = moment();
             ownStatusEmbed.setColor(0xdf691a)
                 .setTitle(`:bar_chart: Member Overview`)
-                .setDescription(`Some details about the member status of ${ownFactionName}`)
+                .setDescription(`Update every ${memberUpdateInterval} minutes.`)
                 .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
                 .setTimestamp(timestamp * 1000)
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
@@ -861,7 +864,7 @@ async function getOCStats(selectedMonthValue) {
     var today = new Date();
     var firstDayOfMonth, lastDayOfMonth;
     let title = '';
-    
+
     if (!selectedMonthValue) {
         selectedMonthValue = today.getMonth();
         title = `*Current Month*`;
@@ -922,10 +925,9 @@ async function getOCStats(selectedMonthValue) {
             if (crime.initiated === 1) {
 
                 var ts = new Date(crime.time_completed * 1000);
-                var formatted_date = ts.toISOString().replace('T', ' ').replace('.000Z', '');
 
                 if (crime.time_completed >= firstDayOfMonth && crime.time_completed <= lastDayOfMonth) {
-                    
+
 
                     if (!crimeSummary[crime.crime_name]) {
                         crimeSummary[crime.crime_name] = {
@@ -957,7 +959,6 @@ async function getOCStats(selectedMonthValue) {
     }
 
     return ocEmbed;
-    
 }
 
 /**
@@ -968,10 +969,128 @@ async function getOCStats(selectedMonthValue) {
  * @return {Promise<void>} A Promise that resolves once the embed is updated or deleted
  */
 async function checkOCs(memberChannel, memberUpdateInterval) {
+    const now = moment();
 
     const ownStatusEmbed = await getOCStats();
+    ownStatusEmbed.setDescription(`Update every ${memberUpdateInterval * 60} minutes.\nNext status check: <t:${now.unix() + (memberUpdateInterval * 60 * 60)}:R>`)
 
     await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
 }
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs };
+/**
+ * Asynchronously retrieves OC (Organized Crime) statistics for the specified month and generates an embed with the statistics.
+ *
+ * @param {number} selectedMonthValue - The value representing the selected month.
+ * @return {EmbedBuilder} An embed containing OC statistics for the specified month.
+ */
+async function getReviveStatus(factionId) {
+
+    const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
+
+    if (!response[0]) {
+        await interaction.reply({ content: response[1], ephemeral: true });
+        return;
+    }
+
+    const factionJson = response[2];
+
+    const members = factionJson?.members || [];
+
+    if (members.length === 0) {
+        await interaction.reply({ content: 'No members found!', ephemeral: false });
+        return;
+    }
+
+    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+
+    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
+
+    const reviveEmbed = new EmbedBuilder()
+        .setColor(0xdf691a)
+        .setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+        .setTimestamp()
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+    let revivableMembers = '';
+    let reviveCount = 0;
+    let membersCount = 0;
+    for (const id in members) {
+
+        const member = members[id];
+        membersCount++;
+
+        let activeReviverKeys = 1;
+        try {
+            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+            const apiKeys = apiConfig.apiKeys;
+            activeReviverKeys = apiKeys.filter(key => key.active && key.reviver).length;
+            
+            if (activeReviverKeys === 0) {
+                activeReviverKeys = 1;
+            }
+        } catch (error) {
+            activeReviverKeys = 1;
+        }
+
+        const totalCalls = 100;
+        console.log("Active reviver keys:", activeReviverKeys);
+        let delayInSeconds = (totalCalls / activeReviverKeys / 15 ).toFixed(2);
+        if (delayInSeconds < 1) {
+            delayInSeconds = minDelay;
+        }
+        console.log("Delay between calls:", delayInSeconds, "seconds");
+
+        await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
+
+        const reviveResponse = await callTornApi('user', 'profile', id, undefined, undefined, undefined, undefined, "revive", undefined);
+        if (reviveResponse[0]) {
+            const reviveJson = reviveResponse[2];
+            printLog(`${member.name} checked, revive status = ${reviveJson.revivable}`);
+            if (reviveJson.revivable == 1) {
+                //const entry = `:stethoscope: [${member.name}](https://www.torn.com/profiles.php?XID=${id})\n`;
+                if (reviveJson.gender === 'Male') {
+                    const entry = `:man_health_worker: [${member.name}]\n`;
+                    revivableMembers += entry;
+                } else if (reviveJson.gender === 'Female') {
+                    const entry = `:woman_health_worker: [${member.name}]\n`;
+                    revivableMembers += entry;
+                } else {
+                    const entry = `:health_worker: [${member.name}]\n`;
+                    revivableMembers += entry;
+                }
+                reviveCount++;
+            }
+        }
+    }
+
+    printLog(`>>> Found ${reviveCount} revivable members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`);
+
+    const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value
+
+    // Split revivableMembers into multiple chunks
+    const chunks = [];
+    let currentChunk = '';
+    const lines = revivableMembers.split('\n');
+    for (const line of lines) {
+        if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
+            chunks.push(currentChunk);
+            currentChunk = line + '\n';
+        } else {
+            currentChunk += line + '\n';
+        }
+    }
+    if (currentChunk !== '') {
+        chunks.push(currentChunk);
+    }
+
+    // Add each chunk as a separate field
+    chunks.forEach((chunk, index) => {
+        reviveEmbed.addFields({ name: `(${index + 1}/${chunks.length})`, value: chunk, inline: true });
+    });
+    reviveEmbed.setTitle(`Revive Overview for ${faction_name} (${reviveCount}/${membersCount})`);
+
+    return reviveEmbed;
+}
+
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus };

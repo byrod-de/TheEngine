@@ -208,6 +208,14 @@ function calculateMonthTimestamps(selectedMonth, offsetInHours = 0) {
 }
 
 
+/**
+ * Verifies the access of a user in a specific channel or category based on the provided interaction.
+ *
+ * @param {Object} interaction - The interaction object representing the user's interaction.
+ * @param {boolean} [limitChannel=false] - Whether to limit the access based on channel.
+ * @param {boolean} [limitCategory=false] - Whether to limit the access based on category.
+ * @return {boolean} Whether the user has access or not.
+ */
 async function verifyChannelAccess(interaction, limitChannel = false, limitCategory = false) {
 
     let accessGranted = false;
@@ -236,6 +244,14 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
         } else {
             accessGranted = true;
         }
+    }
+
+    if (!accessGranted) {
+        accessList = 'the **admin channel**';
+    }
+
+    if (limitedAccessConf.adminChannelId.includes(interaction.channelId)) {
+        accessGranted = true;
     }
 
     if (!accessGranted) {

@@ -96,9 +96,12 @@ module.exports = {
                 .setColor(0xdf691a)
                 .setTitle(`${tornUser} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
-                .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+            if (faction_id > 0) {
+                statsEmbed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+            }
 
             let replyMsg = 'Stat'.padEnd(7) + ` | ${days}${'d ago'.padEnd(5)} | ${'Today'.padEnd(7)} | ${'Diff'.padEnd(7)} | ${'Daily'.padEnd(7)}\n`;
             replyMsg += '-'.padEnd(9 + 9 + 9 + 9 + 11, '-') + '\n';

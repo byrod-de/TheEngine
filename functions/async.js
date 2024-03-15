@@ -972,7 +972,7 @@ async function checkOCs(memberChannel, memberUpdateInterval) {
     const now = moment();
 
     const ownStatusEmbed = await getOCStats();
-    ownStatusEmbed.setDescription(`Update every ${memberUpdateInterval * 60} minutes.\nNext status check: <t:${now.unix() + (memberUpdateInterval * 60 * 60)}:R>`)
+    ownStatusEmbed.setDescription(`Update every ${(memberUpdateInterval * 60).toFixed(0)} minutes.`)
 
     await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
 }

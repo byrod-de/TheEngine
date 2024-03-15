@@ -20,7 +20,7 @@ module.exports = {
 
 	//USE THIS TO TEST GEDOENS!
 
-	verifyKeys(undefined, undefined, true);
+	//verifyKeys(undefined, undefined, true);
 
 	//END TESTING HERE
 

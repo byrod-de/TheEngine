@@ -3,7 +3,7 @@ const fs = require('fs');
 const moment = require('moment');
 const { EmbedBuilder } = require('discord.js');
 
-const { printLog, readConfig } = require('../helper/misc');
+const { printLog, readConfig, updateOrDeleteEmbed } = require('../helper/misc');
 
 const apiConfigPath = './conf/apiConfig.json';
 

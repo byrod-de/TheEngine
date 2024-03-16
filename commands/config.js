@@ -32,19 +32,23 @@ module.exports = {
         ),
 
     async execute(interaction) {
+
+        // Check if the user has access to the channel
+        if (!await verifyChannelAccess(interaction, false, false)) return;
+
         try {
             const operation = interaction.options.getString('operation');
 
             switch (operation) {
                 case 'display':
-                    await interaction.reply(`Current config values:\n\`\`\`${yaml.stringify(config)}\`\`\``);
+                    await interaction.reply({ content: `Current config values:\n\`\`\`${yaml.stringify(config)}\`\`\``, ephemeral: true });
                     break;
 
                 case 'change':
                     const key = interaction.options.getString('key');
                     const value = interaction.options.getString('value');
                     if (!key || !value) {
-                        await interaction.reply('Usage: /config change --key <key> --value <value>');
+                        await interaction.reply({ content: 'Usage: /config change --key <key> --value <value>', ephemeral: true });
                         return;
                     }
 
@@ -62,28 +66,28 @@ module.exports = {
                     // Handle request: If a key is named but no context, reply with a warning without changing the value
                     if (parentObject && propertyName) {
                         if (!config[parentObject]) {
-                            await interaction.reply(`Error: Parent object '${parentObject}' does not exist.`);
+                            await interaction.reply({ content: `Error: Parent object '${parentObject}' does not exist.`, ephemeral: true });
                             return;
                         }
                         if (!config[parentObject][propertyName]) {
-                            await interaction.reply(`Error: Property '${propertyName}' does not exist in '${parentObject}'.`);
+                            await interaction.reply({ content: `Error: Property '${propertyName}' does not exist in '${parentObject}'.`, ephemeral: true });
                             return;
                         }
                         config[parentObject][propertyName] = value;
                     } else if (!parentObject && propertyName) {
                         if (!config[propertyName]) {
-                            await interaction.reply(`Error: Property '${propertyName}' does not exist.`);
+                            await interaction.reply({ content: `Error: Property '${propertyName}' does not exist.`, ephemeral: true });
                             return;
                         }
                         config[propertyName] = value;
                     } else {
-                        await interaction.reply(`Error: Invalid key '${key}'.`);
+                        await interaction.reply({ content: `Error: Invalid key '${key}'.`, ephemeral: true });
                         return;
                     }
 
                     // Write the updated config back to file
                     fs.writeFileSync(configFilename, yaml.stringify(config));
-                    await interaction.reply(`Config value for '${key}' updated to '${value}'.`);
+                    await interaction.reply({ content: `Config value for '${key}' updated to '${value}'.`, ephemeral: true });
                     break;
                 case 'reload':
                     await interaction.reply('Hold on, bot will be restarted.');
@@ -94,7 +98,7 @@ module.exports = {
             }
         } catch (error) {
             console.error('Error handling config command:', error);
-            await interaction.reply('Error handling config command.');
+            await interaction.reply({ content: 'Error handling config command.', ephemeral: true });
         }
     }
 };

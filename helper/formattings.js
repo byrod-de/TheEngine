@@ -91,4 +91,58 @@ function getRemainingTime(startTime, currentTargetScore, leadScore, currentTime)
   return projectedEndTime;
 }
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime };
+
+
+/**
+ * A simple encoding function that reverses the characters of the API key and encodes it in base64.
+ *
+ * @param {string} apiKey - The API key to be encoded
+ * @returns {string} The base64 encoded API key
+ */
+function encodeApiKey(apiKey) {
+  // Simple encoding: reverse the characters of the API key
+  return Buffer.from(apiKey).toString('base64');
+}
+
+/**
+ * Simple decoding: reverse the characters of the encoded API key
+ *
+ * @param {string} encodedApiKey - the encoded API key to decode
+ * @return {string} the decoded API key
+ */
+function decodeApiKey(encodedApiKey) {
+  // Simple decoding: reverse the characters of the encoded API key
+  return Buffer.from(encodedApiKey, 'base64').toString('utf-8');
+}
+
+// Function to encode an API key before writing to file
+function encodeApiKeyWithCypher(apiKey, cipherKey) {
+  let encodedKey = '';
+  for (let i = 0; i < apiKey.length; i++) {
+      const char = apiKey.charAt(i);
+      const index = cipherKey.indexOf(char);
+      if (index !== -1) {
+          encodedKey += cipherKey.charAt((index + 10) % cipherKey.length); // Shifting by 10 characters
+      } else {
+          encodedKey += char; // Leave non-alphanumeric characters unchanged
+      }
+  }
+  return encodedKey;
+}
+
+// Function to decode an API key after reading from file
+function decodeApiKeyWithCypher(encodedApiKey, cipherKey) {
+  let decodedKey = '';
+  for (let i = 0; i < encodedApiKey.length; i++) {
+      const char = encodedApiKey.charAt(i);
+      const index = cipherKey.indexOf(char);
+      if (index !== -1) {
+          decodedKey += cipherKey.charAt((index - 10 + cipherKey.length) % cipherKey.length); // Shifting back by 10 characters
+      } else {
+          decodedKey += char; // Leave non-alphanumeric characters unchanged
+      }
+  }
+  return decodedKey;
+}
+
+module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKey, decodeApiKey, encodeApiKeyWithCypher, decodeApiKeyWithCypher };

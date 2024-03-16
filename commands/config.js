@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { readConfig } = require('../helper/misc');
+const { verifyChannelAccess, readConfig } = require('../helper/misc');
 const fs = require('fs');
 const yaml = require('yaml');
 const configFilename = './conf/config.yaml';

@@ -253,4 +253,4 @@ async function getAdditionalKeyInfo(apiKey) {
   return keyObj ? keyObj.key : null;
 }*/
 
-module.exports = { callTornApi, verifyKeys };
+module.exports = { callTornApi, verifyKeys, verifyAPIKey };

@@ -21,14 +21,14 @@ module.exports = {
 
         const factionID = interaction.options.getInteger('factionid') ?? homeFaction;
 
-        const message = await interaction.reply({ content: `Executing Revive Status for ${factionID}, please wait...`, ephemeral: true });
+        const message = await interaction.reply({ content: `Executing Revive Status for ${factionID}, please wait...`, ephemeral: false });
 
         const reviveEmbed = await getReviveStatus(factionID, message);
 
         if (!reviveEmbed) {
-            await interaction.editReply({ content: 'Revive status for ' + factionID + ' could not be determined.', ephemeral: true });
+            await interaction.editReply({ content: 'Revive status for ' + factionID + ' could not be determined.', ephemeral: false });
             return;
         }
-        await interaction.channel.send({ embeds: [reviveEmbed], ephemeral: false });
+        await interaction.editReply({ embeds: [reviveEmbed], ephemeral: false });
     },
 };

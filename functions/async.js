@@ -1106,7 +1106,7 @@ async function getReviveStatus(factionId, message) {
     printLog(content);
 
     if (message) {
-        await message.delete();
+        //await message.delete();
     }
 
     const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value

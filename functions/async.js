@@ -1094,7 +1094,7 @@ async function getReviveStatus(factionId, message) {
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${reviveIcon} ${statusIcon} ${member.name} >> (*${member.status.state}*)\n`;
+                const entry = `${reviveIcon} ${statusIcon} ${member.name}\n`;
                 
                 revivableMembers += entry;
                 reviveCount++;

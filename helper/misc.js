@@ -118,28 +118,28 @@ function writeNewMessageId(key, newMessageId) {
  * @param {string} destinationText - the destination text
  * @return {string} the flag icon
  */
-function getFlagIcon(travelStatus, destinationText) {
+function getFlagIcon(travelStatus, destinationText = '') {
 
-    let direction = '>';
+    let direction = '` > `';
 
-    if (travelStatus == 'Abroad') direction = '=';
-    if (destinationText.includes('Returning')) direction = '<';
+    if (travelStatus == 'Abroad') direction = '` = `';
+    if (destinationText.includes('Returning')) direction = '` < `';
 
-    let flag = `:flag_black: \` ${direction} \``;
+    let flag = `:flag_black:`;
 
-    if (destinationText.includes('Argentina')) flag = `:flag_ar: \` ${direction} \``;
-    if (destinationText.includes('Canada')) flag = `:flag_ca: \` ${direction} \``;
-    if (destinationText.includes('Cayman')) flag = `:flag_ky: \` ${direction} \``;
-    if (destinationText.includes('China')) flag = `:flag_cn: \` ${direction} \``;
-    if (destinationText.includes('Hawaii')) flag = `:flag_us: \` ${direction} \``;
-    if (destinationText.includes('Japan')) flag = `:flag_jp: \` ${direction} \``;
-    if (destinationText.includes('Mexico')) flag = `:flag_mx: \` ${direction} \``;
-    if (destinationText.includes('Africa')) flag = `:flag_za: \` ${direction} \``;
-    if (destinationText.includes('Switzerland')) flag = `:flag_ch: \` ${direction} \``;
-    if (destinationText.includes('UAE')) flag = `:flag_ae: \` ${direction} \``;
-    if (destinationText.includes('Kingdom')) flag = `:flag_gb: \` ${direction} \``;
+    if (destinationText.includes('Argentina')) flag = `:flag_ar:`;
+    if (destinationText.includes('Canada')) flag = `:flag_ca:`;
+    if (destinationText.includes('Cayman')) flag = `:flag_ky:`;
+    if (destinationText.includes('China')) flag = `:flag_cn:`;
+    if (destinationText.includes('Hawaii')) flag = `:flag_us:`;
+    if (destinationText.includes('Japan')) flag = `:flag_jp:`;
+    if (destinationText.includes('Mexico')) flag = `:flag_mx:`;
+    if (destinationText.includes('Africa')) flag = `:flag_za:`;
+    if (destinationText.includes('Switzerland')) flag = `:flag_ch:`;
+    if (destinationText.includes('UAE')) flag = `:flag_ae:`;
+    if (destinationText.includes('Kingdom')) flag = `:flag_gb:`;
 
-    return flag;
+    return { flag, direction };
 
 }
 

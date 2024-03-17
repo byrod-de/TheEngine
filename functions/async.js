@@ -10,7 +10,7 @@ const { callTornApi } = require('../functions/api');
 const NodeCache = require("node-cache");
 const territoryCache = new NodeCache();
 const timestampCache = new NodeCache();
-const memberCache    = new NodeCache();
+const memberCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
@@ -44,8 +44,6 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
         .setTimestamp()
         .setDescription(`Status check interval: every ${statusUpdateInterval} minutes.\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
-
-
 
     if (startUpTime === undefined) startUpTime = timestampCache.get('startUpTime');
     if (timestampCache.set('startUpTime', startUpTime, 120 * statusUpdateInterval)) printLog(`Cache updated for 'startUpTime' with ${startUpTime}`);
@@ -581,7 +579,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                                     if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
                                         const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                                        const entry = `${flagIcon} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
                                         travelingMembers += entry;
                                     }
                                 }
@@ -982,18 +980,23 @@ async function checkOCs(memberChannel, memberUpdateInterval) {
     await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
 }
 
+
 /**
- * Asynchronously retrieves OC (Organized Crime) statistics for the specified month and generates an embed with the statistics.
+ * Asynchronously retrieves the revive status for a faction and generates an embed with the status of revivable members.
  *
- * @param {number} selectedMonthValue - The value representing the selected month.
- * @return {EmbedBuilder} An embed containing OC statistics for the specified month.
+ * @param {string} factionId - The ID of the faction for which the revive status is to be retrieved.
+ * @param {Message} message - The message object for updating the revive status progress.
+ * @return {EmbedBuilder} - The embed containing the revive status of faction members.
  */
 async function getReviveStatus(factionId, message) {
 
     const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
 
+    await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
+
+    
     if (!response[0]) {
-        await interaction.reply({ content: response[1], ephemeral: true });
+        await message.edit({ content: response[1] });
         return;
     }
 
@@ -1003,7 +1006,7 @@ async function getReviveStatus(factionId, message) {
     const memberLength = Object.keys(members).length;
 
     if (memberLength === 0) {
-        await interaction.reply({ content: 'No members found!', ephemeral: false });
+        await message.edit({ content: 'No members found!' });
         return;
     }
 
@@ -1035,13 +1038,15 @@ async function getReviveStatus(factionId, message) {
         const member = sortedMembers[id];
         const memberId = memberIndex[member.name];
 
-        membersCount++;
-        if (membersCount % 5 === 0) {
-            const dots = ".".repeat((membersCount / 5).toFixed(0));
-            const content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait...${dots}`;
-            const updatedContent = `${content}\n${membersCount} of ${memberLength} members processed.`;
-            await message.edit({ content: updatedContent });
-            printLog(updatedContent);
+        if (message) {
+            membersCount++;
+            if (membersCount % 5 === 0) {
+                const dots = ".".repeat((membersCount / 5).toFixed(0));
+                const content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait...${dots}`;
+                const updatedContent = `${content}\n${membersCount} of ${memberLength} members processed.`;
+                await message.edit({ content: updatedContent });
+                printLog(updatedContent);
+            }
         }
 
         let activeReviverKeys = 1;
@@ -1049,7 +1054,7 @@ async function getReviveStatus(factionId, message) {
             const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
             const apiKeys = apiConfig.apiKeys;
             activeReviverKeys = apiKeys.filter(key => key.active && key.reviver).length;
-            
+
             if (activeReviverKeys === 0) {
                 activeReviverKeys = 1;
             }
@@ -1058,12 +1063,11 @@ async function getReviveStatus(factionId, message) {
         }
 
         const totalCalls = 100;
-        let delayInSeconds = (totalCalls / activeReviverKeys / 15 ).toFixed(2);
+        let delayInSeconds = (totalCalls / activeReviverKeys / 15).toFixed(2);
         if (delayInSeconds < 1) {
             delayInSeconds = minDelay;
         }
         printLog(`Delay between calls: ${delayInSeconds} seconds`);
-
         await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
 
         const reviveResponse = await callTornApi('user', 'profile', memberId, undefined, undefined, undefined, undefined, "revive", undefined);
@@ -1072,24 +1076,38 @@ async function getReviveStatus(factionId, message) {
             printLog(`${member.name} checked, revive status = ${reviveJson.revivable}`);
             if (reviveJson.revivable == 1) {
                 //const entry = `:stethoscope: [${member.name}](https://www.torn.com/profiles.php?XID=${memberId})\n`;
+                let reviveIcon = '';
                 if (reviveJson.gender === 'Male') {
-                    const entry = `:man_health_worker: ${member.name}\n`;
-                    revivableMembers += entry;
+                    reviveIcon = ':man_health_worker:';
                 } else if (reviveJson.gender === 'Female') {
-                    const entry = `:woman_health_worker: ${member.name}\n`;
-                    revivableMembers += entry;
+                    reviveIcon = ':woman_health_worker:';
                 } else {
-                    const entry = `:health_worker: ${member.name}\n`;
-                    revivableMembers += entry;
+                    reviveIcon = ':health_worker:';
                 }
+
+                let statusIcon = ':green_circle:';
+
+                switch (member.status.state) {
+                    case 'Hospital': statusIcon = ':syringe:'; break;
+                    case 'Jail': statusIcon = ':oncoming_police:car:'; break;
+                    case 'Abroad': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
+                    case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
+                }
+
+                const entry = `${reviveIcon} ${statusIcon} ${member.name} >> (*${member.status.state}*)\n`;
+                
+                revivableMembers += entry;
                 reviveCount++;
             }
         }
     }
 
     const content = `>>> Found ${reviveCount} revivable members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`;
-    await message.delete();
     printLog(content);
+
+    if (message) {
+        await message.delete();
+    }
 
     const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value
 
@@ -1113,7 +1131,7 @@ async function getReviveStatus(factionId, message) {
     chunks.forEach((chunk, index) => {
         reviveEmbed.addFields({ name: `(${index + 1}/${chunks.length})`, value: chunk, inline: true });
     });
-    reviveEmbed.setTitle(`Players with revived on for ${faction_name} (${reviveCount}/${membersCount})`);
+    reviveEmbed.setTitle(`Players with revives on (${reviveCount}/${membersCount})`);
 
     return reviveEmbed;
 }

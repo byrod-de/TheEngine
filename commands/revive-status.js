@@ -25,6 +25,10 @@ module.exports = {
 
         const reviveEmbed = await getReviveStatus(factionID, message);
 
+        if (!reviveEmbed) {
+            await interaction.editReply({ content: 'Revive status for ' + factionID + ' could not be determined.', ephemeral: true });
+            return;
+        }
         await interaction.channel.send({ embeds: [reviveEmbed], ephemeral: false });
     },
 };

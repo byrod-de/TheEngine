@@ -21,9 +21,9 @@ module.exports = {
 
         const factionID = interaction.options.getInteger('factionid') ?? homeFaction;
 
-        await interaction.reply({ content: `Executing Revive Status for ${factionID}, please wait...`, ephemeral: true });
+        const message = await interaction.reply({ content: `Executing Revive Status for ${factionID}, please wait...`, ephemeral: true });
 
-        const reviveEmbed = await getReviveStatus(factionID);
+        const reviveEmbed = await getReviveStatus(factionID, message);
 
         await interaction.channel.send({ embeds: [reviveEmbed], ephemeral: false });
     },

@@ -5,6 +5,10 @@ const path = require('node:path');
 const os = require('os');
 const hostname = os.hostname();
 
+const moment = require('moment');
+const NodeCache = require("node-cache");
+const startUpCache = new NodeCache();
+
 const { readConfig } = require('./helper/misc');
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');
 const { verifyKeys } = require('./functions/api');
@@ -24,13 +28,15 @@ for (const file of commandFiles) {
 
 
 client.once(Events.ClientReady, c => {
+	let startUpTime = moment().format().replace('T', ' ');
+
 	const statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
 
 	const statusChannel = client.channels.cache.get(statusConf.channelId);
 
 	if (statusChannel !== undefined) {
-		sendStatusMsg(statusChannel, statusConf.updateInterval, statusMessage);
-		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval), 1000 * 60 * statusConf.updateInterval);
+		sendStatusMsg(statusChannel, statusConf.updateInterval, statusMessage, startUpTime);
+		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval, startUpTime), 1000 * 60 * statusConf.updateInterval);
 	}
 
 

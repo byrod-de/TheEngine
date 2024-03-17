@@ -161,6 +161,26 @@ function sortByUntil(a, b) {
 }
 
 /**
+ * Sorts the given objects by their name in descending order.
+ *
+ * @param {Object} a - The first object to compare
+ * @param {Object} b - The second object to compare
+ * @return {number} 1 if a.name < b.name, -1 if a.name > b.name, 0 if equal
+ */
+function sortByName(a, b) {
+    const lowercaseA = a.name.toLowerCase();
+    const lowercaseB = b.name.toLowerCase();
+    
+    if (lowercaseA < lowercaseB) {
+        return 1;
+    } else if (lowercaseA > lowercaseB) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+/**
  * Updates or deletes an embed message in a war channel.
  *
  * @param {Object} channel - The war channel to update or delete the embed message in.
@@ -271,4 +291,4 @@ function readConfig() {
     }
 }
 
-module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, updateOrDeleteEmbed, calculateMonthTimestamps, verifyChannelAccess, readConfig };
+module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, verifyChannelAccess, readConfig };

@@ -33,7 +33,7 @@ module.exports = {
 
         const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
 
-        const faction_icon_URL = `https://factiontags.torn.com/${factionJson['tag_image']}`;
+        const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
 
         const ceEmbed = new EmbedBuilder()

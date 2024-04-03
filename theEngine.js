@@ -6,8 +6,6 @@ const os = require('os');
 const hostname = os.hostname();
 
 const moment = require('moment');
-const NodeCache = require("node-cache");
-const startUpCache = new NodeCache();
 
 const { readConfig } = require('./helper/misc');
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');

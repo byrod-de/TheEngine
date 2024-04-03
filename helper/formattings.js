@@ -138,7 +138,7 @@ function decodeApiKeyWithCypher(encodedApiKey, cipherKey = cipher) {
   let decodedKey = '';
   if (encodedApiKey.startsWith("0=")) {
     encodedApiKey = encodedApiKey.substring(2);
-    
+
     for (let i = 0; i < encodedApiKey.length; i++) {
       const char = encodedApiKey.charAt(i);
       const index = cipherKey.indexOf(char);
@@ -154,4 +154,18 @@ function decodeApiKeyWithCypher(encodedApiKey, cipherKey = cipher) {
   return decodedKey;
 }
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKey, decodeApiKey, encodeApiKeyWithCypher, decodeApiKeyWithCypher };
+/**
+ * Cleans up the input string by escaping markdown characters.
+ *
+ * @param {string} inputString - The string to be cleaned up.
+ * @return {string} The cleaned up string with escaped markdown characters.
+ */
+function cleanUpString(inputString) {
+  return inputString.replace(/\\/g, "\\\\")
+    .replace(/\*/g, "\\*")
+    .replace(/_/g, "\\_")
+    .replace(/~/g, "\\~")
+    .replace(/`/g, "\\`");
+}
+
+module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString };

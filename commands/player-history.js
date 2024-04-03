@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { abbreviateNumber } = require('../helper/formattings');
+const { abbreviateNumber, cleanUpString } = require('../helper/formattings');
 const { printLog } = require('../helper/misc');
 const { verifyChannelAccess } = require('../helper/misc');
 
@@ -33,7 +33,6 @@ module.exports = {
 
         const thismoment = moment();
         const historymoment = thismoment.subtract(days, 'days');
-        const historyDate = historymoment.format().replace('T', ' ');
 
         const [response, responseHist] = await Promise.all([
             callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
@@ -94,7 +93,7 @@ module.exports = {
 
             const statsEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
-                .setTitle(`${tornUser} [${tornId}]`)
+                .setTitle(`${cleanUpString(tornUser)} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });

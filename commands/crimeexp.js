@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { verifyChannelAccess } = require('../helper/misc');
+const { cleanUpString } = require('../helper/formattings');
 
 
 module.exports = {
@@ -50,7 +51,7 @@ module.exports = {
 
         for (let i = 0; i < crimeexp.length; i++) {
             const rank = i + 1;
-            const entry = `\`${rank.toString().padStart(3)}.\` ${members[crimeexp[i]].name}\n`;
+            const entry = `\`${rank.toString().padStart(3)}.\` ${cleanUpString(members[crimeexp[i]].name)}\n`;
             value += entry;
 
             if (rank % rankSplit === 0 || rank === crimeexp.length) {

@@ -1,10 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const fs = require('fs');
+const { timestampCache } = require('../functions/async');
 const moment = require('moment');
-
-const { verifyKeys } = require('../functions/api');
-
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -12,17 +9,23 @@ module.exports = {
 		.setDescription('Provides status information about the bot!'),
 
 	async execute(interaction) {
-    let currentDate = moment().format().replace('T',' ');
-    let statusMessage = `${currentDate} > Still running!`;
+		const currentDate = moment().format().replace('T', ' ');
+		const statusMessage = `Still running!`;
+		const result = await callTornApi('torn', 'timestamp');
 
-    let result = await callTornApi('torn', 'timestamp');
-    await interaction.reply(`\`\`\`Bot Status: ${statusMessage}\nAPI Status: ${result[1]}\`\`\``);
+		const startUpTime = timestampCache.get('startUpTime');
+		console.log(startUpTime);
 
-	//USE THIS TO TEST GEDOENS!
+		const botStatusEmbed = new EmbedBuilder()
+        .setColor(0xdf691a)
+        .setTitle('Bot Status')
+        .setTimestamp()
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-	//verifyKeys(undefined, undefined, true);
+		if (startUpTime) botStatusEmbed.addFields({ name: 'Start Up Time', value: `\`${startUpTime}\``, inline: false });
+		botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });
+		botStatusEmbed.addFields({ name: 'API Status', value: `\`${result[1]}\``, inline: false });
 
-	//END TESTING HERE
-
+		await interaction.reply({ embeds: [botStatusEmbed], ephemeral: false });
 	},
 };

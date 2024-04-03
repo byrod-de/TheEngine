@@ -1,9 +1,8 @@
 const fs = require('node:fs');
-const axios = require('axios');
 
 const { EmbedBuilder } = require('discord.js');
 const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps } = require('../helper/misc');
-const { getRemainingTime } = require('../helper/formattings');
+const { getRemainingTime, cleanUpString } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 
@@ -14,7 +13,6 @@ const memberCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
-const { off } = require('node:process');
 const hostname = os.hostname();
 
 const homeFaction = readConfig().apiConf.homeFaction;
@@ -200,7 +198,7 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
                 if (tornParams.armouryFilter.some(i => item.includes(i))) {
                     let armouryEmbed = new EmbedBuilder()
                         .setColor(0xdf691a)
-                        .setAuthor({ name: `${tornUser} [${tornId}]`, iconURL: faction_icon, url: `https://www.torn.com/profiles.php?XID=${tornId}` })
+                        .setAuthor({ name: `${cleanUpString(tornUser)} [${tornId}]`, iconURL: faction_icon, url: `https://www.torn.com/profiles.php?XID=${tornId}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -272,7 +270,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
 
                 let attackEmbed = new EmbedBuilder()
                     .setColor(0xdf691a)
-                    .setTitle(`Retal on ${attacker_name} [${attacker_id}]`)
+                    .setTitle(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`)
                     .setURL(`https://www.torn.com/loader.php?sid=attack&user2ID=${attacker_id}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                     .setDescription(`Retal deadline <t:${deadline}:R>`)
@@ -280,9 +278,9 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });;
 
 
-                attackEmbed.addFields({ name: `Defender`, value: `${defender_name} [${defender_id}]`, inline: false });
-                attackEmbed.addFields({ name: `Attacker`, value: `${attacker_name} [${attacker_id}] of ${attacker_factionname}`, inline: false });
-                printLog(`Defender ${defender_name} [${defender_id}] < Attacker ${attacker_name} [${attacker_id}] of ${attacker_factionname}`);
+                attackEmbed.addFields({ name: `Defender`, value: `${cleanUpString(defender_name)} [${defender_id}]`, inline: false });
+                attackEmbed.addFields({ name: `Attacker`, value: `${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`, inline: false });
+                printLog(`Defender ${cleanUpString(defender_name)} [${defender_id}] < Attacker ${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`);
 
 
                 if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `Attack was abroad.`, inline: false });
@@ -293,7 +291,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
 
                     setTimeout(() => {
                         attackEmbed.setDescription('Retal expired')
-                            .setTitle(`~~Retal on ${attacker_name} [${attacker_id}]~~`)
+                            .setTitle(`~~Retal on ${cleanUpString(attacker_name)} [${attacker_id}]~~`)
                             .setURL();
                         attackEmbed.spliceFields(0, 2);
                         message.edit({ embeds: [attackEmbed] });
@@ -486,8 +484,8 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                rwEmbed.addFields({ name: faction1.name, value: fieldFaction1, inline: true });
-                rwEmbed.addFields({ name: faction2.name, value: fieldFaction2, inline: true });
+                rwEmbed.addFields({ name: `${faction1.name} [${faction1ID}]` , value: fieldFaction1, inline: true });
+                rwEmbed.addFields({ name: `${faction2.name} [${faction2ID}]`, value: fieldFaction2, inline: true });
 
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 
@@ -580,7 +578,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                                     if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
                                         const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
                                         travelingMembers += entry;
                                     }
                                 }
@@ -592,7 +590,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                     if (timeDifference < 60) {
                                         hospitalMemberCount++;
                                         if (hospitalMemberCount < memberLimitForEmbed) {
-                                            const entry = `:syringe: [${member.name}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
+                                            const entry = `:syringe: [${cleanUpString(member.name)}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
                                             hospitalMembers += entry;
                                         }
                                     }
@@ -805,7 +803,7 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
 
                     if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
                         const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
                         travelingMembers += entry;
                     }
 
@@ -888,12 +886,12 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 let lastActionRelative = member.last_action.relative;
 
                 if (memberStatusState == 'Jail') {
-                    const entry = `:oncoming_police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) out <t:${member.status.until}:R>\n`;
+                    const entry = `:oncoming_police_car: [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) out <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
                 }
 
                 if (lastActionRelative.includes('day') && memberStatusState != 'Fallen') {
-                    const entry = `:zzz: [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) last seen <t:${member.last_action.timestamp}:R>\n`;
+                    const entry = `:zzz: [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) last seen <t:${member.last_action.timestamp}:R>\n`;
                     offlineMembers += entry;
                 }
 
@@ -1211,7 +1209,7 @@ async function getReviveStatus(factionId, message) {
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${reviveIcon} ${statusIcon} ${member.name}\n`;
+                const entry = `${reviveIcon} ${statusIcon} ${cleanUpString(member.name)}\n`;
 
                 revivableMembers += entry;
                 reviveCount++;
@@ -1254,4 +1252,4 @@ async function getReviveStatus(factionId, message) {
 }
 
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getTravelInformation };
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getTravelInformation, timestampCache };

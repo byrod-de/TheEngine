@@ -4,6 +4,7 @@ const moment = require('moment');
 const { EmbedBuilder } = require('discord.js');
 
 const { printLog, readConfig, updateOrDeleteEmbed } = require('../helper/misc');
+const { encodeApiKeyWithCypher, decodeApiKeyWithCypher } = require('../helper/formattings');
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -76,6 +77,8 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     } else if (keyUsage === 'default') {
         selectedKey = apiKey;
     }
+
+    selectedKey = decodeApiKeyWithCypher(selectedKey, cypher);
 
     let apiURL = `https://api.torn.com/${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}&key=${selectedKey}&comment=${comment}`;
     printLog(`Key usage = ${keyUsage} (${seletedID}) >> ${apiURL}`);

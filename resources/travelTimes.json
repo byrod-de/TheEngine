@@ -1,0 +1,68 @@
+{
+    "Mexico": {
+        "standard": 26,
+        "airstrip": 18,
+        "wlt": 13,
+        "bct": 8
+    },
+    "Cayman Islands": {
+        "standard": 35,
+        "airstrip": 25,
+        "wlt": 18,
+        "bct": 11
+    },
+    "Canada": {
+        "standard": 41,
+        "airstrip": 29,
+        "wlt": 20,
+        "bct": 12
+    },
+    "Hawaii": {
+        "standard": 134,
+        "airstrip": 94,
+        "wlt": 67,
+        "bct": 40
+    },
+    "United Kingdom": {
+        "standard": 159,
+        "airstrip": 111,
+        "wlt": 80,
+        "bct": 48
+    },
+    "Argentina": {
+        "standard": 167,
+        "airstrip": 117,
+        "wlt": 83,
+        "bct": 50
+    },
+    "Switzerland": {
+        "standard": 175,
+        "airstrip": 123,
+        "wlt": 88,
+        "bct": 53
+    },
+    "Japan": {
+        "standard": 225,
+        "airstrip": 158,
+        "wlt": 113,
+        "bct": 68
+    },
+    "China": {
+        "standard": 242,
+        "airstrip": 169,
+        "wlt": 121,
+        "bct": 72
+    },
+    "UAE": {
+        "standard": 271,
+        "airstrip": 190,
+        "wlt": 135,
+        "bct": 81
+    },
+    "South Africa": {
+        "standard": 297,
+        "airstrip": 208,
+        "wlt": 149,
+        "bct": 89
+    }
+}

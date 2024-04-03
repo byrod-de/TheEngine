@@ -1,3 +1,6 @@
+const { readConfig } = require('../helper/misc');
+const cipher = readConfig().secureConf.cipher;
+
 /**
  * Abbreviates a large number and adds a suffix (k, m, b, t, wtf).
  *
@@ -33,7 +36,7 @@ function abbreviateNumber(value) {
  * @return {string} the value with a sign added
  */
 function addSign(value) {
-  if (value < 0 ) return value;
+  if (value < 0) return value;
   else return '+ ' + value;
 }
 
@@ -80,13 +83,13 @@ function getRemainingTime(startTime, currentTargetScore, leadScore, currentTime)
     initialTargetScore = currentTargetScore;
     elapsedTime = 23;
   } else {
-    initialTargetScore = currentTargetScore / (1 - ((elapsedTime - 23 ) * 0.01));
+    initialTargetScore = currentTargetScore / (1 - ((elapsedTime - 23) * 0.01));
   }
   const scoreDecay = initialTargetScore * 0.01;
 
   const hoursToGo = Math.floor((currentTargetScore - leadScore) / scoreDecay) + 1;
 
-  let projectedEndTime =Math.floor(startTime + elapsedTime * 3600 + hoursToGo * 3600);
+  let projectedEndTime = Math.floor(startTime + elapsedTime * 3600 + hoursToGo * 3600);
 
   return projectedEndTime;
 }
@@ -116,31 +119,37 @@ function decodeApiKey(encodedApiKey) {
 }
 
 // Function to encode an API key before writing to file
-function encodeApiKeyWithCypher(apiKey, cipherKey) {
+function encodeApiKeyWithCypher(apiKey, cipherKey = cipher) {
   let encodedKey = '';
   for (let i = 0; i < apiKey.length; i++) {
-      const char = apiKey.charAt(i);
-      const index = cipherKey.indexOf(char);
-      if (index !== -1) {
-          encodedKey += cipherKey.charAt((index + 10) % cipherKey.length); // Shifting by 10 characters
-      } else {
-          encodedKey += char; // Leave non-alphanumeric characters unchanged
-      }
+    const char = apiKey.charAt(i);
+    const index = cipherKey.indexOf(char);
+    if (index !== -1) {
+      encodedKey += cipherKey.charAt((index + 10) % cipherKey.length); // Shifting by 10 characters
+    } else {
+      encodedKey += char; // Leave non-alphanumeric characters unchanged
+    }
   }
-  return encodedKey;
+  return `0=${encodedKey}`;
 }
 
 // Function to decode an API key after reading from file
-function decodeApiKeyWithCypher(encodedApiKey, cipherKey) {
+function decodeApiKeyWithCypher(encodedApiKey, cipherKey = cipher) {
   let decodedKey = '';
-  for (let i = 0; i < encodedApiKey.length; i++) {
+  if (encodedApiKey.startsWith("0=")) {
+    encodedApiKey = encodedApiKey.substring(2);
+    
+    for (let i = 0; i < encodedApiKey.length; i++) {
       const char = encodedApiKey.charAt(i);
       const index = cipherKey.indexOf(char);
       if (index !== -1) {
-          decodedKey += cipherKey.charAt((index - 10 + cipherKey.length) % cipherKey.length); // Shifting back by 10 characters
+        decodedKey += cipherKey.charAt((index - 10 + cipherKey.length) % cipherKey.length); // Shifting back by 10 characters
       } else {
-          decodedKey += char; // Leave non-alphanumeric characters unchanged
+        decodedKey += char; // Leave non-alphanumeric characters unchanged
       }
+    }
+  } else {
+    decodedKey = encodedApiKey;
   }
   return decodedKey;
 }

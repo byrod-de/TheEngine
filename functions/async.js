@@ -14,6 +14,7 @@ const memberCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
+const { off } = require('node:process');
 const hostname = os.hostname();
 
 const homeFaction = readConfig().apiConf.homeFaction;
@@ -422,7 +423,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                 }
 
-                let description = `**Starttime:** <t:${war.start}:f> (<t:${war.start}:R>)`;
+                let description = `**Start time:** <t:${war.start}:f> (<t:${war.start}:R>)`;
                 if (isActive && !hasEnded && lead > 0) {
                     let remainingTime = getRemainingTime(war.start, war.target, lead, timestamp);
                     description += `\n**Projected End:** <t:${remainingTime}:f> (<t:${remainingTime}:R>)`;
@@ -683,6 +684,24 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                             isEnlisted = true;
                             enlistedTimestamp = `<t:${news['timestamp']}:f>`;
                             description += `:ballot_box_with_check: Faction is enlisted since ${enlistedTimestamp}`;
+
+                            //
+                            const currentDate = new Date();
+                            const currentDay = currentDate.getUTCDay(); // 0 (Sunday) to 6 (Saturday)
+                            let daysUntilTuesday = 2 - (currentDay + 7) % 7;
+
+                            // Check if it's already Tuesday and past 12:00 PM
+                            if (currentDay === 2 && currentDate.getUTCHours() >= 12) {
+                                daysUntilTuesday += 7; // Move to next week
+                            }
+
+                            const nextTuesday = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate() + daysUntilTuesday));
+                            nextTuesday.setUTCHours(12, 0, 0, 0);
+
+                            let nextTuesdayTS = Math.floor(nextTuesday.getTime() / 1000);
+                            nextTuesdayTS = `<t:${nextTuesdayTS}:R>`;
+                            description += `\n:hourglass: Next matchmaking ${nextTuesdayTS}`;
+
                             break;
                         }
 
@@ -693,6 +712,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                         if (news['news'].includes('defeated') && news['news'].includes('in a ranked war')) {
                             break;
                         }
+
                     }
 
                     if (isEnlisted) {
@@ -731,6 +751,90 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
 
 
+async function getTravelInformation(warChannel, memberChannel, warUpdateInterval, factionId) {
+
+    if (warChannel) {
+
+        const responseMembers = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, 'rotate');
+
+        if (responseMembers[0]) {
+            const factionJson = responseMembers[2];
+            const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+            const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
+
+            const travelEmbed = new EmbedBuilder();
+            travelEmbed.setColor(0xdf691a)
+                .setTitle(`:airplane: Members traveling`)
+                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                .setDescription(`Members, which are traveling`)
+                .setTimestamp()
+                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+
+            let travelingMembers = '';
+            let travelingMemberCount = 0;
+            let abroadMemberCount = 0;
+            let memberLimitForEmbed = 10;
+
+            const membersList = factionJson.members;
+            const timestamp = factionJson.timestamp;
+            const memberCount = Object.keys(membersList).length;
+
+            let memberIndex = {}
+
+            for (var id in membersList) {
+                memberIndex[membersList[id].name] = id;
+            }
+
+            const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
+
+            for (var id in sortedMembers) {
+
+                let member = sortedMembers[id];
+                let memberStatusState = member.status.state;
+                let travelInfo = 'Torn';
+
+                //check Traveling status
+                if (memberStatusState == 'Abroad') {
+                    travelInfo = 'Abroad';
+                    abroadMemberCount++;
+                }
+
+                if (memberStatusState == 'Traveling') {
+
+                    travelingMemberCount++;
+
+                    if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
+                        const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                        travelingMembers += entry;
+                    }
+
+                    const cachedTravelInfo = memberCache.get(memberIndex[member.name]);
+
+                    if (cachedTravelInfo) {
+                        if (cachedTravelInfo.includes('Abroad') || cachedTravelInfo.includes('Torn')) {
+                            travelInfo = `${timestamp} - ${member.status.state}`;
+                        } else {
+                            travelInfo = cachedTravelInfo;
+                        }
+                        printLog(`Cached travel info: ${travelInfo}`);
+                    } else {
+                        travelInfo = 'initialise cache';
+                    }
+                }
+
+                memberCache.set(memberIndex[member.name], travelInfo, 120);
+            }
+
+            if (travelingMembers == '') travelingMembers = '*none*';
+
+            travelEmbed.addFields({ name: `${faction_name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+
+            console.log(`Traveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`);
+        }
+    }
+}
+
 /**
  * Asynchronously checks the members of a faction and updates their status and information in Discord embeds.
  *
@@ -753,7 +857,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             const ownFactionId = factionJson['ID'];
             const ownFactionIcon = `https://factiontags.torn.com/` + factionJson['tag_image'];
             const timestamp = factionJson['timestamp'];
-            const members = factionJson['members'];
+            const membersList = factionJson['members'];
 
             let hospitalMemberCount = 0;
             let okayMemberCount = 0;
@@ -762,13 +866,11 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             let jailMembersCount = 0;
             let federalMembersCount = 0;
             let jailMembers = '';
+            let offlineMembers = '';
 
             let membersOnline = 0;
             let membersOffline = 0;
             let membersIdle = 0;
-
-            const faction = response[2];
-            const membersList = faction.members;
 
             let memberIndex = {}
 
@@ -783,10 +885,16 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 let member = sortedMembers[id];
                 let memberStatusState = member.status.state;
                 let lastActionStatus = member.last_action.status;
+                let lastActionRelative = member.last_action.relative;
 
                 if (memberStatusState == 'Jail') {
                     const entry = `:oncoming_police_car: [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) out <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
+                }
+
+                if (lastActionRelative.includes('day') && memberStatusState != 'Fallen') {
+                    const entry = `:zzz: [${member.name}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) last seen <t:${member.last_action.timestamp}:R>\n`;
+                    offlineMembers += entry;
                 }
 
                 switch (memberStatusState) {
@@ -850,7 +958,9 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
 
             ownStatusEmbed.addFields({ name: `Member Status`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}`, inline: true });
             ownStatusEmbed.addFields({ name: `Online Status`, value: `:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
-
+            if (offlineMembers) {
+                ownStatusEmbed.addFields({ name: `Offline > 1 day`, value: offlineMembers, inline: false });
+            }
             await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed);
         }
     }
@@ -927,9 +1037,12 @@ async function getOCStats(selectedMonthValue) {
 
             if (crime.initiated === 1) {
 
-                var ts = new Date(crime.time_completed * 1000);
+                var firstDayDate = new Date(firstDayOfMonth * 1000);
+                var newFirstDayOfMonth = new Date(firstDayDate.getFullYear(), firstDayDate.getMonth() + 1, 1);
+                newFirstDayOfMonth = newFirstDayOfMonth.getTime() / 1000;
 
-                if (crime.time_completed >= firstDayOfMonth && crime.time_completed <= lastDayOfMonth) {
+
+                if (crime.time_completed >= newFirstDayOfMonth && crime.time_completed <= lastDayOfMonth) {
 
 
                     if (!crimeSummary[crime.crime_name]) {
@@ -994,7 +1107,7 @@ async function getReviveStatus(factionId, message) {
 
     await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
 
-    
+
     if (!response[0]) {
         await message.edit({ content: response[1] });
         return;
@@ -1017,6 +1130,7 @@ async function getReviveStatus(factionId, message) {
     const reviveEmbed = new EmbedBuilder()
         .setColor(0xdf691a)
         .setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+        .setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
         .setTimestamp()
         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -1040,12 +1154,15 @@ async function getReviveStatus(factionId, message) {
 
         if (message) {
             membersCount++;
-            if (membersCount % 5 === 0) {
-                const dots = ".".repeat((membersCount / 5).toFixed(0));
-                const content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait...${dots}`;
-                const updatedContent = `${content}\n${membersCount} of ${memberLength} members processed.`;
-                await message.edit({ content: updatedContent });
-                printLog(updatedContent);
+            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
+                let content = '';
+                if (membersCount != memberLength) {
+                    const dots = "..".repeat((membersCount / 5).toFixed(0));
+                    content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait...${dots}\n`;
+                }
+                content += `${membersCount} of ${memberLength} members processed.`;
+                await message.edit({ content: content });
+                printLog(content);
             }
         }
 
@@ -1075,7 +1192,7 @@ async function getReviveStatus(factionId, message) {
             const reviveJson = reviveResponse[2];
             printLog(`${member.name} checked, revive status = ${reviveJson.revivable}`);
             if (reviveJson.revivable == 1) {
-                //const entry = `:stethoscope: [${member.name}](https://www.torn.com/profiles.php?XID=${memberId})\n`;
+
                 let reviveIcon = '';
                 if (reviveJson.gender === 'Male') {
                     reviveIcon = ':man_health_worker:';
@@ -1085,7 +1202,7 @@ async function getReviveStatus(factionId, message) {
                     reviveIcon = ':health_worker:';
                 }
 
-                let statusIcon = ':green_circle:';
+                let statusIcon = ':black_small_square:';
 
                 switch (member.status.state) {
                     case 'Hospital': statusIcon = ':syringe:'; break;
@@ -1095,7 +1212,7 @@ async function getReviveStatus(factionId, message) {
                 }
 
                 const entry = `${reviveIcon} ${statusIcon} ${member.name}\n`;
-                
+
                 revivableMembers += entry;
                 reviveCount++;
             }
@@ -1109,7 +1226,7 @@ async function getReviveStatus(factionId, message) {
         //await message.delete();
     }
 
-    const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value
+    const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
 
     // Split revivableMembers into multiple chunks
     const chunks = [];
@@ -1137,4 +1254,4 @@ async function getReviveStatus(factionId, message) {
 }
 
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus };
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getTravelInformation };

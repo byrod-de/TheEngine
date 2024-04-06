@@ -480,7 +480,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                     .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
                     .setURL(`https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}#/war/rank`)
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
-                    .setDescription(description)
+                    .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`)
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -493,40 +493,40 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                     travelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
-                        .setDescription(`List of opponent members, which are traveling`)
+                        .setDescription(`List of opponent members, which are traveling\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     hospitalEmbed.setColor(0xdf691a)
                         .setTitle(`:hospital: Members in hospital`)
-                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital`)
+                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     statusEmbed.setColor(0xdf691a)
                         .setTitle(`:bar_chart: Member Overview`)
-                        .setDescription(`Some details about the member status of each faction`)
+                        .setDescription(`Some details about the member status of each faction\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
 
                     ownTravelEmbed.setColor(0xdf691a)
                         .setTitle(`:airplane: Members traveling`)
-                        .setDescription(`List of ${ownFactionName} members, which are traveling`)
+                        .setDescription(`List of ${ownFactionName} members, which are traveling\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     ownHospitalEmbed.setColor(0xdf691a)
                         .setTitle(`:hospital: Members in hospital`)
-                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital`)
+                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
                     ownStatusEmbed.setColor(0xdf691a)
                         .setTitle(`:bar_chart: Member Overview`)
-                        .setDescription(`Some details about the member status of ${ownFactionName}`)
+                        .setDescription(`Some details about the member status of ${ownFactionName}\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
@@ -565,10 +565,11 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                 let member = sortedMembers[id];
                                 let memberStatusState = member.status.state;
                                 let lastActionStatus = member.last_action.status;
+                                const flagIcon = getFlagIcon(memberStatusState, member.status.description);
 
 
                                 //check Traveling status
-                                if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad') {
+                                if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad' || member.status.description.includes('In a ')) {
 
                                     if (memberStatusState == 'Traveling') {
                                         travelingMemberCount++;
@@ -576,24 +577,25 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                         abroadMemberCount++;
                                     }
 
-                                    if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
-                                        const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
-                                        travelingMembers += entry;
+                                    if (travelingMemberCount + abroadMemberCount <= memberLimitForEmbed) {
+                                        let entry = `${flagIcon.direction} ${flagIcon.flag} [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
+                                        if (member.status.description.includes('In a ')) entry += ' :syringe:';
+                                        travelingMembers += entry + '\n';
                                     }
                                 }
 
                                 //check Hospital status
                                 if (memberStatusState == 'Hospital') {
-                                    let timeDifference = (member.status.until - timestamp) / 60;
+                                    hospitalMemberCount++;
 
-                                    if (timeDifference < 60) {
-                                        hospitalMemberCount++;
-                                        if (hospitalMemberCount < memberLimitForEmbed) {
-                                            const entry = `:syringe: [${cleanUpString(member.name)}](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) <t:${member.status.until}:R>\n`;
-                                            hospitalMembers += entry;
-                                        }
+                                    if (hospitalMemberCount < memberLimitForEmbed) {
+                                        let flag = flagIcon.flag;
+                                        if (flag == ':flag_black:') flag = '';
+
+                                        const entry = `:syringe: [##](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
+                                        if (hospitalMembers.length + entry.length < 1024) hospitalMembers += entry;
                                     }
+                                    
                                 }
 
                                 if (memberStatusState == 'Okay') {
@@ -622,15 +624,17 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                             statusEmbed.addFields({ name: `${faction.name}`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}\n\n:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
 
-                            if (factionID != ownFactionID) {
-                                travelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-                                hospitalEmbed.addFields({ name: `${faction.name}\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                            if (factionID == ownFactionID) {
+                                travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+                                //hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                                ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+                                ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                                ownStatusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
                             }
 
-                            if (factionID == ownFactionID) {
-                                ownTravelEmbed.addFields({ name: `${faction.name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-                                ownHospitalEmbed.addFields({ name: `${faction.name}\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
-                                ownStatusEmbed.addFields({ name: `${faction.name}`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
+                            if (factionID != ownFactionID) {
+                                travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
+                                hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
                             }
                         }
                     }
@@ -803,7 +807,7 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
 
                     if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
                         const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                        const entry = `${flagIcon.flag} ${flagIcon.direction} [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]})\n`;
+                        const entry = `${flagIcon.direction} ${flagIcon.flag} [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} \n`;
                         travelingMembers += entry;
                     }
 
@@ -886,12 +890,12 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 let lastActionRelative = member.last_action.relative;
 
                 if (memberStatusState == 'Jail') {
-                    const entry = `:oncoming_police_car: [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) out <t:${member.status.until}:R>\n`;
+                    const entry = `:oncoming_police_car: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}  out <t:${member.status.until}:R>\n`;
                     jailMembers += entry;
                 }
 
                 if (lastActionRelative.includes('day') && memberStatusState != 'Fallen') {
-                    const entry = `:zzz: [${cleanUpString(member.name)}](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) last seen <t:${member.last_action.timestamp}:R>\n`;
+                    const entry = `:zzz: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}  last seen <t:${member.last_action.timestamp}:R>\n`;
                     offlineMembers += entry;
                 }
 
@@ -917,6 +921,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 jailEmbed.setColor(0xdf691a)
                     .setTitle(':oncoming_police_car: Bust a fox!')
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
+                    .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -1209,7 +1214,7 @@ async function getReviveStatus(factionId, message) {
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${reviveIcon} ${statusIcon} ${cleanUpString(member.name)}\n`;
+                const entry = `${reviveIcon} ${statusIcon} [##](https://www.torn.com/profiles.php?XID=${memberId}) ${cleanUpString(member.name)} [${memberId}] \n`;
 
                 revivableMembers += entry;
                 reviveCount++;

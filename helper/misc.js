@@ -120,24 +120,24 @@ function writeNewMessageId(key, newMessageId) {
  */
 function getFlagIcon(travelStatus, destinationText = '') {
 
-    let direction = '` > `';
+    let direction = '`> `';
 
-    if (travelStatus == 'Abroad') direction = '` = `';
-    if (destinationText.includes('Returning')) direction = '` < `';
+    if (travelStatus == 'Abroad') direction = '`= `';
+    if (destinationText.includes('Returning')) direction = '`< `';
 
     let flag = `:flag_black:`;
 
-    if (destinationText.includes('Argentina')) flag = `:flag_ar:`;
-    if (destinationText.includes('Canada')) flag = `:flag_ca:`;
-    if (destinationText.includes('Cayman')) flag = `:flag_ky:`;
-    if (destinationText.includes('China')) flag = `:flag_cn:`;
-    if (destinationText.includes('Hawaii')) flag = `:flag_us:`;
-    if (destinationText.includes('Japan')) flag = `:flag_jp:`;
-    if (destinationText.includes('Mexico')) flag = `:flag_mx:`;
-    if (destinationText.includes('Africa')) flag = `:flag_za:`;
-    if (destinationText.includes('Switzerland')) flag = `:flag_ch:`;
-    if (destinationText.includes('UAE')) flag = `:flag_ae:`;
-    if (destinationText.includes('Kingdom')) flag = `:flag_gb:`;
+    if (destinationText.includes('Argentina') || destinationText.includes('Argentinian')) flag = `:flag_ar:`;
+    if (destinationText.includes('Canada') || destinationText.includes('Canadian')) flag = `:flag_ca:`;
+    if (destinationText.includes('Cayman') || destinationText.includes('Caymanian ')) flag = `:flag_ky:`;
+    if (destinationText.includes('China') || destinationText.includes('Chinese')) flag = `:flag_cn:`;
+    if (destinationText.includes('Hawaii') || destinationText.includes('Hawaiian')) flag = `:flag_us:`;
+    if (destinationText.includes('Japan') || destinationText.includes('Japanese')) flag = `:flag_jp:`;
+    if (destinationText.includes('Mexico') || destinationText.includes('Mexican')) flag = `:flag_mx:`;
+    if (destinationText.includes('Africa') || destinationText.includes('African')) flag = `:flag_za:`;
+    if (destinationText.includes('Switzerland') || destinationText.includes('Swiss')) flag = `:flag_ch:`;
+    if (destinationText.includes('UAE') || destinationText.includes('Emirati')) flag = `:flag_ae:`; 
+    if (destinationText.includes('Kingdom') || destinationText.includes('British')) flag = `:flag_gb:`;
 
     return { flag, direction };
 

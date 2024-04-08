@@ -160,7 +160,7 @@ async function verifyKeys(statusChannel, verificationInterval, manualMode = fals
     .setColor(0xdf691a)
     .setTitle('API Key Status')
     .setTimestamp()
-    .setDescription(`API Key veritifaction interval: every ${verificationInterval} hours.\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
+    .setDescription(`_Verification interval: every ${verificationInterval} hours._\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
     verifyEmbed.addFields({ name: 'Last check result', value: `\`${statusMessage}\``, inline: false });

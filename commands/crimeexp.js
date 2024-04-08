@@ -14,7 +14,7 @@ module.exports = {
         // Check if the user has access to the channel and category
         if (!await verifyChannelAccess(interaction, true, true)) return;
 
-        const response = await callTornApi('faction', 'basic,crimeexp,timestamp');
+        const response = await callTornApi('faction', 'basic,crimeexp,crimes,timestamp');
 
         if (!response[0]) {
             await interaction.reply({ content: response[1], ephemeral: true });
@@ -25,7 +25,23 @@ module.exports = {
 
         const members = factionJson?.members || [];
         const crimeexp = factionJson?.crimeexp || [];
+        const crimes = factionJson?.crimes || [];
 
+        const crimeParticipants = [];
+
+        let numberOfPAs = 0;	
+        for (const id in crimes) {
+            const crime = crimes[id];
+
+            if (crime.crime_id === 8) {
+                if (crime.initiated === 0) {
+                    crime.participants.forEach(participant => {
+                        crimeParticipants.push(Object.keys(participant)[0]);
+                    });
+                    numberOfPAs++;
+                }
+            }
+        }
 
         if (members.length === 0) {
             await interaction.reply({ content: 'No members found!', ephemeral: false });
@@ -41,22 +57,29 @@ module.exports = {
             .setColor(0xdf691a)
             .setTitle('Crime Experience')
             .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-            .setDescription('Faction members ordered by crime experience')
+            .setDescription('Faction members ordered by crime experience.\n*Members marked with an asterisk (\\*) are currently in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*')
             .setTimestamp()
             .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-        const rankSplit = 33;
+        let rankSplit = Math.floor(crimeexp.length / 4);
         let start = 1;
         let value = '';
+        let embedCount = 0;
 
         for (let i = 0; i < crimeexp.length; i++) {
             const rank = i + 1;
-            const entry = `\`${rank.toString().padStart(3)}.\` ${cleanUpString(members[crimeexp[i]].name)}\n`;
-            value += entry;
+            let entry = `\`${rank.toString().padStart(3)}.\` ${cleanUpString(members[crimeexp[i]].name)}`;
+            if (crimeParticipants.includes(crimeexp[i].toString())) {
+                entry += ' \*';
+            }
+
+            value += entry + '\n';
 
             if (rank % rankSplit === 0 || rank === crimeexp.length) {
+                embedCount++;
+
                 ceEmbed.addFields({ name: `${start} to ${rank}`, value, inline: true });
-                value = '';
+                if (embedCount % 2 === 0) ceEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false }); value = '';
                 start = rank;
             }
         }

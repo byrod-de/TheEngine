@@ -41,7 +41,7 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
         .setColor(0xdf691a)
         .setTitle('Bot Status')
         .setTimestamp()
-        .setDescription(`Status check interval: every ${statusUpdateInterval} minutes.\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
+        .setDescription(`_Check interval: every ${statusUpdateInterval} minutes._\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
     if (startUpTime === undefined) startUpTime = timestampCache.get('startUpTime');
@@ -92,7 +92,7 @@ async function checkTerritories(territoryChannel, territoryUpdateInterval) {
             let territoryEmbed = new EmbedBuilder()
                 .setColor(0xdf691a)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setDescription(`Update every ${territoryUpdateInterval} minutes.`)
+                .setDescription(`_Update interval: every ${territoryUpdateInterval} minutes._`)
                 .setTimestamp()
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -484,7 +484,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                rwEmbed.addFields({ name: `${faction1.name} [${faction1ID}]` , value: fieldFaction1, inline: true });
+                rwEmbed.addFields({ name: `${faction1.name} [${faction1ID}]`, value: fieldFaction1, inline: true });
                 rwEmbed.addFields({ name: `${faction2.name} [${faction2ID}]`, value: fieldFaction2, inline: true });
 
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
@@ -595,7 +595,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                         const entry = `:syringe: [##](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
                                         if (hospitalMembers.length + entry.length < 1024) hospitalMembers += entry;
                                     }
-                                    
+
                                 }
 
                                 if (memberStatusState == 'Okay') {
@@ -867,7 +867,6 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             let jailMembersCount = 0;
             let federalMembersCount = 0;
             let jailMembers = '';
-            let offlineMembers = '';
 
             let membersOnline = 0;
             let membersOffline = 0;
@@ -875,27 +874,31 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
 
             let memberIndex = {}
 
+            let jailMembersList = [];
+            let offlineMembersList = [];
+
+
             for (var id in membersList) {
-                memberIndex[membersList[id].name] = id;
-            }
-            const sortedMembers = Object.values(membersList).sort(sortByUntil);
 
-
-            for (var id in sortedMembers) {
-
-                let member = sortedMembers[id];
+                let member = membersList[id];
                 let memberStatusState = member.status.state;
                 let lastActionStatus = member.last_action.status;
                 let lastActionRelative = member.last_action.relative;
 
-                if (memberStatusState == 'Jail') {
-                    const entry = `:oncoming_police_car: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}  out <t:${member.status.until}:R>\n`;
-                    jailMembers += entry;
+                if (memberStatusState === 'Jail') {
+                    jailMembersList.push({
+                        name: member.name,
+                        id: id,
+                        statusUntil: member.status.until
+                    });
                 }
 
-                if (lastActionRelative.includes('day') && memberStatusState != 'Fallen') {
-                    const entry = `:zzz: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}  last seen <t:${member.last_action.timestamp}:R>\n`;
-                    offlineMembers += entry;
+                if (lastActionRelative.includes('day') && memberStatusState !== 'Fallen') {
+                    offlineMembersList.push({
+                        name: member.name,
+                        id: id,
+                        lastActionTimestamp: member.last_action.timestamp
+                    });
                 }
 
                 switch (memberStatusState) {
@@ -916,7 +919,12 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 }
 
             }
-            if (jailMembers) {
+
+            // Sort jailMembersList and offlineMembersList based on different timestamps
+            jailMembersList.sort((a, b) => a.statusUntil - b.statusUntil);
+            offlineMembersList.sort((a, b) => a.lastActionTimestamp - b.lastActionTimestamp);
+
+            if (jailMembersList.length > 0) {
                 jailEmbed.setColor(0xdf691a)
                     .setTitle(':oncoming_police_car: Bust a fox!')
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
@@ -927,24 +935,28 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value
 
                 // Split jailMembers into multiple chunks
-                const chunks = [];
-                let currentChunk = '';
-                const lines = jailMembers.split('\n');
-                for (const line of lines) {
-                    if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
-                        chunks.push(currentChunk);
-                        currentChunk = line + '\n';
-                    } else {
-                        currentChunk += line + '\n';
+                const jailChunks = [];
+                let currentChunk = [];
+                for (const member of jailMembersList) {
+                    const entry = `:oncoming_police_car: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} - out <t:${member.statusUntil}:R>\n`;
+
+                    if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
+                        if (currentChunk.length > 0) {
+                            jailChunks.push(currentChunk.join(''));
+                            currentChunk = [];
+                        }
                     }
+
+                    currentChunk.push(entry);
                 }
-                if (currentChunk !== '') {
-                    chunks.push(currentChunk);
+
+                if (currentChunk.length > 0) {
+                    jailChunks.push(currentChunk.join(''));
                 }
 
                 // Add each chunk as a separate field
-                chunks.forEach((chunk, index) => {
-                    jailEmbed.addFields({ name: `Members in jail (${index + 1}/${chunks.length})`, value: chunk, inline: true });
+                jailChunks.forEach((chunk, index) => {
+                    jailEmbed.addFields({ name: `Members in jail (${index + 1}/${jailChunks.length})`, value: chunk, inline: true });
                 });
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed);
             } else {
@@ -953,15 +965,20 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             const now = moment();
             ownStatusEmbed.setColor(0xdf691a)
                 .setTitle(`:bar_chart: Member Overview`)
-                .setDescription(`Update every ${memberUpdateInterval} minutes.`)
+                .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
                 .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
                 .setTimestamp(timestamp * 1000)
                 .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
             ownStatusEmbed.addFields({ name: `Member Status`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}`, inline: true });
             ownStatusEmbed.addFields({ name: `Online Status`, value: `:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
-            if (offlineMembers) {
-                ownStatusEmbed.addFields({ name: `Offline > 1 day`, value: offlineMembers, inline: false });
+            if (offlineMembersList.length > 0) {
+                let offlineMembersEntries = '';
+                for (const member of offlineMembersList) {
+                    const entry = `:zzz: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
+                    offlineMembersEntries += entry;
+                }
+                ownStatusEmbed.addFields({ name: 'Offline > 1 day', value: offlineMembersEntries, inline: false });
             }
             await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed);
         }
@@ -1090,7 +1107,7 @@ async function checkOCs(memberChannel, memberUpdateInterval) {
     const now = moment();
 
     const ownStatusEmbed = await getOCStats();
-    ownStatusEmbed.setDescription(`Update every ${(memberUpdateInterval * 60).toFixed(0)} minutes.`)
+    ownStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)
 
     await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
 }

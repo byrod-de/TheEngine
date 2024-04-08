@@ -4,7 +4,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { printLog, readConfig } = require('../helper/misc');
 
-const verifieRoleId = readConfig().discordConf.verifieRoleId;
+const { verifieRoleId } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()

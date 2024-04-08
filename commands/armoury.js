@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyChannelAccess } = require('../helper/misc');
+const { verifyChannelAccess, readConfig } = require('../helper/misc');
+const { embedColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,7 +42,7 @@ module.exports = {
             const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
             const armouryEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
+                .setColor(embedColor)
                 .setTitle('Armoury Overview - ' + capitalizedType)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setDescription('Overview of armoury stock')

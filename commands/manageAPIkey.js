@@ -6,9 +6,8 @@ const { printLog, checkAPIKey, readConfig, verifyChannelAccess } = require('../h
 
 const apiConfigPath = './conf/apiConfig.json';
 
-const comment = readConfig().apiConf.comment;
-
-
+const { comment } = readConfig().apiConf;
+const { errorColor, successColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -45,7 +44,7 @@ module.exports = {
         let checkedAPIKey = checkAPIKey(keyToManage);
 
         if (checkedAPIKey.includes('Error')) {
-            embed.setColor(0xd9534f)
+            embed.setColor(errorColor)
                 .setDescription('API Key not valid or inactive!');
 
             embed.addFields(
@@ -65,7 +64,7 @@ module.exports = {
                 printLog(`Verified API Key: ${newKey.key}`, newKey.active);
 
                 if (!newKey.active) {
-                    embed.setColor(0xd9534f)
+                    embed.setColor(errorColor)
                         .setDescription(newKey.errorReason);
 
                     embed.addFields(
@@ -80,7 +79,7 @@ module.exports = {
 
                     fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 4));
 
-                    embed.setColor(0x5cb85c)
+                    embed.setColor(successColor)
                         .setTitle(`${newKey.name} [${newKey.id.toString()}]`)
                         .setURL(`https://www.torn.com/profiles.php?XID=${newKey.id}`)
                         .setDescription(`API Key Stored`);
@@ -104,11 +103,11 @@ module.exports = {
                 if (indexToRemove !== -1) {
                     apiConfig.apiKeys.splice(indexToRemove, 1);
                     const message = printLog(`Key with key '${keyToManage}' or removed successfully.`);
-                    embed.setColor(0x5cb85c)
+                    embed.setColor(successColor)
                         .setDescription(message);
                 } else {
                     const message = printLog(`Key with key '${keyToManage}' not found.`);
-                    embed.setColor(0xd9534f)
+                    embed.setColor(errorColor)
                         .setDescription(message);
                 }
             

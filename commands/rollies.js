@@ -1,4 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { readConfig } = require('../helper/misc');
+
+const { embedColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -54,7 +57,7 @@ module.exports = {
         }
 
         const rolliesEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
+        .setColor(embedColor)
         .setTitle(`Rollies!`)
         .setDescription(`${value} - **${result}**`)
         .setTimestamp()

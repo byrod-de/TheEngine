@@ -1,7 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { timestampCache } = require('../functions/async');
+const { readConfig } = require('../helper/misc');
 const moment = require('moment');
+
+const { embedColor } = readConfig().discordConf;
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -17,7 +20,7 @@ module.exports = {
 		console.log(startUpTime);
 
 		const botStatusEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
+        .setColor(embedColor)
         .setTitle('Bot Status')
         .setTimestamp()
         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });

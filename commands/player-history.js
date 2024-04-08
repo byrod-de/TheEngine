@@ -1,9 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { abbreviateNumber, cleanUpString } = require('../helper/formattings');
-const { printLog } = require('../helper/misc');
+const { printLog, readConfig } = require('../helper/misc');
 const { verifyChannelAccess } = require('../helper/misc');
 
+const { embedColor } = readConfig().discordConf;
 
 const he = require('he');
 const moment = require('moment');
@@ -92,7 +93,7 @@ module.exports = {
             }
 
             const statsEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
+                .setColor(embedColor)
                 .setTitle(`${cleanUpString(tornUser)} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
                 .setTimestamp()

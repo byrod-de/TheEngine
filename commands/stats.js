@@ -1,7 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { numberWithCommas, addSign } = require('../helper/formattings');
+const { readConfig } = require('../helper/misc');
 const he = require('he');
+
+const { embedColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -38,7 +41,7 @@ module.exports = {
             let ts = new Date(apiTime * 1000);
 
             let statsEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
+                .setColor(embedColor)
                 .setTitle(`${tornUser} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
                 .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })

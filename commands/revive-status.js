@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { getReviveStatus } = require('../functions/async');
 const { verifyChannelAccess, readConfig } = require('../helper/misc');
 
-const homeFaction = readConfig().apiConf.homeFaction;
+const { homeFaction } = readConfig().apiConf;
 
 module.exports = {
     data: new SlashCommandBuilder()

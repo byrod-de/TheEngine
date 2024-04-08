@@ -1,5 +1,5 @@
 const { readConfig } = require('../helper/misc');
-const cipher = readConfig().secureConf.cipher;
+const { cipher } = readConfig().secureConf;
 
 /**
  * Abbreviates a large number and adds a suffix (k, m, b, t, wtf).

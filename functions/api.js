@@ -9,6 +9,7 @@ const { decodeApiKeyWithCypher } = require('../helper/formattings');
 const apiConfigPath = './conf/apiConfig.json';
 
 const { apiKey, comment } = readConfig().apiConf;
+const { embedColor } = readConfig().discordConf;
 
 /**
  * An asynchronous function to call the Torn API with specified parameters and key usage.
@@ -157,7 +158,7 @@ async function verifyKeys(statusChannel, verificationInterval, manualMode = fals
     }
 
     const verifyEmbed = new EmbedBuilder()
-    .setColor(0xdf691a)
+    .setColor(embedColor)
     .setTitle('API Key Status')
     .setTimestamp()
     .setDescription(`_Verification interval: every ${verificationInterval} hours._\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)

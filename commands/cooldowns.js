@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { formatDiscordTimeWithOffset } = require('../helper/formattings');
+const { readConfig } = require('../helper/misc');
+const { embedColor } = readConfig().discordConf;
 
 const he = require('he');
 
@@ -49,7 +51,7 @@ module.exports = {
             }
 
             const cooldownEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
+                .setColor(embedColor)
                 .setTitle(`${tornUser} [${tornId}]`)
                 .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
                 .setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })

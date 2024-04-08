@@ -1,7 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { printLog } = require('../helper/misc');
+const { printLog, readConfig } = require('../helper/misc');
 const he = require('he');
+
+const { embedColor } = readConfig().discordConf;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,7 +27,7 @@ module.exports = {
       let rankedWars = jsonRwResponse['rankedwars'];
 
       let rwEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
+        .setColor(embedColor)
         .setTitle('Ranked Wars')
         .setDescription(`Ranked Wars which ended within the last ${lasthours} hours`)
         .setTimestamp()

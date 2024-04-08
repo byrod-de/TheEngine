@@ -3,6 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { readConfig } = require('../helper/misc');
 
 const config = readConfig();
+const { embedColor } = config.discordConf;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,7 +13,7 @@ module.exports = {
   async execute(interaction) {
 
     let helpEmbed = new EmbedBuilder()
-      .setColor(0xdf691a)
+      .setColor(embedColor)
       .setTitle(`TornEngine`)
       .setURL(`https://tornengine.netlify.app/`)
       .setDescription('Slash Commands Overview')

@@ -241,12 +241,12 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     let accessGranted = false;
     let accessList = '';
 
-    const limitedAccessConf = readConfig().limitedAccessConf;
+    const { categories, channelIds, adminChannelId } = readConfig().limitedAccessConf;
 
     if (limitChannel) {
-        if (!limitedAccessConf.channelIds.includes(interaction.channelId)) {
-            if (limitedAccessConf.channelIds.length > 0) {
-                accessList = limitedAccessConf.channelIds.map(id => `<#${id}>`).join(' or ');
+        if (!channelIds.includes(interaction.channelId)) {
+            if (channelIds.length > 0) {
+                accessList = channelIds.map(id => `<#${id}>`).join(' or ');
             }
         } else {
             accessGranted = true;
@@ -254,12 +254,12 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     }
 
     if (limitCategory) {
-        if (!limitedAccessConf.categories.includes(interaction.channel.parentId)) {
-            if (limitedAccessConf.categories.length > 0) {
+        if (!categories.includes(interaction.channel.parentId)) {
+            if (categories.length > 0) {
                 if (accessList) {
                     accessList += ' or the ';
                 }
-                accessList += limitedAccessConf.categories.map(id => `**<#${id}>**`).join(' or ') + ' category';
+                accessList += categories.map(id => `**<#${id}>**`).join(' or ') + ' category';
             }
         } else {
             accessGranted = true;
@@ -270,7 +270,7 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
         accessList = 'the **admin channel**';
     }
 
-    if (limitedAccessConf.adminChannelId.includes(interaction.channelId)) {
+    if (adminChannelId.includes(interaction.channelId)) {
         accessGranted = true;
     }
 

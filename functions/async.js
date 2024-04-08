@@ -15,8 +15,9 @@ const moment = require('moment');
 const os = require('os');
 const hostname = os.hostname();
 
-const homeFaction = readConfig().apiConf.homeFaction;
-const minDelay = readConfig().apiConf.minDelay;
+const { homeFaction, minDelay } = readConfig().apiConf;
+const { embedColor } = readConfig().discordConf;
+
 const apiConfigPath = './conf/apiConfig.json';
 
 /**
@@ -38,7 +39,7 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
     let result = await callTornApi('torn', 'timestamp');
 
     const botStatusEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
+        .setColor(embedColor)
         .setTitle('Bot Status')
         .setTimestamp()
         .setDescription(`_Check interval: every ${statusUpdateInterval} minutes._\nNext status check: <t:${now.unix() + (statusUpdateInterval * 60)}:R>`)
@@ -90,7 +91,7 @@ async function checkTerritories(territoryChannel, territoryUpdateInterval) {
 
 
             let territoryEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
+                .setColor(embedColor)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setDescription(`_Update interval: every ${territoryUpdateInterval} minutes._`)
                 .setTimestamp()
@@ -197,7 +198,7 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
 
                 if (tornParams.armouryFilter.some(i => item.includes(i))) {
                     let armouryEmbed = new EmbedBuilder()
-                        .setColor(0xdf691a)
+                        .setColor(embedColor)
                         .setAuthor({ name: `${cleanUpString(tornUser)} [${tornId}]`, iconURL: faction_icon, url: `https://www.torn.com/profiles.php?XID=${tornId}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
@@ -269,7 +270,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
             if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
 
                 let attackEmbed = new EmbedBuilder()
-                    .setColor(0xdf691a)
+                    .setColor(embedColor)
                     .setTitle(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`)
                     .setURL(`https://www.torn.com/loader.php?sid=attack&user2ID=${attacker_id}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
@@ -476,7 +477,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                     fieldFaction2 += `\n**Chain:**  ${faction2.chain}`;
                 }
 
-                rwEmbed.setColor(0xdf691a)
+                rwEmbed.setColor(embedColor)
                     .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
                     .setURL(`https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}#/war/rank`)
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
@@ -491,40 +492,40 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                 if (isActive && !hasEnded) {
 
-                    travelEmbed.setColor(0xdf691a)
+                    travelEmbed.setColor(embedColor)
                         .setTitle(`:airplane: Members traveling`)
                         .setDescription(`List of opponent members, which are traveling\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                    hospitalEmbed.setColor(0xdf691a)
+                    hospitalEmbed.setColor(embedColor)
                         .setTitle(`:hospital: Members in hospital`)
                         .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                    statusEmbed.setColor(0xdf691a)
+                    statusEmbed.setColor(embedColor)
                         .setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of each faction\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
 
-                    ownTravelEmbed.setColor(0xdf691a)
+                    ownTravelEmbed.setColor(embedColor)
                         .setTitle(`:airplane: Members traveling`)
                         .setDescription(`List of ${ownFactionName} members, which are traveling\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                    ownHospitalEmbed.setColor(0xdf691a)
+                    ownHospitalEmbed.setColor(embedColor)
                         .setTitle(`:hospital: Members in hospital`)
                         .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                         .setTimestamp(timestamp * 1000)
                         .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                    ownStatusEmbed.setColor(0xdf691a)
+                    ownStatusEmbed.setColor(embedColor)
                         .setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of ${ownFactionName}\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
@@ -720,7 +721,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                         printLog('Faction is enlisted!');
 
-                        rwEmbed.setColor(0xdf691a)
+                        rwEmbed.setColor(embedColor)
                             .setTitle(`Faction is currently enlisted!`)
                             .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                             .setDescription(description)
@@ -764,7 +765,7 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
             const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
             const travelEmbed = new EmbedBuilder();
-            travelEmbed.setColor(0xdf691a)
+            travelEmbed.setColor(embedColor)
                 .setTitle(`:airplane: Members traveling`)
                 .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                 .setDescription(`Members, which are traveling`)
@@ -925,7 +926,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             offlineMembersList.sort((a, b) => a.lastActionTimestamp - b.lastActionTimestamp);
 
             if (jailMembersList.length > 0) {
-                jailEmbed.setColor(0xdf691a)
+                jailEmbed.setColor(embedColor)
                     .setTitle(':oncoming_police_car: Bust a fox!')
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
                     .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
@@ -938,7 +939,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 const jailChunks = [];
                 let currentChunk = [];
                 for (const member of jailMembersList) {
-                    const entry = `:oncoming_police_car: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} - out <t:${member.statusUntil}:R>\n`;
+                    const entry = `:oncoming_police_car: [##](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} - out <t:${member.statusUntil}:R>\n`;
 
                     if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
                         if (currentChunk.length > 0) {
@@ -963,7 +964,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');
             }
             const now = moment();
-            ownStatusEmbed.setColor(0xdf691a)
+            ownStatusEmbed.setColor(embedColor)
                 .setTitle(`:bar_chart: Member Overview`)
                 .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
                 .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
@@ -975,7 +976,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             if (offlineMembersList.length > 0) {
                 let offlineMembersEntries = '';
                 for (const member of offlineMembersList) {
-                    const entry = `:zzz: [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
+                    const entry = `:zzz: [##](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
                     offlineMembersEntries += entry;
                 }
                 ownStatusEmbed.addFields({ name: 'Offline > 1 day', value: offlineMembersEntries, inline: false });
@@ -1040,7 +1041,7 @@ async function getOCStats(selectedMonthValue) {
     }
 
     const ocEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
+        .setColor(embedColor)
         .setTitle(`OC Overview for ${title}`)
         .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
         .setTimestamp()
@@ -1147,7 +1148,7 @@ async function getReviveStatus(factionId, message) {
     const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
     const reviveEmbed = new EmbedBuilder()
-        .setColor(0xdf691a)
+        .setColor(embedColor)
         .setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
         .setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
         .setTimestamp()

@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 
-const { printLog } = require('../helper/misc');
+const { printLog, readConfig } = require('../helper/misc');
+const { embedColor } = readConfig().discordConf;
 
 
 module.exports = {
@@ -59,7 +60,7 @@ module.exports = {
             }
 
             let paramsEmbed = new EmbedBuilder()
-                .setColor(0xdf691a)
+                .setColor(embedColor)
                 .setTitle(`Item Filter`)
                 .setDescription(`List of items displayed by the armoury logger`)
                 .setTimestamp()

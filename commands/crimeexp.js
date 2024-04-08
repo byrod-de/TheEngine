@@ -1,8 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyChannelAccess } = require('../helper/misc');
+const { verifyChannelAccess, readConfig } = require('../helper/misc');
 const { cleanUpString } = require('../helper/formattings');
 
+const { embedColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -54,7 +55,7 @@ module.exports = {
 
 
         const ceEmbed = new EmbedBuilder()
-            .setColor(0xdf691a)
+            .setColor(embedColor)
             .setTitle('Crime Experience')
             .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
             .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*')

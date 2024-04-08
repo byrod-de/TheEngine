@@ -57,7 +57,7 @@ module.exports = {
             .setColor(0xdf691a)
             .setTitle('Crime Experience')
             .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-            .setDescription('Faction members ordered by crime experience.\n*Members marked with an asterisk (\\*) are currently in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*')
+            .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*')
             .setTimestamp()
             .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
@@ -69,8 +69,8 @@ module.exports = {
         for (let i = 0; i < crimeexp.length; i++) {
             const rank = i + 1;
             let entry = `\`${rank.toString().padStart(3)}.\` ${cleanUpString(members[crimeexp[i]].name)}`;
-            if (crimeParticipants.includes(crimeexp[i].toString())) {
-                entry += ' \*';
+            if (!crimeParticipants.includes(crimeexp[i].toString())) {
+                entry = `*${entry}*`;
             }
 
             value += entry + '\n';

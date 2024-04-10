@@ -1249,7 +1249,7 @@ async function getReviveStatus(factionId, message) {
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${reviveIcon} ${statusIcon} [»»](https://www.torn.com/profiles.php?XID=${memberId}) ${cleanUpString(member.name)} [${memberId}] \n`;
+                const entry = `${statusIcon} [»»](https://www.torn.com/profiles.php?XID=${memberId}) ${cleanUpString(member.name)}\n`;
 
                 revivableMembers += entry;
                 reviveCount++;

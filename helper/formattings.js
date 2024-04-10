@@ -164,17 +164,75 @@ function cleanUpString(inputString) {
   const specialCharacters = ['\\', '*', '_', '~', '`'];
 
   for (const char of specialCharacters) {
-      if (inputString.startsWith(char) && inputString.endsWith(char)) {
-          const escapedChar = `\\${char}`;
-          const regex = new RegExp(`(^${char}|${char}$)`, 'g');
-          inputString = inputString.replace(regex, escapedChar);
-     }
+    if (inputString.startsWith(char) && inputString.endsWith(char)) {
+      const escapedChar = `\\${char}`;
+      const regex = new RegExp(`(^${char}|${char}$)`, 'g');
+      inputString = inputString.replace(regex, escapedChar);
+    }
   }
 
   return inputString;
 }
 
-module.exports = { cleanUpString };
+/**
+ * Creates a progress bar based on the current and maximum values, with optional formatting and bar length.
+ *
+ * @param {number} current - The current value for the progress bar.
+ * @param {number} max - The maximum value for the progress bar.
+ * @param {string} format - The format of the progress bar ('default', 'circle', 'scale').
+ * @param {number} barLength - The length of the progress bar.
+ * @return {string} The generated progress bar.
+ */
+function createProgressBar(current, max, format = 'default', barLength = 18) {
+  const centerChar = '|';
+  const circleChar = ':beginner:';
+  const scaleSymbolPos = ':large_orange_diamond:';
+  const scaleSymbolNeg = ':large_blue_diamond:';
+
+  if (format === 'circle') {
+    const progress = (current / max) * barLength;
+    const filledCount = Math.min(barLength, Math.max(0, Math.floor(progress)));
+    return '▬'.repeat(filledCount) + circleChar + '▬'.repeat(Math.max(0, barLength - filledCount - 1));
+  } else if (format === 'scale') {
+
+    let progressBar = '';
+
+    let centerIndex = Math.floor(barLength / 2);
+
+    if (current === 0) {
+      progressBar = '▬'.repeat(centerIndex) + scaleSymbolPos + '▬'.repeat(centerIndex);
+
+    } else if (current > 0) {
+      const progress = ((current / max) * centerIndex) -1;
+      const filledCount = Math.min(centerIndex, Math.max(0, Math.floor(progress)));
+      const positiveHalf = '▬'.repeat(filledCount) + 'X' + '▬'.repeat(Math.max(0, centerIndex - filledCount - 1));
+      progressBar = '▬'.repeat(centerIndex) + centerChar + positiveHalf;
+      progressBar = progressBar.replace('X', scaleSymbolPos);
+    } else {
+      const progress = (current * -1 / max) * centerIndex  -1;
+      const filledCount = Math.min(centerIndex, Math.max(0, Math.floor(progress)));
+      const negativeHalf = '▬'.repeat(filledCount) + 'X' + '▬'.repeat(Math.max(0, centerIndex - filledCount - 1));
+      progressBar = reverseString(negativeHalf) + centerChar + '▬'.repeat(centerIndex);
+      progressBar = progressBar.replace('X', scaleSymbolNeg);
+    }
+    return progressBar;
+  } else {
+    const filledLength = Math.floor((current / max) * barLength);
+    const emptyLength = barLength - filledLength;
+    return '▰'.repeat(filledLength) + '▱'.repeat(emptyLength);
+  }
+}
 
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString };
+/**
+ * Reverses a string.
+ *
+ * @param {string} str - The input string to be reversed.
+ * @return {string} The reversed string.
+ */
+function reverseString(str) {
+  return [...str].reverse().join('');
+}
+
+
+module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar };

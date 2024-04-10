@@ -2,7 +2,7 @@ const fs = require('node:fs');
 
 const { EmbedBuilder } = require('discord.js');
 const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps } = require('../helper/misc');
-const { getRemainingTime, cleanUpString } = require('../helper/formattings');
+const { getRemainingTime, cleanUpString, createProgressBar } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 
@@ -13,6 +13,7 @@ const memberCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
+const { compileFunction } = require('node:vm');
 const hostname = os.hostname();
 
 const { homeFaction, minDelay } = readConfig().apiConf;
@@ -423,18 +424,23 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                 }
 
                 let description = `**Start time:** <t:${war.start}:f> (<t:${war.start}:R>)`;
-                if (isActive && !hasEnded && lead > 0) {
-                    let remainingTime = getRemainingTime(war.start, war.target, lead, timestamp);
-                    description += `\n**Projected End:** <t:${remainingTime}:f> (<t:${remainingTime}:R>)`;
-                }
-                description += `\n**Target:** ${war.target}`;
+
+                description += `\n**Target:** \`${war.target.toString().padStart(6, ' ')}\` `;
 
                 if ((isActive || hasEnded) && lead > 0) {
-                    description += `\n**Lead:** ${lead}`;
+                    description += `**Lead:** \`${lead.toString().padStart(6, ' ')}\``;
+                    let currentLead = lead;
+                    if (faction1StatusText.toLocaleLowerCase().includes('win')) {
+                        currentLead = -1 * currentLead;
+                    }
+                    description += `\n${createProgressBar(currentLead, war.target, 'scale', 18)}`;
+
+                    const remainingTime = getRemainingTime(war.start, war.target, lead, timestamp);
+                    description += `\n**Projected End:** <t:${remainingTime}:f> (<t:${remainingTime}:R>)`;
                 }
 
-                fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n**Score:** ${faction1.score}`;
-                fieldFaction2 = `${faction2StatusIcon} ${faction2StatusText}\n**Score:** ${faction2.score}`;
+                fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n:game_die: **Score:** ${faction1.score}`;
+                fieldFaction2 = `${faction2StatusIcon} ${faction2StatusText}\n:game_die: **Score:** ${faction2.score}`;
 
                 if (hasEnded) {
                     let rwId = Object.keys(rankedWars)[0];
@@ -468,27 +474,26 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 
                         description += `\n**Ended:** <t:${war.end}:f> (<t:${war.end}:R>)`;
 
-                        fieldFaction1 += `\n**Rewards:**\n${faction1Items}`;
-                        fieldFaction2 += `\n**Rewards:**\n${faction2Items}`;
+                        fieldFaction1 += `\n:gift: **Rewards:**\n${faction1Items}`;
+                        fieldFaction2 += `\n:gift: **Rewards:**\n${faction2Items}`;
                     }
 
                 } else {
-                    fieldFaction1 += `\n**Chain:**  ${faction1.chain}`;
-                    fieldFaction2 += `\n**Chain:**  ${faction2.chain}`;
+                    fieldFaction1 += `\n:link: **Chain:**  ${faction1.chain}`;
+                    fieldFaction2 += `\n:link: **Chain:**  ${faction2.chain}`;
                 }
 
                 rwEmbed.setColor(embedColor)
-                    .setTitle(`Ranked war between ${faction1.name} and ${faction2.name}`)
+                    .setTitle(`Ranked war between _${faction1.name}_ and _${faction2.name}_`)
                     .setURL(`https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}#/war/rank`)
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
                     .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`)
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                rwEmbed.addFields({ name: `${faction1.name} [${faction1ID}]`, value: fieldFaction1, inline: true });
-                rwEmbed.addFields({ name: `${faction2.name} [${faction2ID}]`, value: fieldFaction2, inline: true });
 
-                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+
+                //await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
 
                 if (isActive && !hasEnded) {
 
@@ -579,7 +584,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                     }
 
                                     if (travelingMemberCount + abroadMemberCount <= memberLimitForEmbed) {
-                                        let entry = `${flagIcon.direction} ${flagIcon.flag} [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
+                                        let entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
                                         if (member.status.description.includes('In a ')) entry += ' :syringe:';
                                         travelingMembers += entry + '\n';
                                     }
@@ -593,7 +598,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                         let flag = flagIcon.flag;
                                         if (flag == ':flag_black:') flag = '';
 
-                                        const entry = `:syringe: [##](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
+                                        const entry = `:syringe: [»»](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
                                         if (hospitalMembers.length + entry.length < 1024) hospitalMembers += entry;
                                     }
 
@@ -630,11 +635,13 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                 ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
                                 ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
                                 ownStatusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
+                                fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
                             }
 
                             if (factionID != ownFactionID) {
                                 travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
                                 hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                                fieldFaction2 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
                             }
                         }
                     }
@@ -664,6 +671,10 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                         await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed, 'delete');
                     }
                 }
+
+                rwEmbed.addFields({ name: `${faction1.name} [${faction1ID}]`, value: fieldFaction1, inline: true });
+                rwEmbed.addFields({ name: `${faction2.name} [${faction2ID}]`, value: fieldFaction2, inline: true });
+                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
             } else {
 
                 const responseMainNews = await callTornApi('faction', 'mainnews,timestamp', undefined, undefined, undefined, undefined, undefined, 'default');
@@ -690,12 +701,15 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                             //
                             const currentDate = new Date();
                             const currentDay = currentDate.getUTCDay(); // 0 (Sunday) to 6 (Saturday)
-                            let daysUntilTuesday = 2 - (currentDay + 7) % 7;
+                            const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+                            let daysUntilTuesday = (2 + 7 - currentDay) % 7;
 
                             // Check if it's already Tuesday and past 12:00 PM
                             if (currentDay === 2 && currentDate.getUTCHours() >= 12) {
                                 daysUntilTuesday += 7; // Move to next week
                             }
+
+                            printLog(`Current day: ${dayName}, Days until Tuesday: ${daysUntilTuesday}`);
 
                             const nextTuesday = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate() + daysUntilTuesday));
                             nextTuesday.setUTCHours(12, 0, 0, 0);
@@ -807,7 +821,7 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
 
                     if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
                         const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                        const entry = `${flagIcon.direction} ${flagIcon.flag} [##](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} \n`;
+                        const entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} \n`;
                         travelingMembers += entry;
                     }
 
@@ -939,7 +953,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 const jailChunks = [];
                 let currentChunk = [];
                 for (const member of jailMembersList) {
-                    const entry = `:oncoming_police_car: [##](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} - out <t:${member.statusUntil}:R>\n`;
+                    const entry = `:oncoming_police_car: [»»](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} - out <t:${member.statusUntil}:R>\n`;
 
                     if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
                         if (currentChunk.length > 0) {
@@ -976,7 +990,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             if (offlineMembersList.length > 0) {
                 let offlineMembersEntries = '';
                 for (const member of offlineMembersList) {
-                    const entry = `:zzz: [##](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
+                    const entry = `:zzz: [»»](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
                     offlineMembersEntries += entry;
                 }
                 ownStatusEmbed.addFields({ name: 'Offline > 1 day', value: offlineMembersEntries, inline: false });
@@ -1176,10 +1190,14 @@ async function getReviveStatus(factionId, message) {
             membersCount++;
             if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
                 let content = '';
+
+                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
+                content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait.\n`;
+
                 if (membersCount != memberLength) {
-                    const dots = "..".repeat((membersCount / 5).toFixed(0));
-                    content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait...${dots}\n`;
+                    content += `${progressBar}\n`;
                 }
+
                 content += `${membersCount} of ${memberLength} members processed.`;
                 await message.edit({ content: content });
                 printLog(content);
@@ -1231,7 +1249,7 @@ async function getReviveStatus(factionId, message) {
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${reviveIcon} ${statusIcon} [##](https://www.torn.com/profiles.php?XID=${memberId}) ${cleanUpString(member.name)} [${memberId}] \n`;
+                const entry = `${reviveIcon} ${statusIcon} [»»](https://www.torn.com/profiles.php?XID=${memberId}) ${cleanUpString(member.name)} [${memberId}] \n`;
 
                 revivableMembers += entry;
                 reviveCount++;

@@ -635,13 +635,23 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                 ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
                                 ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
                                 ownStatusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
-                                fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
+                            
+                                if (faction1ID == ownFactionID) {
+                                    fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
+                                } else {
+                                    fieldFaction2 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
+                                }
                             }
 
                             if (factionID != ownFactionID) {
                                 travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
                                 hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
-                                fieldFaction2 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
+                            
+                                if (faction1ID != ownFactionID) {
+                                    fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
+                                } else {
+                                    fieldFaction2 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
+                                }
                             }
                         }
                     }

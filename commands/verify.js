@@ -28,17 +28,20 @@ module.exports = {
             let discordID = memberJson['discord']['discordID'];
 
             if (discordID.length > 10) {
-                let member = await interaction.guild.members.fetch(discordID);
 
                 try {
+                    let member = await interaction.guild.members.fetch(discordID);
                     member.setNickname(`${tornUser} [${tornId}]`);
+                    member.roles.add(verifieRoleId);
+                    printLog(`${tornUser} [${tornId}] verified on Torn.`);
+                    await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);
+
                 } catch (e) {
-                    printLog('Set Nickname failed: ' & e);
+                    printLog(`Some error occured: ${e}`);
+                    await interaction.reply(`\`\`\`Some error occured: ${e}\`\`\``);
+
                 }
-                member.roles.add(verifieRoleId);
             }
-            printLog(`${tornUser} [${tornId}] verified on Torn.`);
-            await interaction.reply(`\`\`\`This command was run by ${interaction.user.username}, member was verified as ${tornUser} [${tornId}] on Torn.\`\`\``);
         } else {
             await interaction.reply({ content: response[1], ephemeral: true });
         }

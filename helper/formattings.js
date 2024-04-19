@@ -234,5 +234,40 @@ function reverseString(str) {
   return [...str].reverse().join('');
 }
 
+/**
+ * Splits a list of members into multiple chunks based on the specified entry format.
+ *
+ * @param {Array} membersList - The list of members to be split into chunks.
+ * @param {string} entryFormat - The format for each entry containing placeholders to be replaced.
+ * @return {Array} An array of strings representing the split chunks.
+ */
+function splitIntoChunks(membersList, entryFormat) {
+  const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar };
+  // Split jailMembers into multiple chunks
+  const memberChunks = [];
+  let currentChunk = [];
+  for (const member of membersList) {
+      const entry = entryFormat
+          .replace('{{id}}', member.id)
+          .replace('{{name}}', cleanUpString(member.name))
+          .replace('{{statusUntil}}', member.statusUntil);
+
+      if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
+          if (currentChunk.length > 0) {
+              memberChunks.push(currentChunk.join(''));
+              currentChunk = [];
+          }
+      }
+
+      currentChunk.push(entry);
+  }
+
+  if (currentChunk.length > 0) {
+      memberChunks.push(currentChunk.join(''));
+  }
+
+  return memberChunks;
+}
+
+module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };

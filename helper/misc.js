@@ -217,14 +217,31 @@ function calculateMonthTimestamps(selectedMonth, offsetInHours = 0) {
     }
 
     var firstDayOfMonth = new Date(currentYear, selectedMonth, 1).getTime() / 1000;
-    let dummy = new Date(currentYear, selectedMonth, 1);
     var lastDayOfMonth = new Date(currentYear, selectedMonth + 1, 0, 23, 59, 59).getTime() / 1000;
-    let dummy2 = new Date(currentYear, selectedMonth + 1, 0, 23, 59, 59);
     if (offsetInHours > 0) {
         firstDayOfMonth -= (offsetInHours + 36) * 60 * 60;
         //  lastDayOfMonth -= offsetInHours * 60 * 60;
     }
     return { firstDay: firstDayOfMonth, lastDay: lastDayOfMonth };
+}
+
+function calculateLastXDaysTimestamps(numDays, offsetInHours = 0) {
+    const currentDate = new Date();
+    const lastDayOfXDays = new Date(currentDate.getTime());
+    lastDayOfXDays.setDate(lastDayOfXDays.getDate());
+
+    const firstDayOfXDays = new Date(currentDate.getTime());
+    firstDayOfXDays.setDate(firstDayOfXDays.getDate() - (numDays - 1)); 
+
+    let firstDayTimestamp = firstDayOfXDays.getTime() / 1000;
+    let lastDayTimestamp = lastDayOfXDays.getTime() / 1000;
+
+    if (offsetInHours > 0) {
+        firstDayTimestamp -= (offsetInHours + 36) * 60 * 60;
+        //lastDayTimestamp -= offsetInHours * 60 * 60;
+    }
+
+    return { firstDay: firstDayTimestamp.toFixed(0), lastDay: lastDayTimestamp.toFixed(0) };
 }
 
 
@@ -291,4 +308,4 @@ function readConfig() {
     }
 }
 
-module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, verifyChannelAccess, readConfig };
+module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig };

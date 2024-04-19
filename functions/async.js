@@ -1,8 +1,8 @@
 const fs = require('node:fs');
 
 const { EmbedBuilder } = require('discord.js');
-const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps } = require('../helper/misc');
-const { getRemainingTime, cleanUpString, createProgressBar } = require('../helper/formattings');
+const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps } = require('../helper/misc');
+const { getRemainingTime, cleanUpString, createProgressBar, splitIntoChunks } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 
@@ -20,6 +20,10 @@ const { homeFaction, minDelay } = readConfig().apiConf;
 const { embedColor } = readConfig().discordConf;
 
 const apiConfigPath = './conf/apiConfig.json';
+
+let memberTitle = 'Criminal';
+if (homeFaction === '7709') memberTitle = 'Fox';
+if (homeFaction === '9032') memberTitle = 'Wolf';
 
 /**
  * Send a status message to the specified channel at regular intervals.
@@ -635,7 +639,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                 ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
                                 ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
                                 ownStatusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
-                            
+
                                 if (faction1ID == ownFactionID) {
                                     fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
                                 } else {
@@ -646,7 +650,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                             if (factionID != ownFactionID) {
                                 travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
                                 hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
-                            
+
                                 if (faction1ID != ownFactionID) {
                                     fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
                                 } else {
@@ -951,38 +955,20 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
 
             if (jailMembersList.length > 0) {
                 jailEmbed.setColor(embedColor)
-                    .setTitle(':oncoming_police_car: Bust a fox!')
+                    .setTitle(`:oncoming_police_car: Bust a ${memberTitle}!`)
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
                     .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
                     .setTimestamp(timestamp * 1000)
                     .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
 
-                const MAX_FIELD_LENGTH = 1024; // Maximum allowed length for field value
-
-                // Split jailMembers into multiple chunks
-                const jailChunks = [];
-                let currentChunk = [];
-                for (const member of jailMembersList) {
-                    const entry = `:oncoming_police_car: [»»](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} - out <t:${member.statusUntil}:R>\n`;
-
-                    if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
-                        if (currentChunk.length > 0) {
-                            jailChunks.push(currentChunk.join(''));
-                            currentChunk = [];
-                        }
-                    }
-
-                    currentChunk.push(entry);
-                }
-
-                if (currentChunk.length > 0) {
-                    jailChunks.push(currentChunk.join(''));
-                }
+                const entryFormat = `:oncoming_police_car: [»»](https://www.torn.com/profiles.php?XID={{id}}) {{name}} - out <t:{{statusUntil}}:R>\n`;
+                const jailChunks = splitIntoChunks(jailMembersList, entryFormat);
 
                 // Add each chunk as a separate field
                 jailChunks.forEach((chunk, index) => {
                     jailEmbed.addFields({ name: `Members in jail (${index + 1}/${jailChunks.length})`, value: chunk, inline: true });
                 });
+
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed);
             } else {
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');
@@ -1013,29 +999,39 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
 /**
  * Asynchronously retrieves OC (Organized Crime) statistics for the specified month and generates an embed with the statistics.
  *
- * @param {number} selectedMonthValue - The value representing the selected month.
+ * @param {number} selectedDateValue - The value representing the selected month.
  * @return {EmbedBuilder} An embed containing OC statistics for the specified month.
  */
-async function getOCStats(selectedMonthValue) {
+async function getOCStats(selection, selectedDateValue) {
 
-    var today = new Date();
-    var firstDayOfMonth, lastDayOfMonth;
+    let timestamps;
     let title = '';
 
-    if (!selectedMonthValue) {
-        selectedMonthValue = today.getMonth();
-        title = `*Current Month*`;
-    } else {
-        selectedMonthValue--;
+    if (selection === 'months') {
+        var today = new Date();
+        var firstDay, lastDay;
+
+
+        if (!selectedDateValue) {
+            selectedDateValue = today.getMonth();
+            title = `*Current Month*`;
+        } else {
+            selectedDateValue--;
+        }
+
+        // Calculate timestamps using the offset
+        timestamps = calculateMonthTimestamps(selectedDateValue, 192);
+    }
+    
+    if (selection === 'last-x-days') {
+        title = `*Last ${selectedDateValue} Days*`;
+        timestamps = calculateLastXDaysTimestamps(selectedDateValue, 192);
     }
 
-    // Calculate timestamps using the offset
-    var timestamps = calculateMonthTimestamps(selectedMonthValue, 192);
+    var firstDay = timestamps.firstDay;
+    var lastDay = timestamps.lastDay;
 
-    var firstDayOfMonth = timestamps.firstDay;
-    var lastDayOfMonth = timestamps.lastDay;
-
-    const response = await callTornApi('faction', 'basic,crimes,timestamp', undefined, firstDayOfMonth, lastDayOfMonth);
+    const response = await callTornApi('faction', 'basic,crimes,timestamp', undefined, firstDay, lastDay);
 
     if (!response[0]) {
         await interaction.reply({ content: response[1], ephemeral: true });
@@ -1058,7 +1054,7 @@ async function getOCStats(selectedMonthValue) {
     const faction_icon_URL = `https://factiontags.torn.com/${factionJson['tag_image']}`;
     const crimeList = [8];
 
-    const lastDateFormatted = (new Date(lastDayOfMonth * 1000)).toISOString().replace('T', ' ').replace('.000Z', '');
+    const lastDateFormatted = (new Date(lastDay * 1000)).toISOString().replace('T', ' ').replace('.000Z', '');
 
     if (title === '') {
         title = `*${lastDateFormatted.substring(0, 7)}*`;
@@ -1081,13 +1077,18 @@ async function getOCStats(selectedMonthValue) {
 
             if (crime.initiated === 1) {
 
-                var firstDayDate = new Date(firstDayOfMonth * 1000);
-                var newFirstDayOfMonth = new Date(firstDayDate.getFullYear(), firstDayDate.getMonth() + 1, 1);
-                newFirstDayOfMonth = newFirstDayOfMonth.getTime() / 1000;
+                
 
+                var firstDayDate = new Date(firstDay * 1000);
+                var newFirstDay = '';
+                
+                if (selection === 'months') newFirstDay = new Date(firstDayDate.getFullYear(), firstDayDate.getMonth() + 1, 1);
+                if (selection === 'last-x-days')  newFirstDay = firstDayDate;
+                
+                newFirstDay = newFirstDay.getTime() / 1000;
 
-                if (crime.time_completed >= newFirstDayOfMonth && crime.time_completed <= lastDayOfMonth) {
-
+                if (crime.time_completed >= newFirstDay && crime.time_completed <= lastDay) {
+                    
 
                     if (!crimeSummary[crime.crime_name]) {
                         crimeSummary[crime.crime_name] = {
@@ -1118,6 +1119,8 @@ async function getOCStats(selectedMonthValue) {
         ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
     }
 
+    console.log(title);
+
     return ocEmbed;
 }
 
@@ -1131,7 +1134,7 @@ async function getOCStats(selectedMonthValue) {
 async function checkOCs(memberChannel, memberUpdateInterval) {
     const now = moment();
 
-    const ownStatusEmbed = await getOCStats();
+    const ownStatusEmbed = await getOCStats('months');
     ownStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)
 
     await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
@@ -1254,7 +1257,7 @@ async function getReviveStatus(factionId, message) {
 
                 switch (member.status.state) {
                     case 'Hospital': statusIcon = ':syringe:'; break;
-                    case 'Jail': statusIcon = ':oncoming_police:car:'; break;
+                    case 'Jail': statusIcon = ':oncoming_police_car:'; break;
                     case 'Abroad': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }

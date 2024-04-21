@@ -1,8 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 
-const { printLog, readConfig } = require('../helper/misc');
-const { embedColor } = readConfig().discordConf;
+const { printLog } = require('../helper/misc');
 
 
 module.exports = {
@@ -58,15 +57,6 @@ module.exports = {
                 printLog(tornParams[category][i]);
                 paramList = paramList + tornParams[category][i] + '\n';
             }
-
-            let paramsEmbed = new EmbedBuilder()
-                .setColor(embedColor)
-                .setTitle(`Item Filter`)
-                .setDescription(`List of items displayed by the armoury logger`)
-                .setTimestamp()
-                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
-
-            paramsEmbed
 
             await interaction.reply(`\`\`\`\n${paramList}\`\`\``)
         }

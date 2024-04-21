@@ -1,5 +1,3 @@
-const fs = require('node:fs');
-
 const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { printLog, readConfig } = require('../helper/misc');

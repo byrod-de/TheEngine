@@ -1,9 +1,9 @@
 const fs = require('node:fs');
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { readConfig } = require('../helper/misc');
+const { SlashCommandBuilder } = require('discord.js');
+const { readConfig, initializeEmbed } = require('../helper/misc');
 
 const config = readConfig();
-const { embedColor } = config.discordConf;
+
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,13 +12,8 @@ module.exports = {
 
   async execute(interaction) {
 
-    let helpEmbed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`TornEngine`)
-      .setURL(`https://tornengine.netlify.app/`)
-      .setDescription('Slash Commands Overview')
-      .setTimestamp()
-      .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+    const helpEmbed = initializeEmbed('Help');
+    helpEmbed.setDescription('Slash Commands Overview');
 
     // Grab all the command files from the commands directory you created earlier
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));

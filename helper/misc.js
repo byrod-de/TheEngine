@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require('discord.js');
 const moment = require('moment');
 const fs = require('fs');
 const yaml = require('yaml');
@@ -284,7 +285,7 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     }
 
     if (!accessGranted) {
-        accessList = 'the **admin channel**';
+        accessList = `the **admin channel** <#${adminChannelId}>`;
     }
 
     if (adminChannelId.includes(interaction.channelId)) {
@@ -292,13 +293,20 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     }
 
     if (!accessGranted) {
-        await interaction.reply({ content: `Nice try! This command can only be used in ${accessList}. If you cannot see the channel or category, you are not meant to use this command :wink:`, ephemeral: true });
+        const notificationEmbed = initializeEmbed( `Error 418 - I'am a teapot`, 'error');
+        notificationEmbed.setDescription(`:teapot: Nice try! This command can only be used in ${accessList}.`);
+        await interaction.reply({  embeds: [notificationEmbed], ephemeral: true });
     }
 
     return accessGranted;
 }
 
 
+/**
+ * Reads the configuration file and parses it into a JavaScript object.
+ *
+ * @return {Object|null} The parsed configuration object or null if an error occurred.
+ */
 function readConfig() {
     try {
         return yaml.parse(fs.readFileSync(configFilename, 'utf8'));
@@ -308,4 +316,28 @@ function readConfig() {
     }
 }
 
-module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig };
+/**
+ * Initializes an embed with the given title and category.
+ *
+ * @param {string} title - The title of the embed.
+ * @param {string} [category='default'] - The category of the embed. Defaults to 'default'.
+ * @return {EmbedBuilder} The initialized embed.
+ */
+function initializeEmbed(title, category = 'default') {
+    const { embedColor, successColor, errorColor } = readConfig().discordConf;
+    let color = 0x2695d1;
+    switch (category) {
+        case 'success': color = successColor; break;
+        case 'error': color = errorColor; break;
+        default: color = embedColor;
+    }
+
+    const embed = new EmbedBuilder().setColor(color)
+        .setTitle(title)
+        .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' })
+        .setTimestamp();
+
+    return embed;
+}
+
+module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed };

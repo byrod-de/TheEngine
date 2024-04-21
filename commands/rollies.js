@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { readConfig } = require('../helper/misc');
+const { SlashCommandBuilder } = require('discord.js');
+const { initializeEmbed } = require('../helper/misc');
 
-const { embedColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -56,12 +55,8 @@ module.exports = {
             value = 'Result dice roll D' + dice;
         }
 
-        const rolliesEmbed = new EmbedBuilder()
-        .setColor(embedColor)
-        .setTitle(`Rollies!`)
-        .setDescription(`${value} - **${result}**`)
-        .setTimestamp()
-        .setFooter({ text: 'powered by TornEngine, inspired by D&D', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+        const rolliesEmbed = initializeEmbed('Rollies!')
+        .setFooter({ text: 'inspired by Frumpkin', iconURL: 'https://tornengine.netlify.app/images/byrod/Frumpkin.png' });
 
         await interaction.reply({ embeds: [rolliesEmbed], ephemeral: !show });
     }

@@ -1,9 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyChannelAccess, readConfig } = require('../helper/misc');
+const { verifyChannelAccess, initializeEmbed } = require('../helper/misc');
 const { cleanUpString } = require('../helper/formattings');
-
-const { embedColor } = readConfig().discordConf;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -54,13 +52,9 @@ module.exports = {
         const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
 
-        const ceEmbed = new EmbedBuilder()
-            .setColor(embedColor)
-            .setTitle('Crime Experience')
-            .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-            .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*')
-            .setTimestamp()
-            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+        const ceEmbed = initializeEmbed('Crime Experience');
+        ceEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+               .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently not in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*');
 
         let rankSplit = Math.floor(crimeexp.length / 4);
         let start = 1;

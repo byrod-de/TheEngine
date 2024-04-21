@@ -1,15 +1,13 @@
 const axios = require('axios');
 const fs = require('fs');
 const moment = require('moment');
-const { EmbedBuilder } = require('discord.js');
 
-const { printLog, readConfig, updateOrDeleteEmbed } = require('../helper/misc');
+const { printLog, readConfig, updateOrDeleteEmbed, initializeEmbed } = require('../helper/misc');
 const { decodeApiKeyWithCypher } = require('../helper/formattings');
 
 const apiConfigPath = './conf/apiConfig.json';
 
 const { apiKey, comment } = readConfig().apiConf;
-const { embedColor } = readConfig().discordConf;
 
 /**
  * An asynchronous function to call the Torn API with specified parameters and key usage.
@@ -157,12 +155,8 @@ async function verifyKeys(statusChannel, verificationInterval, manualMode = fals
         return;
     }
 
-    const verifyEmbed = new EmbedBuilder()
-    .setColor(embedColor)
-    .setTitle('API Key Status')
-    .setTimestamp()
-    .setDescription(`_Verification interval: every ${verificationInterval} hours._\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
-    .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+    const verifyEmbed = initializeEmbed('API Key Status');
+    verifyEmbed.setDescription(`_Verification interval: every ${verificationInterval} hours._\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
 
     verifyEmbed.addFields({ name: 'Last check result', value: `\`${statusMessage}\``, inline: false });
     await updateOrDeleteEmbed(statusChannel, 'verifyStatus', verifyEmbed);

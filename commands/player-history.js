@@ -1,10 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { abbreviateNumber, cleanUpString } = require('../helper/formattings');
-const { printLog, readConfig } = require('../helper/misc');
-const { verifyChannelAccess } = require('../helper/misc');
-
-const { embedColor } = readConfig().discordConf;
+const { printLog, initializeEmbed, verifyChannelAccess } = require('../helper/misc');
 
 const he = require('he');
 const moment = require('moment');
@@ -92,12 +89,8 @@ module.exports = {
                 printLog(`Profile image not available for ${tornId}`);
             }
 
-            const statsEmbed = new EmbedBuilder()
-                .setColor(embedColor)
-                .setTitle(`${cleanUpString(tornUser)} [${tornId}]`)
-                .setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
-                .setTimestamp()
-                .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
+            const statsEmbed = initializeEmbed(`${cleanUpString(tornUser)} [${tornId}]`);
+            statsEmbed.setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
 
             if (faction_id > 0) {
                 statsEmbed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })

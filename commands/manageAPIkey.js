@@ -1,8 +1,8 @@
 const fs = require('node:fs');
 
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { verifyAPIKey } = require('../functions/api');
-const { printLog, checkAPIKey, readConfig, verifyChannelAccess } = require('../helper/misc');
+const { printLog, checkAPIKey, readConfig, verifyChannelAccess, initializeEmbed } = require('../helper/misc');
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -33,13 +33,9 @@ module.exports = {
         if (!await verifyChannelAccess(interaction, false, false)) return;
 
         const keyToManage = interaction.options.getString('apikey');
-
-        let embed = new EmbedBuilder()
-            .setTimestamp()
-            .setFooter({ text: 'powered by TornEngine', iconURL: 'https://tornengine.netlify.app/images/logo-100x100.png' });
-
         const operation = interaction.options.getString('operation');
 
+        const embed = initializeEmbed('Manage API Key' + ' - ' + operation);
 
         let checkedAPIKey = checkAPIKey(keyToManage);
 

@@ -657,7 +657,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                 if (responseMainNews[0]) {
                     const newsJson = responseMainNews[2];
                     const mainnews = newsJson['mainnews'];
-                    const timestamp = newsJson.timestamp;
                     let isEnlisted = false;
                     let enlistedTimestamp = 0;
                     let description = '';
@@ -964,7 +963,7 @@ async function getOCStats(selection, selectedDateValue) {
         // Calculate timestamps using the offset
         timestamps = calculateMonthTimestamps(selectedDateValue, 192);
     }
-    
+
     if (selection === 'last-x-days') {
         title = `*Last ${selectedDateValue} Days*`;
         timestamps = calculateLastXDaysTimestamps(selectedDateValue, 192);
@@ -1015,18 +1014,18 @@ async function getOCStats(selection, selectedDateValue) {
 
             if (crime.initiated === 1) {
 
-                
+
 
                 var firstDayDate = new Date(firstDay * 1000);
                 var newFirstDay = '';
-                
+
                 if (selection === 'months') newFirstDay = new Date(firstDayDate.getFullYear(), firstDayDate.getMonth() + 1, 1);
-                if (selection === 'last-x-days')  newFirstDay = firstDayDate;
-                
+                if (selection === 'last-x-days') newFirstDay = firstDayDate;
+
                 newFirstDay = newFirstDay.getTime() / 1000;
 
                 if (crime.time_completed >= newFirstDay && crime.time_completed <= lastDay) {
-                    
+
 
                     if (!crimeSummary[crime.crime_name]) {
                         crimeSummary[crime.crime_name] = {
@@ -1115,7 +1114,7 @@ async function getReviveStatus(factionId, message) {
     const reviveEmbed = initializeEmbed('Faction Revive Status');
     reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
         .setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
-;
+        ;
 
     let revivableMembers = '';
     let reviveCount = 0;
@@ -1241,4 +1240,145 @@ async function getReviveStatus(factionId, message) {
 }
 
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getTravelInformation, timestampCache };
+
+async function getWarActivity(factionId, message) {
+
+    const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
+
+    await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
+
+
+    if (!response[0]) {
+        await message.edit({ content: response[1] });
+        return;
+    }
+
+    const factionJson = response[2];
+
+    const members = factionJson?.members || {};
+    const memberLength = Object.keys(members).length;
+
+    if (memberLength === 0) {
+        await message.edit({ content: 'No members found!' });
+        return;
+    }
+
+    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+
+    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
+
+    const reviveEmbed = initializeEmbed('Faction War Activity');
+    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+        ;
+
+    let selectedMembers = `\`${'Name'.padEnd(20, ' ')} | ${'Hits'.toString().padStart(5, ' ')} | ${'Retal'.toString().padStart(5, ' ')} | ${'SEs'.toString().padStart(5, ' ')}\`\n`;
+
+    let memberCount = 0;
+    let membersCount = 0;
+
+    const membersList = members;
+
+    let memberIndex = {}
+
+    for (var id in membersList) {
+        memberIndex[membersList[id].name] = id;
+    }
+    const sortedMembers = Object.values(membersList).sort(sortByName).reverse();
+
+    for (const id in sortedMembers) {
+
+        const member = sortedMembers[id];
+        const memberId = memberIndex[member.name];
+
+        if (message) {
+            membersCount++;
+            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
+                let content = '';
+
+                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
+                content = `Executing War Activity check for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait.\n`;
+
+                if (membersCount != memberLength) {
+                    content += `${progressBar}\n`;
+                }
+
+                content += `${membersCount} of ${memberLength} members processed.`;
+                await message.edit({ content: content });
+                printLog(content);
+            }
+        }
+
+        let activeKeys = 1;
+        try {
+            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+            const apiKeys = apiConfig.apiKeys;
+            activeKeys = apiKeys.filter(key => key.active).length;
+
+            if (activeKeys === 0) {
+                activeKeys = 1;
+            }
+        } catch (error) {
+            activeKeys = 1;
+        }
+
+        const totalCalls = 100;
+        let delayInSeconds = (totalCalls / activeKeys / 15).toFixed(2);
+        if (delayInSeconds < 1) {
+            delayInSeconds = minDelay;
+        }
+        printLog(`Delay between calls: ${delayInSeconds} seconds`);
+        await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
+
+
+
+        const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, undefined, 'rankedwarhits,retals,statenhancersused', "rotate", undefined);
+        if (statsResponse[0]) {
+            const statsJson = statsResponse[2];
+            const personalstats = statsJson['personalstats'];
+            const rankedwarhits = personalstats['rankedwarhits'];
+            const retals = personalstats['retals'];
+            const statenhancersused = personalstats['statenhancersused'];
+
+            const entry = `\`${member.name.padEnd(20, ' ')} | ${rankedwarhits.toString().padStart(5, ' ')} | ${retals.toString().padStart(5, ' ')} | ${statenhancersused.toString().padStart(5, ' ')}\`\n`;
+
+            selectedMembers += entry;
+            memberCount++;
+        }
+    }
+
+    const content = `>>> Found ${memberCount} members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`;
+    printLog(content);
+
+    if (message) {
+        //await message.delete();
+    }
+
+    //const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
+
+    // Split revivableMembers into multiple chunks
+    //const chunks = [];
+    //let currentChunk = '';
+    //const lines = selectedMembers.split('\n');
+    //for (const line of lines) {
+    //    if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
+    //        chunks.push(currentChunk);
+    //        currentChunk = line + '\n';
+    //    } else {
+    //        currentChunk += line + '\n';
+    //    }
+    //}
+    //if (currentChunk !== '') {
+    //   chunks.push(currentChunk);
+    //}
+
+    // Add each chunk as a separate field
+    //chunks.forEach((chunk, index) => {
+    //    reviveEmbed.addFields({ name: `(${index + 1}/${chunks.length})`, value: chunk, inline: false });
+    //});
+    //reviveEmbed.setTitle(`Players with revives on (${memberCount}/${membersCount})`);
+
+    return selectedMembers;
+}
+
+
+module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, timestampCache };

@@ -1271,7 +1271,8 @@ async function getWarActivity(factionId, message) {
     reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
         ;
 
-    let selectedMembers = `\`${'Name'.padEnd(20, ' ')} | ${'Hits'.toString().padStart(5, ' ')} | ${'Retal'.toString().padStart(5, ' ')} | ${'SEs'.toString().padStart(5, ' ')}\`\n`;
+    let selectedMembers = ''
+    const tableHeader = `\`${'Name'.padEnd(20, ' ')} | ${'Hits'.toString().padStart(5, ' ')} | ${'Retal'.toString().padStart(5, ' ')} | ${'SEs'.toString().padStart(5, ' ')}\`\n`;
 
     let memberCount = 0;
     let membersCount = 0;
@@ -1339,7 +1340,7 @@ async function getWarActivity(factionId, message) {
             const retals = personalstats['retals'];
             const statenhancersused = personalstats['statenhancersused'];
 
-            const entry = `\`${member.name.padEnd(20, ' ')} | ${rankedwarhits.toString().padStart(5, ' ')} | ${retals.toString().padStart(5, ' ')} | ${statenhancersused.toString().padStart(5, ' ')}\`\n`;
+            const entry = `\`${cleanUpString(member.name).padEnd(20, ' ')} | ${rankedwarhits.toString().padStart(5, ' ')} | ${retals.toString().padStart(5, ' ')} | ${statenhancersused.toString().padStart(5, ' ')}\`\n`;
 
             selectedMembers += entry;
             memberCount++;
@@ -1353,31 +1354,33 @@ async function getWarActivity(factionId, message) {
         //await message.delete();
     }
 
-    //const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
+    //console.log(selectedMembers);
+
+    const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
 
     // Split revivableMembers into multiple chunks
-    //const chunks = [];
-    //let currentChunk = '';
-    //const lines = selectedMembers.split('\n');
-    //for (const line of lines) {
-    //    if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
-    //        chunks.push(currentChunk);
-    //        currentChunk = line + '\n';
-    //    } else {
-    //        currentChunk += line + '\n';
-    //    }
-    //}
-    //if (currentChunk !== '') {
-    //   chunks.push(currentChunk);
-    //}
+    const chunks = [];
+    let currentChunk = '';
+    const lines = selectedMembers.split('\n');
+    for (const line of lines) {
+        if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
+            chunks.push(currentChunk);
+            currentChunk = line + '\n';
+        } else {
+            currentChunk += line + '\n';
+        }
+    }
+    if (currentChunk !== '') {
+        chunks.push(currentChunk);
+    }
 
     // Add each chunk as a separate field
-    //chunks.forEach((chunk, index) => {
-    //    reviveEmbed.addFields({ name: `(${index + 1}/${chunks.length})`, value: chunk, inline: false });
-    //});
+    chunks.forEach((chunk, index) => {
+        reviveEmbed.addFields({ name: tableHeader, value: chunk, inline: false });
+    });
     //reviveEmbed.setTitle(`Players with revives on (${memberCount}/${membersCount})`);
 
-    return selectedMembers;
+    return reviveEmbed;
 }
 
 

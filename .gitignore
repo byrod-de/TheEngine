@@ -7,3 +7,4 @@ conf/**.json
 **.conf
 **.yaml
 testScript.js
+exports/**.csv

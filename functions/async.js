@@ -1241,7 +1241,7 @@ async function getReviveStatus(factionId, message) {
 
 
 
-async function getWarActivity(factionId, message) {
+async function getWarActivity(factionId, message, exportCSV = false) {	
 
     const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
 
@@ -1271,7 +1271,8 @@ async function getWarActivity(factionId, message) {
     reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
         ;
 
-    let selectedMembers = ''
+    let selectedMembers = '';
+    const entries = [];
     const tableHeader = `\`${'Name'.padEnd(20, ' ')} | ${'Hits'.toString().padStart(5, ' ')} | ${'Retal'.toString().padStart(5, ' ')} | ${'SEs'.toString().padStart(5, ' ')}\`\n`;
 
     let memberCount = 0;
@@ -1341,6 +1342,15 @@ async function getWarActivity(factionId, message) {
             const statenhancersused = personalstats['statenhancersused'];
 
             const entry = `\`${cleanUpString(member.name).padEnd(20, ' ')} | ${rankedwarhits.toString().padStart(5, ' ')} | ${retals.toString().padStart(5, ' ')} | ${statenhancersused.toString().padStart(5, ' ')}\`\n`;
+            const player = {
+                name: cleanUpString(member.name),
+                id: memberId,
+                rankedwarhits: rankedwarhits,
+                retals: retals,
+                statenhancersused: statenhancersused
+              };
+
+            entries.push(player);
 
             selectedMembers += entry;
             memberCount++;
@@ -1354,11 +1364,8 @@ async function getWarActivity(factionId, message) {
         //await message.delete();
     }
 
-    //console.log(selectedMembers);
-
     const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
 
-    // Split revivableMembers into multiple chunks
     const chunks = [];
     let currentChunk = '';
     const lines = selectedMembers.split('\n');
@@ -1374,13 +1381,31 @@ async function getWarActivity(factionId, message) {
         chunks.push(currentChunk);
     }
 
-    // Add each chunk as a separate field
     chunks.forEach((chunk, index) => {
         reviveEmbed.addFields({ name: tableHeader, value: chunk, inline: false });
     });
-    //reviveEmbed.setTitle(`Players with revives on (${memberCount}/${membersCount})`);
 
-    return reviveEmbed;
+    let returnResult = {};
+
+    if (exportCSV) {
+
+        let csvString = 'Name,ID,Ranked War Hits,Retals,Stat Enhancers Used\n';
+
+        entries.forEach(entry => {
+            // Format the entry into a CSV string
+            const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.retals},${entry.statenhancersused}\n`;
+            
+            // Append the formatted entry string to the CSV string
+            csvString += entryString;
+        });
+
+        const csvFilePath =  `./exports/war-activity_${factionId}_${Date.now()}.csv`;
+        fs.writeFileSync(csvFilePath, csvString);
+        returnResult.csvFilePath = csvFilePath;
+    }
+
+    returnResult.embed = reviveEmbed;
+    return returnResult;
 }
 
 

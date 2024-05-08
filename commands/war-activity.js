@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
+const fs = require('node:fs');
 const { getWarActivity } = require('../functions/async');
 const { verifyChannelAccess, readConfig } = require('../helper/misc');
 
@@ -11,7 +12,10 @@ module.exports = {
         .addIntegerOption(option =>
             option.setName('factionid')
                 .setDescription('Faction ID')
-                .setRequired(false)),
+                .setRequired(false))
+        .addBooleanOption(option =>
+            option.setName('export')
+                .setDescription('Export as csv')),
 
 
     async execute(interaction) {
@@ -20,19 +24,26 @@ module.exports = {
         if (!await verifyChannelAccess(interaction, true, false)) return;
 
         const factionID = interaction.options.getInteger('factionid') ?? homeFaction;
+        const exportCSV = interaction.options.getBoolean('export') ?? false;
+
 
         const message = await interaction.reply({ content: `Executing war activity check for ${factionID}, please wait...`, ephemeral: false });
 
-        const warActivityOutput = await getWarActivity(factionID, message);
+        const warActivityOutput = await getWarActivity(factionID, message, exportCSV);
 
         if (!warActivityOutput) {
             await interaction.editReply({ content: 'War activity for ' + factionID + ' could not be determined.', ephemeral: false });
             return;
         }
-        if (warActivityOutput instanceof EmbedBuilder) {
-            await interaction.editReply({ embeds: [warActivityOutput], ephemeral: false });
-        } else {
-            await interaction.editReply({ content: warActivityOutput, ephemeral: false });
+
+            await interaction.editReply({ embeds: [warActivityOutput.embed], ephemeral: false });
+
+        if (warActivityOutput.csvFilePath) {
+            const attachment = new AttachmentBuilder(warActivityOutput.csvFilePath);
+            await interaction.followUp({ files: [attachment] });
+
+
+            console.log(`CSV file exported to ${warActivityOutput.csvFilePath}`);
         }
     },
 };

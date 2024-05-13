@@ -8,9 +8,9 @@ const hostname = os.hostname();
 const moment = require('moment');
 
 const { readConfig } = require('./helper/misc');
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getTravelInformation } = require('./functions/async');
 const { verifyKeys } = require('./functions/api');
-const { discordConf, statusConf, territoryConf, armouryConf, retalConf, rankedWarConf, memberConf, verificationConf } = readConfig();
+const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf } = readConfig();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -64,6 +64,7 @@ client.on('ready', () => {
 	const territoryChannel = client.channels.cache.get(territoryConf.channelId);
 	const armouryChannel = client.channels.cache.get(armouryConf.channelId);
 	const memberChannel = client.channels.cache.get(memberConf.channelId);
+	const travelChannel = client.channels.cache.get(travelConf.channelId);
 	const retalChannel = client.channels.cache.get(retalConf.channelId);
 	const rankedWarChannel = client.channels.cache.get(rankedWarConf.channelId);
 	const verificationChannel = client.channels.cache.get(verificationConf.channelId);
@@ -82,6 +83,10 @@ client.on('ready', () => {
 
 	if (rankedWarChannel !== undefined) {
 		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval), 1000 * 60 * rankedWarConf.updateInterval);
+	}
+
+	if (travelChannel !== undefined) {
+		setInterval(() => getTravelInformation(travelChannel, travelConf.updateInterval), 1000 * 60 * travelConf.updateInterval);
 	}
 
 	if (memberChannel !== undefined) {

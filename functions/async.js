@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 
-const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed } = require('../helper/misc');
+const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed, getTravelTimes } = require('../helper/misc');
 const { getRemainingTime, cleanUpString, createProgressBar, splitIntoChunks } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
@@ -422,8 +422,8 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                     }
                     description += `\n${createProgressBar(currentLead, war.target, 'scale', 18)}`;
 
-                    const remainingTime = getRemainingTime(war.start, war.target, lead, timestamp);
-                    description += `\n**Projected End:** <t:${remainingTime}:f> (<t:${remainingTime}:R>)`;
+                    //const remainingTime = getRemainingTime(war.start, war.target, lead, timestamp);
+                    //description += `\n**Projected End:** <t:${remainingTime}:f> (<t:${remainingTime}:R>)`;
                 }
 
                 fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n:game_die: **Score:** ${faction1.score}`;
@@ -737,10 +737,17 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
 }
 
 
+/**
+ * Retrieves travel information for a given faction and sends it to a specified channel.
+ *
+ * @param {Channel} travelChannel - The channel where the travel information will be sent.
+ * @param {number} travelUpdateInterval - The interval in minutes at which the travel information should be updated.
+ * @param {number} factionId - The ID of the faction for which travel information is being retrieved. Defaults to the home faction ID.
+ * @return {Promise<void>} A promise that resolves when the travel information has been retrieved and sent.
+ */
+async function getTravelInformation(travelChannel, travelUpdateInterval, factionId = homeFaction) {
 
-async function getTravelInformation(warChannel, memberChannel, warUpdateInterval, factionId) {
-
-    if (warChannel) {
+    if (travelChannel) {
 
         const responseMembers = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, 'rotate');
 
@@ -749,10 +756,6 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
             const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
             const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
-            const travelEmbed = initializeEmbed(`:airplane: Members traveling`);
-            travelEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                .setDescription(`Members, which are traveling`);
-
             let travelingMembers = '';
             let travelingMemberCount = 0;
             let abroadMemberCount = 0;
@@ -760,7 +763,15 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
 
             const membersList = factionJson.members;
             const timestamp = factionJson.timestamp;
-            const memberCount = Object.keys(membersList).length;
+
+            const travelTimestampCache = timestampCache.get('travelTimestamp');
+
+            let firstRun = false;
+            if (travelTimestampCache == undefined) {
+                firstRun = true;
+            }
+
+            timestampCache.set('travelTimestamp', timestamp, 120 * travelUpdateInterval)
 
             let memberIndex = {}
 
@@ -774,46 +785,66 @@ async function getTravelInformation(warChannel, memberChannel, warUpdateInterval
 
                 let member = sortedMembers[id];
                 let memberStatusState = member.status.state;
-                let travelInfo = 'Torn';
 
                 //check Traveling status
-                if (memberStatusState == 'Abroad') {
-                    travelInfo = 'Abroad';
-                    abroadMemberCount++;
-                }
-
                 if (memberStatusState == 'Traveling') {
 
                     travelingMemberCount++;
 
+                    const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+
                     if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
-                        const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-                        const entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)} \n`;
-                        travelingMembers += entry;
+
+                        const entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
+                        travelingMembers += entry + '\n';
                     }
 
                     const cachedTravelInfo = memberCache.get(memberIndex[member.name]);
+                    const travelInfo = `${memberStatusState} - ${member.status.description}`;
 
                     if (cachedTravelInfo) {
-                        if (cachedTravelInfo.includes('Abroad') || cachedTravelInfo.includes('Torn')) {
-                            travelInfo = `${timestamp} - ${member.status.state}`;
-                        } else {
-                            travelInfo = cachedTravelInfo;
-                        }
-                        printLog(`Cached travel info: ${travelInfo}`);
+                        printLog(`>>> Cached travel info: ${memberIndex[member.name]} - ${cachedTravelInfo}`);
+                        printLog(`> Member already in air.`);
                     } else {
-                        travelInfo = 'initialise cache';
-                    }
-                }
+                        printLog(`>>> New travel info: ${memberIndex[member.name]} - ${travelInfo}`);
+                        if (firstRun) {
+                            printLog(`> First Run, not sending message.`);
+                        } else {
+                            printLog(`> Member started travelling.`);
 
-                memberCache.set(memberIndex[member.name], travelInfo, 120);
+                            const travelTimes = getTravelTimes(memberStatusState, member.status.description);
+
+                            const travelDetails = `\`Standard: \`<t:${timestamp + travelTimes.standard * 60}:R>\n`
+                                + `\`Aistrip:  \`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
+                                + `\`WLT:      \`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
+                                + `\`BCT:      \`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
+
+                            const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`);
+                            travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
+                                .setAuthor({ name: `${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                                .addFields({ name: `Estimated time of arrival:`, value: `${travelDetails}`, inline: true })
+                                .setDescription(flagIcon.flag + ' ' + member.status.description);
+
+                            const message = await travelChannel.send({ embeds: [travelEmbed], ephemeral: false });
+
+                            setTimeout(() => {
+                                message.delete();
+                            }, (travelTimes.standard + 10) * 60 * 1000); // Delete 10 minutes after landing
+                        }
+                    }
+
+                    memberCache.set(memberIndex[member.name], travelInfo, 120);
+                } else {
+                    if (memberStatusState == 'Abroad') {
+                        abroadMemberCount++;
+                    }
+                    memberCache.del(memberIndex[member.name]);
+                }
             }
 
             if (travelingMembers == '') travelingMembers = '*none*';
 
-            travelEmbed.addFields({ name: `${faction_name}\nTraveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-
-            console.log(`Traveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`);
+            //console.log(`Traveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`);
         }
     }
 }
@@ -1241,7 +1272,7 @@ async function getReviveStatus(factionId, message) {
 
 
 
-async function getWarActivity(factionId, message, exportCSV = false) {	
+async function getWarActivity(factionId, message, exportCSV = false) {
 
     const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
 
@@ -1348,7 +1379,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
                 rankedwarhits: rankedwarhits,
                 retals: retals,
                 statenhancersused: statenhancersused
-              };
+            };
 
             entries.push(player);
 
@@ -1394,12 +1425,12 @@ async function getWarActivity(factionId, message, exportCSV = false) {
         entries.forEach(entry => {
             // Format the entry into a CSV string
             const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.retals},${entry.statenhancersused}\n`;
-            
+
             // Append the formatted entry string to the CSV string
             csvString += entryString;
         });
 
-        const csvFilePath =  `./exports/war-activity_${factionId}_${Date.now()}.csv`;
+        const csvFilePath = `./exports/war-activity_${factionId}_${Date.now()}.csv`;
         fs.writeFileSync(csvFilePath, csvString);
         returnResult.csvFilePath = csvFilePath;
     }

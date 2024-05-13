@@ -137,10 +137,36 @@ function getFlagIcon(travelStatus, destinationText = '') {
     if (destinationText.includes('Mexico') || destinationText.includes('Mexican')) flag = `:flag_mx:`;
     if (destinationText.includes('Africa') || destinationText.includes('African')) flag = `:flag_za:`;
     if (destinationText.includes('Switzerland') || destinationText.includes('Swiss')) flag = `:flag_ch:`;
-    if (destinationText.includes('UAE') || destinationText.includes('Emirati')) flag = `:flag_ae:`; 
+    if (destinationText.includes('UAE') || destinationText.includes('Emirati')) flag = `:flag_ae:`;
     if (destinationText.includes('Kingdom') || destinationText.includes('British')) flag = `:flag_gb:`;
 
     return { flag, direction };
+
+}
+
+
+function getTravelTimes(travelStatus, destinationText = '') {
+
+    let location = '';
+    if (destinationText.includes('Argentina') || destinationText.includes('Argentinian')) location = `Argentina`;
+    if (destinationText.includes('Canada') || destinationText.includes('Canadian')) location = `Canada`;
+    if (destinationText.includes('Cayman') || destinationText.includes('Caymanian ')) location = `Cayman Islands`;
+    if (destinationText.includes('China') || destinationText.includes('Chinese')) location = `China`;
+    if (destinationText.includes('Hawaii') || destinationText.includes('Hawaiian')) location = `Hawaii`;
+    if (destinationText.includes('Japan') || destinationText.includes('Japanese')) location = `Japan`;
+    if (destinationText.includes('Mexico') || destinationText.includes('Mexican')) location = `Mexico`;
+    if (destinationText.includes('Africa') || destinationText.includes('African')) location = `South Africa`;
+    if (destinationText.includes('Switzerland') || destinationText.includes('Swiss')) location = `Switzerland`;
+    if (destinationText.includes('UAE') || destinationText.includes('Emirati')) location = `UAE`;
+    if (destinationText.includes('Kingdom') || destinationText.includes('British')) location = `United Kingdom`;
+
+    const travelJson = fs.readFileSync('./resources/travelTimes.json');
+    const travelTimes = JSON.parse(travelJson);
+
+    // Filter travelTimes based on location
+    const filteredTravelTimes = travelTimes[location];
+
+    return filteredTravelTimes;
 
 }
 
@@ -171,7 +197,7 @@ function sortByUntil(a, b) {
 function sortByName(a, b) {
     const lowercaseA = a.name.toLowerCase();
     const lowercaseB = b.name.toLowerCase();
-    
+
     if (lowercaseA < lowercaseB) {
         return 1;
     } else if (lowercaseA > lowercaseB) {
@@ -232,7 +258,7 @@ function calculateLastXDaysTimestamps(numDays, offsetInHours = 0) {
     lastDayOfXDays.setDate(lastDayOfXDays.getDate());
 
     const firstDayOfXDays = new Date(currentDate.getTime());
-    firstDayOfXDays.setDate(firstDayOfXDays.getDate() - (numDays - 1)); 
+    firstDayOfXDays.setDate(firstDayOfXDays.getDate() - (numDays - 1));
 
     let firstDayTimestamp = firstDayOfXDays.getTime() / 1000;
     let lastDayTimestamp = lastDayOfXDays.getTime() / 1000;
@@ -293,9 +319,9 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     }
 
     if (!accessGranted) {
-        const notificationEmbed = initializeEmbed( `Error 418 - I'am a teapot`, 'error');
+        const notificationEmbed = initializeEmbed(`Error 418 - I'am a teapot`, 'error');
         notificationEmbed.setDescription(`:teapot: Nice try! This command can only be used in ${accessList}.`);
-        await interaction.reply({  embeds: [notificationEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
     }
 
     return accessGranted;
@@ -340,4 +366,4 @@ function initializeEmbed(title, category = 'default') {
     return embed;
 }
 
-module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed };
+module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed, getTravelTimes };

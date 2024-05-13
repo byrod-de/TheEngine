@@ -57,7 +57,7 @@ module.exports = {
 
         const rolliesEmbed = initializeEmbed('Rollies!')
         .setFooter({ text: 'inspired by Frumpkin', iconURL: 'https://tornengine.netlify.app/images/byrod/Frumpkin.png' });
-        rolliesEmbed.addFields({ name: value, value: result });
+        rolliesEmbed.setDescription(`${value} - **${result}**`)
         await interaction.reply({ embeds: [rolliesEmbed], ephemeral: !show });
     }
 };

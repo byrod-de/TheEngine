@@ -814,14 +814,16 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
                             const travelTimes = getTravelTimes(memberStatusState, member.status.description);
 
-                            const travelDetails = `\`Standard: \`<t:${timestamp + travelTimes.standard * 60}:R>\n`
+                            const travelDetails =
+                                  `\`Start:    \`<t:${timestamp}:f>\n` 
+                                + `\`Standard: \`<t:${timestamp + travelTimes.standard * 60}:R>\n`
                                 + `\`Aistrip:  \`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
                                 + `\`WLT:      \`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
                                 + `\`BCT:      \`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
 
                             const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`);
                             travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
-                                .setAuthor({ name: `${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                                 .addFields({ name: `Estimated time of arrival:`, value: `${travelDetails}`, inline: true })
                                 .setDescription(flagIcon.flag + ' ' + member.status.description);
 

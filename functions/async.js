@@ -756,11 +756,6 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
             const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
             const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
-            let travelingMembers = '';
-            let travelingMemberCount = 0;
-            let abroadMemberCount = 0;
-            let memberLimitForEmbed = 10;
-
             const membersList = factionJson.members;
             const timestamp = factionJson.timestamp;
 
@@ -786,67 +781,77 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                 let member = sortedMembers[id];
                 let memberStatusState = member.status.state;
 
+                const cachedTravelInfo = memberCache.get(memberIndex[member.name]);
+                const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+
+                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`);
+                travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
+                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                    .setDescription(flagIcon.flag + ' ' + member.status.description);
+
                 //check Traveling status
                 if (memberStatusState == 'Traveling') {
 
-                    travelingMemberCount++;
-
-                    const flagIcon = getFlagIcon(memberStatusState, member.status.description);
-
-                    if (travelingMemberCount + abroadMemberCount < memberLimitForEmbed) {
-
-                        const entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
-                        travelingMembers += entry + '\n';
-                    }
-
-                    const cachedTravelInfo = memberCache.get(memberIndex[member.name]);
-                    const travelInfo = `${memberStatusState} - ${member.status.description}`;
+                    let travelInfo = `${memberStatusState} - ${member.status.description}`;
 
                     if (cachedTravelInfo) {
-                        printLog(`>>> Cached travel info: ${memberIndex[member.name]} - ${cachedTravelInfo}`);
-                        printLog(`> Member already in air.`);
+                        travelInfo = cachedTravelInfo;
+                        printLog(`>>> Member in air: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
                     } else {
-                        printLog(`>>> New travel info: ${memberIndex[member.name]} - ${travelInfo}`);
                         if (firstRun) {
-                            printLog(`> First Run, not sending message.`);
+                            printLog(`>>> First Run, Member already traveling: ${memberIndex[member.name]} - ${travelInfo}`);
+                            travelEmbed.addFields({ name: `**${member.name}** is already traveling`, value: `*No details available*`, inline: true });
+
                         } else {
-                            printLog(`> Member started travelling.`);
+                            printLog(`>>> Member started traveling: [${memberIndex[member.name]}] - ${travelInfo}`);
 
                             const travelTimes = getTravelTimes(memberStatusState, member.status.description);
 
                             const travelDetails =
-                                  `\`Start:    \`<t:${timestamp}:f>\n` 
+                                `\`Start   : \` around <t:${timestamp}:f>\n`
                                 + `\`Standard: \`<t:${timestamp + travelTimes.standard * 60}:R>\n`
-                                + `\`Aistrip:  \`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
-                                + `\`WLT:      \`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
-                                + `\`BCT:      \`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
+                                + `\`Airstrip: \`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
+                                + `\`WLT     : \`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
+                                + `\`BCT     : \`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
 
-                            const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`);
-                            travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
-                                .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                                .addFields({ name: `Estimated time of arrival:`, value: `${travelDetails}`, inline: true })
-                                .setDescription(flagIcon.flag + ' ' + member.status.description);
-
-                            const message = await travelChannel.send({ embeds: [travelEmbed], ephemeral: false });
-
-                            setTimeout(() => {
-                                message.delete();
-                            }, (travelTimes.standard + 10) * 60 * 1000); // Delete 10 minutes after landing
+                            travelEmbed.addFields({ name: `Estimated time of arrival:`, value: `${travelDetails}`, inline: true });
                         }
+
+                        const message = await travelChannel.send({ embeds: [travelEmbed], ephemeral: false });
+
+                        travelInfo += ` (${message.id})`;
                     }
 
                     memberCache.set(memberIndex[member.name], travelInfo, 120);
                 } else {
-                    if (memberStatusState == 'Abroad') {
-                        abroadMemberCount++;
+                    if (cachedTravelInfo) {
+                        printLog(`>>> Member stopped travelling: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+
+                        const regex = /\((\d+)\)/;
+                        const match = cachedTravelInfo.match(regex);
+                        const messageID = match ? match[1] : null;
+
+                        if (messageID) {
+                            const travelDetails =
+                                `\`Landed  : \` around <t:${timestamp}:f>`;
+
+                            travelEmbed.addFields({ name: `${member.name} stopped travelling:`, value: `${travelDetails}`, inline: true });
+                            if (memberStatusState != 'Traveling' && memberStatusState != 'Abroad') {
+                                travelEmbed.setDescription(flagIcon.flag + ' In Torn');
+                            }
+
+                            const originalMessage = await travelChannel.messages.fetch(messageID);
+                            await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
+
+                            setTimeout(() => {
+                                originalMessage.delete();
+                            }, 5 * 60 * 1000); // Delete 5 minutes after the message is sent
+                        }
                     }
+
                     memberCache.del(memberIndex[member.name]);
                 }
             }
-
-            if (travelingMembers == '') travelingMembers = '*none*';
-
-            //console.log(`Traveling: (${travelingMemberCount}/${memberCount})\nAbroad: (${abroadMemberCount}/${memberCount})`);
         }
     }
 }

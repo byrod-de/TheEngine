@@ -203,8 +203,6 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
                     } else {
                         printLog('armouryChannel is undefined');
                     }
-                } else {
-                    printLog(`Item not displayed: ${item}`);
                 }
             }
         }
@@ -309,7 +307,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
  * @param {number} warUpdateInterval - The interval for updating war-related information.
  * @return {Promise} A promise that resolves when the war status is checked and the information is updated.
  */
-async function checkWar(warChannel, memberChannel, warUpdateInterval) {
+async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChannel = undefined) {
 
     if (warChannel) {
 
@@ -365,8 +363,9 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                 let hasEnded = false;
                 const timestamp = factionJson.timestamp;
 
-                //start 30 min before
-                if (war.start - 1800 < timestamp) {
+                //start x min before
+                const preStart = 60 * 60;
+                if (war.start - preStart < timestamp) {
                     isActive = true;
                     if (war.end > 0) {
                         isActive = false;
@@ -617,6 +616,10 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval) {
                                 } else {
                                     fieldFaction2 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
                                 }
+
+                                if (travelChannel) {
+                                    await getTravelInformation(travelChannel, warUpdateInterval, factionID);
+                                }
                             }
                         }
                     }
@@ -759,14 +762,14 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
             const membersList = factionJson.members;
             const timestamp = factionJson.timestamp;
 
-            const travelTimestampCache = timestampCache.get('travelTimestamp');
+            const travelTimestampCache = timestampCache.get(`travelTimestamp_${faction_id}`);
 
             let firstRun = false;
             if (travelTimestampCache == undefined) {
                 firstRun = true;
             }
 
-            timestampCache.set('travelTimestamp', timestamp, 120 * travelUpdateInterval)
+            timestampCache.set(`travelTimestamp_${faction_id}`, timestamp, 120 * travelUpdateInterval)
 
             let memberIndex = {}
 
@@ -784,10 +787,15 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                 const cachedTravelInfo = memberCache.get(memberIndex[member.name]);
                 const flagIcon = getFlagIcon(memberStatusState, member.status.description);
 
-                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`);
+                let embedCategory = 'default';
+                if (factionId != homeFaction) {
+                    embedCategory = 'error';
+                }
+
+                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`, embedCategory);
                 travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                    .setDescription(flagIcon.flag + ' ' + member.status.description);
+                    .setDescription(member.status.description + ' ' +  flagIcon.flag);
 
                 //check Traveling status
                 if (memberStatusState == 'Traveling') {
@@ -796,11 +804,11 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
                     if (cachedTravelInfo) {
                         travelInfo = cachedTravelInfo;
-                        printLog(`>>> Member in air: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+                        //printLog(`>>> Member in air: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
                     } else {
                         if (firstRun) {
                             printLog(`>>> First Run, Member already traveling: ${memberIndex[member.name]} - ${travelInfo}`);
-                            travelEmbed.addFields({ name: `**${member.name}** is already traveling`, value: `*No details available*`, inline: true });
+                            travelEmbed.addFields({ name: `:airplane_departure: ${member.name} is already traveling`, value: `*No details available*`, inline: true });
 
                         } else {
                             printLog(`>>> Member started traveling: [${memberIndex[member.name]}] - ${travelInfo}`);
@@ -808,13 +816,13 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                             const travelTimes = getTravelTimes(memberStatusState, member.status.description);
 
                             const travelDetails =
-                                `\`Start   : \` around <t:${timestamp}:f>\n`
-                                + `\`Standard: \`<t:${timestamp + travelTimes.standard * 60}:R>\n`
-                                + `\`Airstrip: \`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
-                                + `\`WLT     : \`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
-                                + `\`BCT     : \`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
+                                `:timer: \`Start   :\` ± <t:${timestamp}:f>\n`
+                                + `:airplane_small: \`Standard:\`<t:${timestamp + travelTimes.standard * 60}:R>\n`
+                                + `:airplane: \`Airstrip:\`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
+                                + `:earth_africa: \`WLT     :\`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
+                                + `:ticket: \`BCT     :\`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
 
-                            travelEmbed.addFields({ name: `Estimated time of arrival:`, value: `${travelDetails}`, inline: true });
+                            travelEmbed.addFields({ name: `:airplane_departure: Estimated time of arrival:`, value: `${travelDetails}`, inline: true });
                         }
 
                         const message = await travelChannel.send({ embeds: [travelEmbed], ephemeral: false });
@@ -835,7 +843,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                             const travelDetails =
                                 `\`Landed  : \` around <t:${timestamp}:f>`;
 
-                            travelEmbed.addFields({ name: `${member.name} stopped travelling:`, value: `${travelDetails}`, inline: true });
+                            travelEmbed.addFields({ name: `:airplane_arriving: ${member.name} stopped travelling:`, value: `${travelDetails}`, inline: true });
                             if (memberStatusState != 'Traveling' && memberStatusState != 'Abroad') {
                                 travelEmbed.setDescription(flagIcon.flag + ' In Torn');
                             }
@@ -843,9 +851,13 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                             const originalMessage = await travelChannel.messages.fetch(messageID);
                             await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
 
+                            const delMinutes = 5;
+
+                            printLog(`> Embed with message ID ${messageID} has been edited and will be deleted in ${delMinutes} minutes.`);
+
                             setTimeout(() => {
                                 originalMessage.delete();
-                            }, 5 * 60 * 1000); // Delete 5 minutes after the message is sent
+                            }, delMinutes * 60 * 1000);
                         }
                     }
 
@@ -990,7 +1002,6 @@ async function getOCStats(selection, selectedDateValue) {
         var today = new Date();
         var firstDay, lastDay;
 
-
         if (!selectedDateValue) {
             selectedDateValue = today.getMonth();
             title = `*Current Month*`;
@@ -1052,8 +1063,6 @@ async function getOCStats(selection, selectedDateValue) {
 
             if (crime.initiated === 1) {
 
-
-
                 var firstDayDate = new Date(firstDay * 1000);
                 var newFirstDay = '';
 
@@ -1093,8 +1102,6 @@ async function getOCStats(selection, selectedDateValue) {
         printLog(crimeName + " " + total + " " + successRate.toFixed(2) + "%");
         ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
     }
-
-    console.log(title);
 
     return ocEmbed;
 }

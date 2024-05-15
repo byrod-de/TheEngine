@@ -82,7 +82,7 @@ client.on('ready', () => {
 	}
 
 	if (rankedWarChannel !== undefined) {
-		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval), 1000 * 60 * rankedWarConf.updateInterval);
+		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval, travelChannel), 1000 * 60 * rankedWarConf.updateInterval);
 	}
 
 	if (travelChannel !== undefined) {

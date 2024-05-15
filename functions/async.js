@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 
 const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed, getTravelTimes } = require('../helper/misc');
-const { getRemainingTime, cleanUpString, createProgressBar, splitIntoChunks } = require('../helper/formattings');
+const { extractFromRegex, cleanUpString, createProgressBar, splitIntoChunks } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 
@@ -795,16 +795,68 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                 const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`, embedCategory);
                 travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
-                    .setDescription(member.status.description + ' ' +  flagIcon.flag);
+                    .setDescription(member.status.description + ' ' + flagIcon.flag);
 
                 //check Traveling status
                 if (memberStatusState == 'Traveling') {
 
-                    let travelInfo = `${memberStatusState} - ${member.status.description}`;
+                    let travelInfo = `<${memberStatusState}> [${member.status.description}]`;
 
                     if (cachedTravelInfo) {
-                        travelInfo = cachedTravelInfo;
-                        //printLog(`>>> Member in air: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+
+                        printLog(`>>> Member in air: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+
+                        const cachedStatusState = extractFromRegex(cachedTravelInfo, /<(.+)>/);
+                        const cachedStatusDesc = extractFromRegex(cachedTravelInfo, /\[(.+)\]/);
+                        //console.log(cachedStatusState, cachedStatusDesc, member.status.description);
+                        if (member.status.description != cachedStatusDesc && cachedStatusState == 'Traveling') {
+                            printLog(`>>> Member status changed: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+
+                            try {
+                                const messageID = extractFromRegex(cachedTravelInfo, /\((\d+)\)/);
+
+                                try {
+                                    const originalMessage = await travelChannel.messages.fetch(messageID);
+
+                                    try {
+                                        const travelTimes = getTravelTimes(memberStatusState, member.status.description);
+
+                                        const travelDetails =
+                                            `:timer: \`Start   :\` ± <t:${timestamp}:f>\n`
+                                            + `:airplane_small: \`Standard:\`<t:${timestamp + travelTimes.standard * 60}:R>\n`
+                                            + `:airplane: \`Airstrip:\`<t:${timestamp + travelTimes.airstrip * 60}:R>\n`
+                                            + `:earth_africa: \`WLT     :\`<t:${timestamp + travelTimes.wlt * 60}:R>\n`
+                                            + `:ticket: \`BCT     :\`<t:${timestamp + travelTimes.bct * 60}:R>\n`;
+
+                                        travelEmbed.addFields({ name: `:airplane_departure: Estimated time of arrival:`, value: `${travelDetails}`, inline: true });
+
+
+                                        await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
+                                        printLog(`Message with ID ${messageID} has been edited.`);
+
+                                    } catch (deleteError) {
+                                        if (error.code === 10008) printLog('Message not found: ' + error);
+                                        else printLog('Failed to edit the message: ' + error);
+                                    }
+
+                                } catch (fetchError) {
+                                    if (fetchError.code === 10008) printLog('Message not found: ' + fetchError);
+                                    else printLog('Failed to fetch the message: ' + fetchError);
+                                }
+
+                                travelInfo += ` (${messageID})`;
+
+                                memberCache.set(memberIndex[member.name], travelInfo, 120);
+                                printLog(`Member cache entry for ${member.name} has been updated.`);
+
+                            } catch (error) {
+                                printLog('Failed to process the message deletion or cache update: ' + error);
+                            }
+
+                        } else {
+                            travelInfo = cachedTravelInfo;
+                        }
+
                     } else {
                         if (firstRun) {
                             printLog(`>>> First Run, Member already traveling: ${memberIndex[member.name]} - ${travelInfo}`);
@@ -833,11 +885,9 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                     memberCache.set(memberIndex[member.name], travelInfo, 120);
                 } else {
                     if (cachedTravelInfo) {
-                        printLog(`>>> Member stopped travelling: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+                        printLog(`>>> Member stopped traveling: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
 
-                        const regex = /\((\d+)\)/;
-                        const match = cachedTravelInfo.match(regex);
-                        const messageID = match ? match[1] : null;
+                        const messageID = extractFromRegex(cachedTravelInfo, /\((\d+)\)/);
 
                         if (messageID) {
                             const travelDetails =
@@ -848,16 +898,33 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                                 travelEmbed.setDescription(flagIcon.flag + ' In Torn');
                             }
 
-                            const originalMessage = await travelChannel.messages.fetch(messageID);
-                            await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
+                            try {
+                                const originalMessage = await travelChannel.messages.fetch(messageID);
 
-                            const delMinutes = 5;
+                                try {
+                                    await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
 
-                            printLog(`> Embed with message ID ${messageID} has been edited and will be deleted in ${delMinutes} minutes.`);
+                                    const delMinutes = 5;
 
-                            setTimeout(() => {
-                                originalMessage.delete();
-                            }, delMinutes * 60 * 1000);
+                                    printLog(`> Embed with message ID ${messageID} has been edited and will be deleted in ${delMinutes} minutes.`);
+
+                                    setTimeout(() => {
+                                        originalMessage.delete().catch(deleteError => {
+                                            printLog('Failed to delete the message:' + deleteError);
+                                        });
+                                    }, delMinutes * 60 * 1000);
+
+                                } catch (error) {
+                                    if (error.code === 10008) printLog('Message not found: ' + error);
+                                    else printLog('Failed to edit the message: ' + error);
+                                }
+
+                            } catch (fetchError) {
+                                if (fetchError.code === 10008) printLog('Message not found: ' + fetchError);
+                                else printLog('Failed to fetch the message: ' + fetchError);
+                            }
+
+
                         }
                     }
 

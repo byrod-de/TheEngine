@@ -270,4 +270,16 @@ function splitIntoChunks(membersList, entryFormat) {
   return memberChunks;
 }
 
-module.exports = { abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };
+/**
+ * Extracts a specific pattern from the input string using the provided regex.
+ *
+ * @param {string} inputString - The input string to extract from.
+ * @param {RegExp} regex - The regular expression pattern to match against.
+ * @return {string | null} The extracted pattern or null if no match is found.
+ */
+function extractFromRegex(inputString, regex) {
+  const match = inputString.match(regex);
+  return match ? match[1] : null;
+}
+
+module.exports = { extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };

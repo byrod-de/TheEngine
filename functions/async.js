@@ -760,6 +760,8 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
             const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
             const membersList = factionJson.members;
+            let membersTraveling = [];
+            let membersAbroad = [];
             const timestamp = factionJson.timestamp;
 
             const travelTimestampCache = timestampCache.get(`travelTimestamp_${faction_id}`);
@@ -771,20 +773,12 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
             timestampCache.set(`travelTimestamp_${faction_id}`, timestamp, 120 * travelUpdateInterval)
 
-            let memberIndex = {}
+            for (var memberId in membersList) {
 
-            for (var id in membersList) {
-                memberIndex[membersList[id].name] = id;
-            }
-
-            const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
-
-            for (var id in sortedMembers) {
-
-                let member = sortedMembers[id];
+                let member = membersList[memberId];
                 let memberStatusState = member.status.state;
 
-                const cachedTravelInfo = memberCache.get(memberIndex[member.name]);
+                const cachedTravelInfo = memberCache.get(memberId);
                 const flagIcon = getFlagIcon(memberStatusState, member.status.description);
 
                 let embedCategory = 'default';
@@ -792,8 +786,8 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                     embedCategory = 'error';
                 }
 
-                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberIndex[member.name]}]`, embedCategory);
-                travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}`)
+                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberId}]`, embedCategory);
+                travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberId}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
                     .setDescription(member.status.description + ' ' + flagIcon.flag);
 
@@ -801,16 +795,14 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                 if (memberStatusState == 'Traveling') {
 
                     let travelInfo = `<${memberStatusState}> [${member.status.description}]`;
+                    membersTraveling.push(memberId);
 
                     if (cachedTravelInfo) {
-
-                        printLog(`>>> Member in air: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
-
                         const cachedStatusState = extractFromRegex(cachedTravelInfo, /<(.+)>/);
                         const cachedStatusDesc = extractFromRegex(cachedTravelInfo, /\[(.+)\]/);
                         //console.log(cachedStatusState, cachedStatusDesc, member.status.description);
                         if (member.status.description != cachedStatusDesc && cachedStatusState == 'Traveling') {
-                            printLog(`>>> Member status changed: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+                            printLog(`>>> Member status changed: [${memberId}] - ${cachedTravelInfo}`);
 
                             try {
                                 const messageID = extractFromRegex(cachedTravelInfo, /\((\d+)\)/);
@@ -846,7 +838,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
                                 travelInfo += ` (${messageID})`;
 
-                                memberCache.set(memberIndex[member.name], travelInfo, 120);
+                                memberCache.set(memberId, travelInfo, 120);
                                 printLog(`Member cache entry for ${member.name} has been updated.`);
 
                             } catch (error) {
@@ -859,11 +851,11 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
                     } else {
                         if (firstRun) {
-                            printLog(`>>> First Run, Member already traveling: ${memberIndex[member.name]} - ${travelInfo}`);
+                            printLog(`>>> First Run, Member already traveling: ${memberId} - ${travelInfo}`);
                             travelEmbed.addFields({ name: `:airplane_departure: ${member.name} is already traveling`, value: `*No details available*`, inline: true });
 
                         } else {
-                            printLog(`>>> Member started traveling: [${memberIndex[member.name]}] - ${travelInfo}`);
+                            printLog(`>>> Member started traveling: [${memberId}] - ${travelInfo}`);
 
                             const travelTimes = getTravelTimes(memberStatusState, member.status.description);
 
@@ -882,10 +874,13 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                         travelInfo += ` (${message.id})`;
                     }
 
-                    memberCache.set(memberIndex[member.name], travelInfo, 120);
+                    memberCache.set(memberId, travelInfo, 120);
                 } else {
+                    if (memberStatusState == 'Abroad') {
+                        membersAbroad.push(memberId);
+                    }
                     if (cachedTravelInfo) {
-                        printLog(`>>> Member stopped traveling: [${memberIndex[member.name]}] - ${cachedTravelInfo}`);
+                        printLog(`>>> Member stopped traveling: [${memberId}] - ${cachedTravelInfo}`);
 
                         const messageID = extractFromRegex(cachedTravelInfo, /\((\d+)\)/);
 
@@ -923,13 +918,18 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                                 if (fetchError.code === 10008) printLog('Message not found: ' + fetchError);
                                 else printLog('Failed to fetch the message: ' + fetchError);
                             }
-
-
                         }
                     }
 
-                    memberCache.del(memberIndex[member.name]);
+                    memberCache.del(memberId);
                 }
+            }
+            if (membersTraveling.length > 0) {
+                printLog(`> Members which are traveling for ${faction_name} [${factionId}]: ${membersTraveling.join(', ')}`);
+            }
+
+            if (membersAbroad.length > 0) {
+                printLog(`> Members which are abroad for ${faction_name} [${factionId}]: ${membersAbroad.join(', ')}`);
             }
         }
     }

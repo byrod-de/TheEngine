@@ -366,4 +366,26 @@ function initializeEmbed(title, category = 'default') {
     return embed;
 }
 
-module.exports = { checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed, getTravelTimes };
+
+async function cleanChannel(channel) {
+    if (!channel) {
+        console.log(`Channel with ID ${channelId} does not exist.`);
+        return;
+    }
+
+    try {
+        const fetchedMessages = await channel.messages.fetch();
+        const messageIDs = fetchedMessages.map((msg) => msg.id);
+
+        for (const id of messageIDs) {
+            await channel.messages.delete(id);
+            //console.log(`Message ${id} deleted from channel ${channel.name}.`);
+        }
+
+        printLog(`<${channel.name}> emptied!`);
+    } catch (err) {
+        console.error('Error deleting messages:', err);
+    }
+}
+
+module.exports = { cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed, getTravelTimes };

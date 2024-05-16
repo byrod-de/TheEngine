@@ -7,7 +7,7 @@ const hostname = os.hostname();
 
 const moment = require('moment');
 
-const { readConfig } = require('./helper/misc');
+const { readConfig, cleanChannel } = require('./helper/misc');
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getTravelInformation } = require('./functions/async');
 const { verifyKeys } = require('./functions/api');
 const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf } = readConfig();
@@ -78,6 +78,7 @@ client.on('ready', () => {
 	}
 
 	if (retalChannel !== undefined) {
+		cleanChannel(retalChannel);
 		setInterval(() => checkRetals(retalChannel, retalConf.updateInterval), 1000 * 60 * retalConf.updateInterval);
 	}
 
@@ -86,6 +87,7 @@ client.on('ready', () => {
 	}
 
 	if (travelChannel !== undefined) {
+		cleanChannel(travelChannel);
 		setInterval(() => getTravelInformation(travelChannel, travelConf.updateInterval), 1000 * 60 * travelConf.updateInterval);
 	}
 

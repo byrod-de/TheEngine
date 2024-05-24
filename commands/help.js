@@ -26,7 +26,22 @@ module.exports = {
         continue;
       }
 
-      helpEmbed.addFields({ name: `/${command.data.name}`, value: `${command.data.description}`, inline: false });
+
+      let value = command.data.description;
+
+      const { SlashCommandSubcommandBuilder } = require('@discordjs/builders');
+      const subcommands = command.data.options.filter(option => option instanceof SlashCommandSubcommandBuilder);
+
+      if (subcommands.length != 0) {
+        value += '\n**Subcommands:**';
+        subcommands.forEach(subcommand => {
+          value += `\n- *${subcommand.name}* - ${subcommand.description}`;
+          console.log(`Name: ${subcommand.name}`);
+          console.log(`Description: ${subcommand.description}`);
+        });
+      }
+
+      helpEmbed.addFields({ name: `/${command.data.name}`, value: `${value}`, inline: false });
     }
 
     // Check if each channel ID exists

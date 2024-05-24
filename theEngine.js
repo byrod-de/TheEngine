@@ -86,10 +86,10 @@ client.on('ready', () => {
 		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval, travelChannel), 1000 * 60 * rankedWarConf.updateInterval);
 	}
 
-	if (travelChannel !== undefined) {
-		cleanChannel(travelChannel);
-		setInterval(() => getTravelInformation(travelChannel, travelConf.updateInterval), 1000 * 60 * travelConf.updateInterval);
-	}
+	//if (travelChannel !== undefined) {
+	//	cleanChannel(travelChannel);
+	//	setInterval(() => getTravelInformation(travelChannel, travelConf.updateInterval), 1000 * 60 * travelConf.updateInterval);
+	//}
 
 	if (memberChannel !== undefined) {
 		setInterval(() => checkMembers(memberChannel, memberConf.updateInterval), 1000 * 60 * memberConf.updateInterval);

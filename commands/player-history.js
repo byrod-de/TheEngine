@@ -90,10 +90,10 @@ module.exports = {
             }
 
             const statsEmbed = initializeEmbed(`${cleanUpString(tornUser)} [${tornId}]`);
-            statsEmbed.setURL(`https://www.torn.com/profiles.php?XID=${tornId}`)
+            statsEmbed.setURL(`https://byrod.cc/p/${tornId}`)
 
             if (faction_id > 0) {
-                statsEmbed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                statsEmbed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://byrod.cc/f/${faction_id}` })
             }
 
             let replyMsg = 'Stat'.padEnd(7) + ` | ${days}${'d ago'.padEnd(5)} | ${'Today'.padEnd(7)} | ${'Diff'.padEnd(7)} | ${'Daily'.padEnd(7)}\n`;

@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 
 const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed, getTravelTimes, cleanChannel } = require('../helper/misc');
-const { abbreviateNumber, numberWithCommas, extractFromRegex, cleanUpString, createProgressBar, splitIntoChunks } = require('../helper/formattings');
+const { abbreviateNumber, numberWithCommas, extractFromRegex, cleanUpString, createProgressBar, splitIntoChunks, capitalize } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
 
@@ -13,6 +13,7 @@ const itemCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
+const { channel } = require('node:diagnostics_channel');
 
 const hostname = os.hostname();
 
@@ -91,7 +92,7 @@ async function checkTerritories(territoryChannel, territoryUpdateInterval) {
 
 
             let territoryEmbed = initializeEmbed('Territory Status');
-            territoryEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` });
+            territoryEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://byrod.cc/f/${faction_id}` });
 
             let territories = territoryJson ? Object.keys(territoryJson.territory).sort() : null;
             if (!territories || territories.length <= 0) {
@@ -194,7 +195,7 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
 
                 if (tornParams.armouryFilter.some(i => item.includes(i))) {
                     const armouryEmbed = initializeEmbed('Armoury Usage');
-                    armouryEmbed.setAuthor({ name: `${cleanUpString(tornUser)} [${tornId}]`, iconURL: faction_icon, url: `https://www.torn.com/profiles.php?XID=${tornId}` });
+                    armouryEmbed.setAuthor({ name: `${cleanUpString(tornUser)} [${tornId}]`, iconURL: faction_icon, url: `https://byrod.cc/p/${tornId}` });
 
                     armouryEmbed.addFields({ name: `${item}`, value: `${tornUser} [${tornId}] ${newstext}`, inline: false });
 
@@ -258,20 +259,22 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
             let overseas = false;
             if (attacks[attackID].modifiers.overseas > 1) overseas = true;
 
-            if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
-
+            //if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
+            if (true) {
+                
+            
                 const attackEmbed = initializeEmbed(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`);
 
-                attackEmbed.setURL(`https://www.torn.com/loader.php?sid=attack&user2ID=${attacker_id}`)
-                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                attackEmbed.setURL(`https://byrod.cc/a/${attacker_id}`)
+                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://byrod.cc/f/${faction_id}` })
                     .setDescription(`Retal deadline <t:${deadline}:R>`);
 
-                attackEmbed.addFields({ name: `Defender`, value: `${cleanUpString(defender_name)} [${defender_id}]`, inline: false });
-                attackEmbed.addFields({ name: `Attacker`, value: `${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`, inline: false });
+                attackEmbed.addFields({ name: `Defender`, value: `[»»](https://byrod.cc/p/${defender_id}) ${cleanUpString(defender_name)} [${defender_id}]`, inline: false });
+                attackEmbed.addFields({ name: `Attacker`, value: `[»»](https://byrod.cc/p/${attacker_id}) ${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`, inline: false });
                 printLog(`Defender ${cleanUpString(defender_name)} [${defender_id}] < Attacker ${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`);
 
 
-                if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `Attack was abroad.`, inline: false });
+                if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `:golf:Attack was abroad.`, inline: false });
 
 
                 if (retalChannel) {
@@ -507,8 +510,8 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 }
 
                 rwEmbed.setTitle(`Ranked war between _${faction1.name}_ and _${faction2.name}_`)
-                    .setURL(`https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}#/war/rank`)
-                    .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
+                    .setURL(`https://byrod.cc/f/${ownFactionID}#/war/rank`)
+                    .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
                     .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`);
 
 
@@ -528,17 +531,17 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                     ownTravelEmbed.setTitle(`:airplane: Members traveling`)
                         .setDescription(`List of ${ownFactionName} members, which are traveling\n_Update interval: every ${warUpdateInterval} minutes._`)
-                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` });
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
                     ownAbroadEmbed.setTitle(`:golf: Members Abroad`)
                         .setDescription(`List of ${ownFactionName} members, which are abroad\n_Update interval: every ${warUpdateInterval} minutes._`)
-                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` });
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
 
                     ownHospitalEmbed.setTitle(`:hospital: Members in hospital`)
                         .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
-                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` });
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
                     ownStatusEmbed.setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of ${ownFactionName}\n_Update interval: every ${warUpdateInterval} minutes._`)
-                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` });
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
 
                     for (var factionID in rankedWar.factions) {
                         const responseMembers = await callTornApi('faction', 'basic', factionID, undefined, undefined, undefined, undefined, 'rotate');
@@ -581,7 +584,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                 //check Traveling status
                                 if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad' || member.status.description.includes('In a ')) {
 
-                                    let entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://www.torn.com/profiles.php?XID=${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
+                                    let entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://byrod.cc/p/${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
                                     if (member.status.description.includes('In a ')) entry += ' :syringe:';
 
 
@@ -601,7 +604,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     let flag = flagIcon.flag;
                                     if (flag == ':flag_black:') flag = '';
 
-                                    const entry = `:syringe: [»»](https://www.torn.com/loader.php?sid=attack&user2ID=${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
+                                    const entry = `:syringe: [»»](https://byrod.cc/a/${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
                                     if (hospitalMembers.length + entry.length < 1024) hospitalMembers += entry;
 
 
@@ -760,7 +763,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         printLog('Faction is enlisted!');
 
                         rwEmbed.setTitle(`Faction is currently enlisted!`)
-                            .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionID}` })
+                            .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
                             .setDescription(description);
 
                         if (warChannel) {
@@ -834,8 +837,8 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                 }
 
                 const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberId}]`, embedCategory);
-                travelEmbed.setURL(`https://www.torn.com/profiles.php?XID=${memberId}`)
-                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+                travelEmbed.setURL(`https://byrod.cc/p/${memberId}`)
+                    .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
                     .setDescription(member.status.description + ' ' + flagIcon.flag);
 
                 //check Traveling status
@@ -1068,10 +1071,10 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             offlineMembersList.sort((a, b) => a.lastActionTimestamp - b.lastActionTimestamp);
 
             if (jailMembersList.length > 0) {
-                jailEmbed.setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` })
+                jailEmbed.setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` })
                     .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`);
 
-                const entryFormat = `:oncoming_police_car: [»»](https://www.torn.com/profiles.php?XID={{id}}) {{name}} - out <t:{{statusUntil}}:R>\n`;
+                const entryFormat = `:oncoming_police_car: [»»](https://byrod.cc/p/{{id}}) {{name}} - out <t:{{statusUntil}}:R>\n`;
                 const jailChunks = splitIntoChunks(jailMembersList, entryFormat);
 
                 // Add each chunk as a separate field
@@ -1084,14 +1087,14 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');
             }
             ownStatusEmbed.setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
-                .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://www.torn.com/factions.php?step=profile&ID=${ownFactionId}` });
+                .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` });
 
             ownStatusEmbed.addFields({ name: `Member Status`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}`, inline: true });
             ownStatusEmbed.addFields({ name: `Online Status`, value: `:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
             if (offlineMembersList.length > 0) {
                 let offlineMembersEntries = '';
                 for (const member of offlineMembersList) {
-                    const entry = `:zzz: [»»](https://www.torn.com/profiles.php?XID=${member.id}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
+                    const entry = `:zzz: [»»](https://byrod.cc/p/${member.id}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
                     offlineMembersEntries += entry;
                 }
                 ownStatusEmbed.addFields({ name: 'Offline > 1 day', value: offlineMembersEntries, inline: false });
@@ -1165,7 +1168,7 @@ async function getOCStats(selection, selectedDateValue) {
     }
 
     const ocEmbed = initializeEmbed(`OC Overview for ${title}`);
-    ocEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` });
+    ocEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
 
     const crimeSummary = {};
 
@@ -1271,7 +1274,7 @@ async function getReviveStatus(factionId, message) {
     const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
     const reviveEmbed = initializeEmbed('Faction Revive Status');
-    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
         .setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
         ;
 
@@ -1299,7 +1302,7 @@ async function getReviveStatus(factionId, message) {
                 let content = '';
 
                 const progressBar = createProgressBar(membersCount, memberLength, 'circle');
-                content = `Executing Revive Status for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait.\n`;
+                content = `Executing Revive Status for [${faction_name}](https://byrod.cc/f/${faction_id}), please wait.\n`;
 
                 if (membersCount != memberLength) {
                     content += `${progressBar}\n`;
@@ -1356,7 +1359,7 @@ async function getReviveStatus(factionId, message) {
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${statusIcon} [»»](https://www.torn.com/profiles.php?XID=${memberId}) ${cleanUpString(member.name)}\n`;
+                const entry = `${statusIcon} [»»](https://byrod.cc/p/${memberId}) ${cleanUpString(member.name)}\n`;
 
                 revivableMembers += entry;
                 reviveCount++;
@@ -1427,7 +1430,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
     const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
     const reviveEmbed = initializeEmbed('Faction War Activity');
-    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
         ;
 
     let selectedMembers = '';
@@ -1457,7 +1460,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
                 let content = '';
 
                 const progressBar = createProgressBar(membersCount, memberLength, 'circle');
-                content = `Executing War Activity check for [${faction_name}](https://www.torn.com/factions.php?step=profile&ID=${faction_id}), please wait.\n`;
+                content = `Executing War Activity check for [${faction_name}](https://byrod.cc/f/${faction_id}), please wait.\n`;
 
                 if (membersCount != memberLength) {
                     content += `${progressBar}\n`;
@@ -1492,13 +1495,14 @@ async function getWarActivity(factionId, message, exportCSV = false) {
 
 
 
-        const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, undefined, 'rankedwarhits,retals,statenhancersused', "rotate", undefined);
+        const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, undefined, 'rankedwarhits,retals,statenhancersused,xantaken', "rotate", undefined);
         if (statsResponse[0]) {
             const statsJson = statsResponse[2];
             const personalstats = statsJson['personalstats'];
             const rankedwarhits = personalstats['rankedwarhits'];
             const retals = personalstats['retals'];
             const statenhancersused = personalstats['statenhancersused'];
+            const xantaken = personalstats['xantaken'];
 
             const entry = `\`${cleanUpString(member.name).padEnd(20, ' ')} | ${rankedwarhits.toString().padStart(5, ' ')} | ${retals.toString().padStart(5, ' ')} | ${statenhancersused.toString().padStart(5, ' ')}\`\n`;
             const player = {
@@ -1506,7 +1510,8 @@ async function getWarActivity(factionId, message, exportCSV = false) {
                 id: memberId,
                 rankedwarhits: rankedwarhits,
                 retals: retals,
-                statenhancersused: statenhancersused
+                statenhancersused: statenhancersused,
+                xantaken: xantaken
             };
 
             entries.push(player);
@@ -1548,11 +1553,11 @@ async function getWarActivity(factionId, message, exportCSV = false) {
 
     if (exportCSV) {
 
-        let csvString = 'Name,ID,Ranked War Hits,Retals,Stat Enhancers Used\n';
+        let csvString = 'Name,ID,Ranked War Hits,Retals,Stat Enhancers Used,Xanax Taken\n';
 
         entries.forEach(entry => {
             // Format the entry into a CSV string
-            const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.retals},${entry.statenhancersused}\n`;
+            const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.retals},${entry.statenhancersused},${entry.xantaken}\n`;
 
             // Append the formatted entry string to the CSV string
             csvString += entryString;
@@ -1568,4 +1573,51 @@ async function getWarActivity(factionId, message, exportCSV = false) {
 }
 
 
-module.exports = { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, timestampCache };
+async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
+
+    if (tornDataChannel) {
+        const responseEnvironment = await callTornApi('torn', 'shoplifting,searchforcash,timestamp');
+
+        if (responseEnvironment[0]) {
+            const envorinmentJson = responseEnvironment[2];
+            const searchForCash = envorinmentJson['searchforcash'];
+            const shoplifting = envorinmentJson['shoplifting'];
+
+            let searchForCashValue = '';
+            let shopliftingValue = '';
+
+            const environmentEmbed = initializeEmbed('Torn Insights');
+            environmentEmbed.setDescription('Crimes Environment Data');
+            
+            for (const key in searchForCash) {
+                const entry = `**${capitalize(key)}**\n- ${searchForCash[key].title}:\n- ${searchForCash[key].percentage}%\n`;
+                searchForCashValue += entry;
+            }
+
+            environmentEmbed.addFields({ name: ':dollar: Search For Cash', value: searchForCashValue, inline: true });
+
+            for (const key in shoplifting) {
+                let details = '';
+                for (const subKey in shoplifting[key]) {
+                    let disabled = ':o:';
+                    if (shoplifting[key][subKey].disabled) disabled = ':green_circle:';
+                    details += `- ${disabled} ${shoplifting[key][subKey].title}\n`;
+                }
+
+                const entry = `**${capitalize(key)}** \n${details}`;
+                shopliftingValue += entry;
+                
+            }
+
+            environmentEmbed.addFields({ name: ':department_store: Shoplifting', value: shopliftingValue, inline: true });
+
+            const message = await tornDataChannel.send({ embeds: [attackEmbed], ephemeral: false });
+
+
+        }
+    }
+}
+
+
+
+module.exports = { checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, timestampCache };

@@ -8,7 +8,7 @@ const hostname = os.hostname();
 const moment = require('moment');
 
 const { readConfig, cleanChannel } = require('./helper/misc');
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getTravelInformation } = require('./functions/async');
+const { checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');
 const { verifyKeys } = require('./functions/api');
 const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf } = readConfig();
 
@@ -68,6 +68,7 @@ client.on('ready', () => {
 	const retalChannel = client.channels.cache.get(retalConf.channelId);
 	const rankedWarChannel = client.channels.cache.get(rankedWarConf.channelId);
 	const verificationChannel = client.channels.cache.get(verificationConf.channelId);
+	//const tornDataChannel = client.channels.cache.get(tornDataConf.channelId);
 
 	if (territoryChannel !== undefined) {
 		setInterval(() => checkTerritories(territoryChannel, territoryConf.updateInterval), 1000 * 60 * territoryConf.updateInterval);
@@ -83,6 +84,9 @@ client.on('ready', () => {
 	}
 
 	if (rankedWarChannel !== undefined) {
+		if (travelChannel !== undefined) {
+			cleanChannel(travelChannel);
+		}
 		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval, travelChannel), 1000 * 60 * rankedWarConf.updateInterval);
 	}
 
@@ -99,6 +103,11 @@ client.on('ready', () => {
 	if (verificationChannel !== undefined) {
 		setInterval(() => verifyKeys(verificationChannel, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
 	}
+
+	//if (tornDataChannel !== undefined) {
+	//	checkCrimeEnvironment(tornDataChannel, tornDataConf.updateInterval);
+	//	setInterval(() => checkCrimeEnvironment(tornDataChannel, tornDataConf.updateInterval), 1000 * 60 * tornDataConf.updateInterval);
+	//}
 });
 
 client.on(Events.InteractionCreate, async interaction => {

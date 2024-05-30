@@ -53,7 +53,7 @@ module.exports = {
 
 
         const ceEmbed = initializeEmbed('Crime Experience');
-        ceEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://www.torn.com/factions.php?step=profile&ID=${faction_id}` })
+        ceEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
                .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently not in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*');
 
         let rankSplit = Math.floor(crimeexp.length / 4);

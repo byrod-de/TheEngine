@@ -77,7 +77,7 @@ module.exports = {
 
                     embed.setColor(successColor)
                         .setTitle(`${newKey.name} [${newKey.id.toString()}]`)
-                        .setURL(`https://www.torn.com/profiles.php?XID=${newKey.id}`)
+                        .setURL(`https://byrod.cc/p/${newKey.id}`)
                         .setDescription(`API Key Stored`);
 
                     embed.addFields(

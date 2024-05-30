@@ -282,4 +282,12 @@ function extractFromRegex(inputString, regex) {
   return match ? match[1] : null;
 }
 
-module.exports = { extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };
+function capitalize(str) {
+  return str
+    .replace(/_/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+module.exports = { capitalize, extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };

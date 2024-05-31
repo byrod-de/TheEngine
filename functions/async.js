@@ -259,10 +259,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
             let overseas = false;
             if (attacks[attackID].modifiers.overseas > 1) overseas = true;
 
-            //if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
-            if (true) {
-                
-            
+            if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
                 const attackEmbed = initializeEmbed(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`);
 
                 attackEmbed.setURL(`https://byrod.cc/a/${attacker_id}`)
@@ -1350,7 +1347,7 @@ async function getReviveStatus(factionId, message) {
                     reviveIcon = ':health_worker:';
                 }
 
-                let statusIcon = ':black_small_square:';
+                let statusIcon = '`  `';
 
                 switch (member.status.state) {
                     case 'Hospital': statusIcon = ':syringe:'; break;

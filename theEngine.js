@@ -24,7 +24,6 @@ for (const file of commandFiles) {
 	client.commands.set(command.data.name, command);
 }
 
-
 client.once(Events.ClientReady, c => {
 	let startUpTime = moment().format().replace('T', ' ');
 
@@ -32,16 +31,11 @@ client.once(Events.ClientReady, c => {
 
 	const statusChannel = client.channels.cache.get(statusConf.channelId);
 
-	if (statusChannel !== undefined) {
+	if (statusChannel) {
 		sendStatusMsg(statusChannel, statusConf.updateInterval, statusMessage, startUpTime);
 		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval, startUpTime), 1000 * 60 * statusConf.updateInterval);
 	}
 
-
-	//0: Playing
-	//1: Streaming
-	//2: Listening
-	//3: Watching
 	const activityPool = [
 		{ name: "in the basement", type: 0 },
 		{ name: "Torn(dot)com!", type: 0 },
@@ -60,54 +54,44 @@ client.once(Events.ClientReady, c => {
 });
 
 client.on('ready', () => {
+	const channels = {
+		territory: client.channels.cache.get(territoryConf.channelId),
+		armoury: client.channels.cache.get(armouryConf.channelId),
+		member: client.channels.cache.get(memberConf.channelId),
+		travel: client.channels.cache.get(travelConf.channelId),
+		retal: client.channels.cache.get(retalConf.channelId),
+		rankedWar: client.channels.cache.get(rankedWarConf.channelId),
+		verification: client.channels.cache.get(verificationConf.channelId),
+	};
 
-	const territoryChannel = client.channels.cache.get(territoryConf.channelId);
-	const armouryChannel = client.channels.cache.get(armouryConf.channelId);
-	const memberChannel = client.channels.cache.get(memberConf.channelId);
-	const travelChannel = client.channels.cache.get(travelConf.channelId);
-	const retalChannel = client.channels.cache.get(retalConf.channelId);
-	const rankedWarChannel = client.channels.cache.get(rankedWarConf.channelId);
-	const verificationChannel = client.channels.cache.get(verificationConf.channelId);
-	//const tornDataChannel = client.channels.cache.get(tornDataConf.channelId);
-
-	if (territoryChannel !== undefined) {
-		setInterval(() => checkTerritories(territoryChannel, territoryConf.updateInterval), 1000 * 60 * territoryConf.updateInterval);
+	if (channels.territory) {
+		setInterval(() => checkTerritories(channels.territory, territoryConf.updateInterval), 1000 * 60 * territoryConf.updateInterval);
 	}
 
-	if (armouryChannel !== undefined) {
-		setInterval(() => checkArmoury(armouryChannel, armouryConf.updateInterval), 1000 * 60 * armouryConf.updateInterval);
+	if (channels.armoury) {
+		setInterval(() => checkArmoury(channels.armoury, armouryConf.updateInterval), 1000 * 60 * armouryConf.updateInterval);
 	}
 
-	if (retalChannel !== undefined) {
-		cleanChannel(retalChannel);
-		setInterval(() => checkRetals(retalChannel, retalConf.updateInterval), 1000 * 60 * retalConf.updateInterval);
+	if (channels.retal) {
+		cleanChannel(channels.retal);
+		setInterval(() => checkRetals(channels.retal, retalConf.updateInterval), 1000 * 60 * retalConf.updateInterval);
 	}
 
-	if (rankedWarChannel !== undefined) {
-		if (travelChannel !== undefined) {
-			cleanChannel(travelChannel);
+	if (channels.rankedWar) {
+		if (channels.travel) {
+			cleanChannel(channels.travel);
 		}
-		setInterval(() => checkWar(rankedWarChannel, memberChannel, rankedWarConf.updateInterval, travelChannel), 1000 * 60 * rankedWarConf.updateInterval);
+		setInterval(() => checkWar(channels.rankedWar, channels.member, rankedWarConf.updateInterval, channels.travel), 1000 * 60 * rankedWarConf.updateInterval);
 	}
 
-	//if (travelChannel !== undefined) {
-	//	cleanChannel(travelChannel);
-	//	setInterval(() => getTravelInformation(travelChannel, travelConf.updateInterval), 1000 * 60 * travelConf.updateInterval);
-	//}
-
-	if (memberChannel !== undefined) {
-		setInterval(() => checkMembers(memberChannel, memberConf.updateInterval), 1000 * 60 * memberConf.updateInterval);
-		setInterval(() => checkOCs(memberChannel, memberConf.updateInterval), 1000 * 60 * 60 * memberConf.updateInterval);
-	}
-	
-	if (verificationChannel !== undefined) {
-		setInterval(() => verifyKeys(verificationChannel, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
+	if (channels.member) {
+		setInterval(() => checkMembers(channels.member, memberConf.updateInterval), 1000 * 60 * memberConf.updateInterval);
+		setInterval(() => checkOCs(channels.member, memberConf.updateInterval), 1000 * 60 * 60 * memberConf.updateInterval);
 	}
 
-	//if (tornDataChannel !== undefined) {
-	//	checkCrimeEnvironment(tornDataChannel, tornDataConf.updateInterval);
-	//	setInterval(() => checkCrimeEnvironment(tornDataChannel, tornDataConf.updateInterval), 1000 * 60 * tornDataConf.updateInterval);
-	//}
+	if (channels.verification) {
+		setInterval(() => verifyKeys(channels.verification, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
+	}
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -125,4 +109,4 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
-client.login(discordConf.token);
+client.login(discordConf.token).catch(console.error);

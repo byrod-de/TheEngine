@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
-const fs = require('node:fs');
 const { getWarActivity } = require('../functions/async');
 const { verifyChannelAccess, readConfig } = require('../helper/misc');
 
@@ -36,7 +35,7 @@ module.exports = {
             return;
         }
 
-            await interaction.editReply({ embeds: [warActivityOutput.embed], ephemeral: false });
+        await interaction.editReply({ embeds: [warActivityOutput.embed], ephemeral: false });
 
         if (warActivityOutput.csvFilePath) {
             const attachment = new AttachmentBuilder(warActivityOutput.csvFilePath);

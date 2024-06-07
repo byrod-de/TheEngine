@@ -25,6 +25,7 @@ module.exports = {
 
         await interaction.reply({ embeds: [botStatusEmbed], ephemeral: false });
 
+        /*
         const button1 = new ButtonBuilder()
             .setCustomId('primary')
             .setLabel('Primary Button')
@@ -69,8 +70,9 @@ module.exports = {
         });
 
         collector.on('end', collected => {
-            interaction.channel.send(`Collected ${collected.size} interactions.`);
+            //interaction.channel.send(`Collected ${collected.size} interactions.`);
 			
         });
+        */
     },
 };

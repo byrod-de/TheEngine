@@ -28,7 +28,7 @@ module.exports = {
 
         const crimeParticipants = [];
 
-        let numberOfPAs = 0;	
+        let numberOfPAs = 0;
         for (const id in crimes) {
             const crime = crimes[id];
 
@@ -54,7 +54,7 @@ module.exports = {
 
         const ceEmbed = initializeEmbed('Crime Experience');
         ceEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
-               .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently not in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*');
+            .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently not in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*');
 
         let rankSplit = Math.floor(crimeexp.length / 4);
         let start = 1;
@@ -74,7 +74,8 @@ module.exports = {
                 embedCount++;
 
                 ceEmbed.addFields({ name: `${start} to ${rank}`, value, inline: true });
-                if (embedCount % 2 === 0) ceEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false }); value = '';
+                if (embedCount % 2 === 0) ceEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });
+                value = '';
                 start = rank;
             }
         }

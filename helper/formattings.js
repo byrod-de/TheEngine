@@ -203,13 +203,13 @@ function createProgressBar(current, max, format = 'default', barLength = 18) {
       progressBar = '▬'.repeat(centerIndex) + scaleSymbolPos + '▬'.repeat(centerIndex);
 
     } else if (current > 0) {
-      const progress = ((current / max) * centerIndex) -1;
+      const progress = ((current / max) * centerIndex) - 1;
       const filledCount = Math.min(centerIndex, Math.max(0, Math.floor(progress)));
       const positiveHalf = '▬'.repeat(filledCount) + 'X' + '▬'.repeat(Math.max(0, centerIndex - filledCount - 1));
       progressBar = '▬'.repeat(centerIndex) + centerChar + positiveHalf;
       progressBar = progressBar.replace('X', scaleSymbolPos);
     } else {
-      const progress = (current * -1 / max) * centerIndex  -1;
+      const progress = (current * -1 / max) * centerIndex - 1;
       const filledCount = Math.min(centerIndex, Math.max(0, Math.floor(progress)));
       const negativeHalf = '▬'.repeat(filledCount) + 'X' + '▬'.repeat(Math.max(0, centerIndex - filledCount - 1));
       progressBar = reverseString(negativeHalf) + centerChar + '▬'.repeat(centerIndex);
@@ -248,23 +248,26 @@ function splitIntoChunks(membersList, entryFormat) {
   const memberChunks = [];
   let currentChunk = [];
   for (const member of membersList) {
-      const entry = entryFormat
-          .replace('{{id}}', member.id)
-          .replace('{{name}}', cleanUpString(member.name))
-          .replace('{{statusUntil}}', member.statusUntil);
+    const entry = entryFormat
+      .replace(/{{id}}/g, member.id)
+      .replace(/{{name}}/g, cleanUpString(member.name))
+      .replace(/{{statusUntil}}/g, member.statusUntil)
+      .replace(/{{direction}}/g, member.direction)
+      .replace(/{{flag}}/g, member.flag)
+      .replace(/{{statusIcon}}/g, member.statusIcon);
 
-      if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
-          if (currentChunk.length > 0) {
-              memberChunks.push(currentChunk.join(''));
-              currentChunk = [];
-          }
+    if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
+      if (currentChunk.length > 0) {
+        memberChunks.push(currentChunk.join(''));
+        currentChunk = [];
       }
+    }
 
-      currentChunk.push(entry);
+    currentChunk.push(entry);
   }
 
   if (currentChunk.length > 0) {
-      memberChunks.push(currentChunk.join(''));
+    memberChunks.push(currentChunk.join(''));
   }
 
   return memberChunks;

@@ -333,9 +333,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             const ownHospitalEmbed = initializeEmbed(`Embed`);
             const ownStatusEmbed = initializeEmbed(`Embed`);
 
-            const memberLimitForEmbed = 10;
-
-
             const rankedWar = Object.values(rankedWars)[0];
 
             if (rankedWar) {
@@ -522,7 +519,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         .setDescription(`List of members, which are abroad\n_Update interval: every ${warUpdateInterval} minutes._`);
 
                     hospitalEmbed.setTitle(`:hospital: Members in hospital`)
-                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`);
+                        .setDescription(`List of the next members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`);
                     statusEmbed.setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of each faction\n_Update interval: every ${warUpdateInterval} minutes._`);
 
@@ -534,7 +531,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
 
                     ownHospitalEmbed.setTitle(`:hospital: Members in hospital`)
-                        .setDescription(`List of the next ${memberLimitForEmbed} members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
+                        .setDescription(`List of the next members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
                     ownStatusEmbed.setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of ${ownFactionName}\n_Update interval: every ${warUpdateInterval} minutes._`)
@@ -545,7 +542,9 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                         if (responseMembers[0]) {
                             let travelingMembers = '';
+                            let travelingMembersList = [];
                             let abroadMembers = '';
+                            let abroadMembersList = [];
                             let hospitalMembers = '';
                             let hospitalMemberCount = 0;
                             let okayMemberCount = 0;
@@ -584,13 +583,29 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     let entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://byrod.cc/p/${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
                                     if (member.status.description.includes('In a ')) entry += ' :syringe:';
 
-
                                     if (memberStatusState == 'Traveling') {
                                         travelingMemberCount++;
                                         if (travelingMembers.length + entry.length < 1024) travelingMembers += entry + '\n';
+
+                                        travelingMembersList.push(
+                                            {
+                                                name: member.name,
+                                                id: memberIndex[member.name],
+                                                direction: flagIcon.direction,
+                                                flag : flagIcon.flag
+                                            }
+                                        );
                                     } else {
                                         abroadMemberCount++;
                                         if (abroadMembers.length + entry.length < 1024) abroadMembers += entry + '\n';
+                                        abroadMembersList.push(
+                                            {
+                                                name: member.name,
+                                                id: memberIndex[member.name],
+                                                direction: flagIcon.direction,
+                                                flag : flagIcon.flag
+                                            }
+                                        );
                                     }
                                 }
 
@@ -603,8 +618,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                                     const entry = `:syringe: [»»](https://byrod.cc/a/${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
                                     if (hospitalMembers.length + entry.length < 1024) hospitalMembers += entry;
-
-
                                 }
 
                                 if (memberStatusState == 'Okay') {
@@ -633,11 +646,37 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                             statusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}\n\n:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
 
+                            travelingMembersList.sort((a, b) => a.flag.localeCompare(b.flag));
+                            const travelingToList = travelingMembersList.filter(member => member.direction === '`> `');
+                            const travelingFromList = travelingMembersList.filter(member => member.direction === '`< `');
+
+                            const entryFormat = `{{direction}} {{flag}} [»»](https://byrod.cc/p/{{id}}) {{name}}\n`;
+                            const travelToChunks = splitIntoChunks(travelingToList, entryFormat);
+                            const travelFromChunks = splitIntoChunks(travelingFromList, entryFormat);
+                            const abroadChunks = splitIntoChunks(abroadMembersList, entryFormat);
+    
                             if (factionID == ownFactionID) {
-                                travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-                                abroadEmbed.addFields({ name: `${faction.name} [${factionID}]\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${abroadMembers}`, inline: true });
-                                ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-                                ownAbroadEmbed.addFields({ name: `${faction.name} [${factionID}]\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${abroadMembers}`, inline: true });
+
+                                travelToChunks.forEach((chunk, index) => {
+                                    const travelToChunksLength = (chunk.match(/\n/g) || []).length;
+                                    travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
+                                    ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
+                                });
+                                
+                                travelFromChunks.forEach((chunk, index) => {
+                                    const travelFromChunksLength = (chunk.match(/\n/g) || []).length;
+                                    travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_backward: Traveling fom: (${travelFromChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
+                                    ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_backward: Traveling from: (${travelFromChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
+                                });
+
+                                travelEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });
+
+                                abroadChunks.forEach((chunk, index) => {
+                                    abroadEmbed.addFields({ name: `${faction.name} [${factionID}]\n:pause_button: Abroad: (${abroadMemberCount}/${memberCount})`, value: chunk, inline: true });
+                                    ownAbroadEmbed.addFields({ name: `${faction.name} [${factionID}]\n:pause_button: Abroad: (${abroadMemberCount}/${memberCount})`, value: chunk, inline: true });
+                                });
+
+                                abroadEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false })
 
                                 ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
                                 ownStatusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
@@ -650,8 +689,22 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             }
 
                             if (factionID != ownFactionID) {
-                                travelEmbed.addFields({ name: `${faction.name} [${factionID}]\nTraveling: (${travelingMemberCount}/${memberCount})`, value: `${travelingMembers}`, inline: true });
-                                abroadEmbed.addFields({ name: `${faction.name} [${factionID}]\nAbroad: (${abroadMemberCount}/${memberCount})`, value: `${abroadMembers}`, inline: true });
+                                travelToChunks.forEach((chunk, index) => {
+                                    const travelToChunksLength = (chunk.match(/\n/g) || []).length;
+                                    travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
+                                });
+                                
+                                travelFromChunks.forEach((chunk, index) => {
+                                    const travelFromChunksLength = (chunk.match(/\n/g) || []).length;
+                                    travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_backward: Traveling fom: (${travelFromChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
+                                });
+
+                                travelEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });
+
+                                abroadChunks.forEach((chunk, index) => {
+                                    abroadEmbed.addFields({ name: `${faction.name} [${factionID}]\n:pause_button: Abroad: (${abroadMemberCount}/${memberCount})`, value: chunk, inline: true });
+                                });
+                                abroadEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });  
                                 hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
 
                                 if (faction1ID != ownFactionID) {
@@ -752,7 +805,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         if (news['news'].includes('defeated') && news['news'].includes('in a ranked war')) {
                             break;
                         }
-
                     }
 
                     if (isEnlisted) {
@@ -766,7 +818,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         if (warChannel) {
                             await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
                         }
-
                     } else {
                         if (warChannel) {
                             await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
@@ -777,10 +828,8 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
                     }
                 }
-
             }
         }
-
     } else {
         printLog('warChannel is undefined');
     }
@@ -1275,7 +1324,7 @@ async function getReviveStatus(factionId, message) {
         .setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
         ;
 
-    let revivableMembers = '';
+    let revivableMembersList = [];
     let reviveCount = 0;
     let membersCount = 0;
 
@@ -1348,17 +1397,19 @@ async function getReviveStatus(factionId, message) {
                 }
 
                 let statusIcon = '`  `';
-
+                let statusUntil = '';
                 switch (member.status.state) {
-                    case 'Hospital': statusIcon = ':syringe:'; break;
+                    case 'Hospital': statusIcon = ':syringe:'; statusUntil =  `<t:${member.status.until}:R>`; break;
                     case 'Jail': statusIcon = ':oncoming_police_car:'; break;
                     case 'Abroad': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                 }
 
-                const entry = `${statusIcon} [»»](https://byrod.cc/p/${memberId}) ${cleanUpString(member.name)}\n`;
-
-                revivableMembers += entry;
+                revivableMembersList.push({
+                    name: member.name,
+                    id: memberId,
+                    statusIcon: statusIcon,
+                    statusUntil: statusUntil});
                 reviveCount++;
             }
         }
@@ -1367,32 +1418,21 @@ async function getReviveStatus(factionId, message) {
     const content = `>>> Found ${reviveCount} revivable members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`;
     printLog(content);
 
-    if (message) {
-        //await message.delete();
-    }
+    revivableMembersList.sort((a, b) => {
+        const statusUntilA = a.statusUntil || '';
+        const statusUntilB = b.statusUntil || '';
+        return statusUntilA.localeCompare(statusUntilB);
+      });
 
-    const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
+    console.log(revivableMembersList);
 
-    // Split revivableMembers into multiple chunks
-    const chunks = [];
-    let currentChunk = '';
-    const lines = revivableMembers.split('\n');
-    for (const line of lines) {
-        if ((currentChunk + line).length > MAX_FIELD_LENGTH) {
-            chunks.push(currentChunk);
-            currentChunk = line + '\n';
-        } else {
-            currentChunk += line + '\n';
-        }
-    }
-    if (currentChunk !== '') {
-        chunks.push(currentChunk);
-    }
+    const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
+    const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
 
-    // Add each chunk as a separate field
-    chunks.forEach((chunk, index) => {
-        reviveEmbed.addFields({ name: `(${index + 1}/${chunks.length})`, value: chunk, inline: true });
+    reviveChunks.forEach((chunk, index) => {
+        reviveEmbed.addFields({ name: `(${index + 1}/${reviveChunks.length})`, value: chunk, inline: true });
     });
+
     reviveEmbed.setTitle(`Players with revives on (${reviveCount}/${membersCount})`);
 
     return reviveEmbed;
@@ -1431,7 +1471,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
         ;
 
     let selectedMembers = '';
-    const entries = [];
+    const entriesList = [];
     const tableHeader = `\`${'Name'.padEnd(20, ' ')} | ${'Hits'.toString().padStart(5, ' ')} | ${'Retal'.toString().padStart(5, ' ')} | ${'SEs'.toString().padStart(5, ' ')}\`\n`;
 
     let memberCount = 0;
@@ -1511,7 +1551,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
                 xantaken: xantaken
             };
 
-            entries.push(player);
+            entriesList.push(player);
 
             selectedMembers += entry;
             memberCount++;
@@ -1521,9 +1561,6 @@ async function getWarActivity(factionId, message, exportCSV = false) {
     const content = `>>> Found ${memberCount} members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`;
     printLog(content);
 
-    if (message) {
-        //await message.delete();
-    }
 
     const MAX_FIELD_LENGTH = 1023; // Maximum allowed length for field value
 
@@ -1552,7 +1589,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
 
         let csvString = 'Name,ID,Ranked War Hits,Retals,Stat Enhancers Used,Xanax Taken\n';
 
-        entries.forEach(entry => {
+        entriesList.forEach(entry => {
             // Format the entry into a CSV string
             const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.retals},${entry.statenhancersused},${entry.xantaken}\n`;
 

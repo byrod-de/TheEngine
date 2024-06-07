@@ -77,11 +77,21 @@ client.on('ready', () => {
 		setInterval(() => checkRetals(channels.retal, retalConf.updateInterval), 1000 * 60 * retalConf.updateInterval);
 	}
 
+	let isTravelInformationRunning = false;
+
 	if (channels.rankedWar) {
 		if (channels.travel) {
 			cleanChannel(channels.travel);
 		}
-		setInterval(() => checkWar(channels.rankedWar, channels.member, rankedWarConf.updateInterval, channels.travel), 1000 * 60 * rankedWarConf.updateInterval);
+		setInterval(() => {
+			if (!isTravelInformationRunning) {
+				isTravelInformationRunning = true;
+				checkWar(channels.rankedWar, channels.member, rankedWarConf.updateInterval, channels.travel)
+					.finally(() => {
+						isTravelInformationRunning = false;
+					});
+			}
+		}, 1000 * 60 * rankedWarConf.updateInterval);
 	}
 
 	if (channels.member) {

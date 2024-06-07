@@ -123,7 +123,7 @@ function getFlagIcon(travelStatus, destinationText = '') {
 
     let direction = '`> `';
 
-    if (travelStatus == 'Abroad') direction = '`= `';
+    if (travelStatus == 'Abroad' || destinationText.includes('In a')) direction = '`= `';
     if (destinationText.includes('Returning')) direction = '`< `';
 
     let flag = `:flag_black:`;

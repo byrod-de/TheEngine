@@ -254,7 +254,8 @@ function splitIntoChunks(membersList, entryFormat) {
       .replace(/{{statusUntil}}/g, member.statusUntil)
       .replace(/{{direction}}/g, member.direction)
       .replace(/{{flag}}/g, member.flag)
-      .replace(/{{statusIcon}}/g, member.statusIcon);
+      .replace(/{{statusIcon}}/g, member.statusIcon)
+      .replace(/{{hospital}}/g, member.hospital);
 
     if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
       if (currentChunk.length > 0) {

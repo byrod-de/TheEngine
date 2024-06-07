@@ -541,11 +541,9 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         const responseMembers = await callTornApi('faction', 'basic', factionID, undefined, undefined, undefined, undefined, 'rotate');
 
                         if (responseMembers[0]) {
-                            let travelingMembers = '';
                             let travelingMembersList = [];
-                            let abroadMembers = '';
                             let abroadMembersList = [];
-                            let hospitalMembers = '';
+                            let hospitalMembersList = [];
                             let hospitalMemberCount = 0;
                             let okayMemberCount = 0;
                             let travelingMemberCount = 0;
@@ -578,32 +576,32 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
 
                                 //check Traveling status
-                                if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad' || member.status.description.includes('In a ')) {
+                                if (memberStatusState == 'Traveling' || memberStatusState == 'Abroad' || member.status.description.includes('In a')) {
 
-                                    let entry = `${flagIcon.direction} ${flagIcon.flag} [»»](https://byrod.cc/p/${memberIndex[member.name]}) ${cleanUpString(member.name)}`;
-                                    if (member.status.description.includes('In a ')) entry += ' :syringe:';
+                                    let hospital = '';
+                                    if (member.status.description.includes('In a')) hospital = ':syringe:';
 
                                     if (memberStatusState == 'Traveling') {
                                         travelingMemberCount++;
-                                        if (travelingMembers.length + entry.length < 1024) travelingMembers += entry + '\n';
 
                                         travelingMembersList.push(
                                             {
                                                 name: member.name,
                                                 id: memberIndex[member.name],
                                                 direction: flagIcon.direction,
-                                                flag : flagIcon.flag
+                                                flag : flagIcon.flag,
+                                                hospital: hospital
                                             }
                                         );
                                     } else {
                                         abroadMemberCount++;
-                                        if (abroadMembers.length + entry.length < 1024) abroadMembers += entry + '\n';
                                         abroadMembersList.push(
                                             {
                                                 name: member.name,
                                                 id: memberIndex[member.name],
                                                 direction: flagIcon.direction,
-                                                flag : flagIcon.flag
+                                                flag : flagIcon.flag,
+                                                hospital: hospital
                                             }
                                         );
                                     }
@@ -616,8 +614,15 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     let flag = flagIcon.flag;
                                     if (flag == ':flag_black:') flag = '';
 
-                                    const entry = `:syringe: [»»](https://byrod.cc/a/${memberIndex[member.name]}) ${flag} ${cleanUpString(member.name)} <t:${member.status.until}:R>\n`;
-                                    if (hospitalMembers.length + entry.length < 1024) hospitalMembers += entry;
+                                    hospitalMembersList.push(
+                                        {
+                                            name: member.name,
+                                            id: memberIndex[member.name],
+                                            direction: flagIcon.direction,
+                                            flag : flag,
+                                            statusUntil: member.status.until
+                                        }
+                                    );
                                 }
 
                                 if (memberStatusState == 'Okay') {
@@ -640,20 +645,19 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                 }
                             }
 
-                            if (travelingMembers == '') travelingMembers = '*none*';
-                            if (abroadMembers == '') abroadMembers = '*none*';
-                            if (hospitalMembers == '') hospitalMembers = '*none*';
-
                             statusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}\n\n:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
 
                             travelingMembersList.sort((a, b) => a.flag.localeCompare(b.flag));
                             const travelingToList = travelingMembersList.filter(member => member.direction === '`> `');
                             const travelingFromList = travelingMembersList.filter(member => member.direction === '`< `');
 
-                            const entryFormat = `{{direction}} {{flag}} [»»](https://byrod.cc/p/{{id}}) {{name}}\n`;
-                            const travelToChunks = splitIntoChunks(travelingToList, entryFormat);
-                            const travelFromChunks = splitIntoChunks(travelingFromList, entryFormat);
-                            const abroadChunks = splitIntoChunks(abroadMembersList, entryFormat);
+                            const travelEntryFormat = `{{direction}} {{flag}} [»»](https://byrod.cc/p/{{id}}) {{name}} {{hospital}}\n`;
+                            const travelToChunks = splitIntoChunks(travelingToList, travelEntryFormat);
+                            const travelFromChunks = splitIntoChunks(travelingFromList, travelEntryFormat);
+                            const abroadChunks = splitIntoChunks(abroadMembersList, travelEntryFormat);
+
+                            const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
+                            const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
     
                             if (factionID == ownFactionID) {
 
@@ -678,7 +682,10 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                                 abroadEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false })
 
-                                ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+                                hospitalChunks.forEach((chunk, index) => {
+                                    if (index < 2) ownHospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\n:hospital: In hospital: (${hospitalMemberCount}/${memberCount})`, value: chunk, inline: true });
+                                });
+
                                 ownStatusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:airplane: Traveling: ${travelingMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:ok_hand: Okay: ${okayMemberCount}`, inline: true });
 
                                 if (faction1ID == ownFactionID) {
@@ -705,7 +712,10 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     abroadEmbed.addFields({ name: `${faction.name} [${factionID}]\n:pause_button: Abroad: (${abroadMemberCount}/${memberCount})`, value: chunk, inline: true });
                                 });
                                 abroadEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });  
-                                hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\nIn hospital: (${hospitalMemberCount}/${memberCount})`, value: `${hospitalMembers}`, inline: true });
+
+                                hospitalChunks.forEach((chunk, index) => {
+                                    if (index < 2) hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\n:hospital: In hospital: (${hospitalMemberCount}/${memberCount})`, value: chunk, inline: true });
+                                });
 
                                 if (faction1ID != ownFactionID) {
                                     fieldFaction1 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;

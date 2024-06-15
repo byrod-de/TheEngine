@@ -338,9 +338,12 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             const raidWar = Object.values(raidWars)[0];
 
             let isEnlisted = false;
+            let rankedWarActive = false;
+            let raidWarActive = false;
 
             if (rankedWar) {
 
+                rankedWarActive = true;
                 const rankedWar = Object.values(rankedWars)[0];
                 const factionIDs = Object.keys(rankedWar.factions);
 
@@ -843,6 +846,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             }
             if (raidWar) {
                 printLog('Raid!');
+                raidWarActive = true;
                 const raiding_faction = raidWar['raiding_faction'];
                 const defending_faction = raidWar['defending_faction'];
                 const raider_score = raidWar['raider_score'];
@@ -930,13 +934,17 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         rwEmbed.addFields({ name: `${opponentFactionStatusIcon} ${opponentFactionName} [${opponentFaction}]`, value: `:game_die: **Score:** ${opponendFactionScore}`, inline: true });
 
                     if (warChannel) {
-                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed);
                         await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed);
                     }
                 }
             }
+            console.log('raidWarActive:',  raidWarActive);
+            console.log('rankedWarActive:', rankedWarActive);
+            console.log('isEnlisted:', isEnlisted);
 
-            if (!raidWar && !rankedWar && !isEnlisted) {
+            if (!raidWarActive && !rankedWarActive && !isEnlisted) {
+                console.log('Deleting embeds');
                 if (warChannel) {
                     await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
                 }

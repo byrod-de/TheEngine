@@ -322,6 +322,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             const ownFactionIcon = `https://factiontags.torn.com/` + factionJson['tag_image'];
 
             const rankedWars = factionJson['ranked_wars'];
+            const raidWars = factionJson['raid_wars'];
 
             const rwEmbed = initializeEmbed(`Embed`);
             const travelEmbed = initializeEmbed(`Embed`);
@@ -334,6 +335,9 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             const ownStatusEmbed = initializeEmbed(`Embed`);
 
             const rankedWar = Object.values(rankedWars)[0];
+            const raidWar = Object.values(raidWars)[0];
+
+            let isEnlisted = false;
 
             if (rankedWar) {
 
@@ -432,7 +436,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             cleanChannel(travelChannel);
                         }
                         if (timestampCache.set('travelCleanupTimestamp', timestamp, 60 * warUpdateInterval)) printLog(`Cache updated for 'travelCleanupTimestamp' with ${timestamp}`);
-                
+
                     }
 
                     let rwId = Object.keys(rankedWars)[0];
@@ -452,7 +456,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         let market_prices = {};
 
                         for (let i = 0; i < cacheArray.length; i++) {
-  
+
                             const cacheId = cacheArray[i];
                             const itemPrice = itemCache.get(cacheId);
 
@@ -474,7 +478,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                         let faction1ItemValue = 0;
                         let faction2ItemValue = 0;
-                        
+
                         faction1Items += '- ' + numberWithCommas(rankedWarReport.factions[faction1ID].rewards.respect) + ' Respect\n';
                         faction1Items += '- ' + numberWithCommas(rankedWarReport.factions[faction1ID].rewards.points) + ' Points\n';
                         faction2Items += '- ' + numberWithCommas(rankedWarReport.factions[faction2ID].rewards.respect) + ' Respect\n';
@@ -491,7 +495,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         }
 
                         description += `\n**Ended:** <t:${war.end}:f> (<t:${war.end}:R>)`;
-                        
+
                         fieldFaction1 += `\n:gift: **Rewards:**\n${faction1Items}`;
                         fieldFaction1 += `:dollar: **Estimated Cache value:** *${abbreviateNumber(faction1ItemValue)}*\n- \$${numberWithCommas(faction1ItemValue)}`;
                         fieldFaction2 += `\n:gift: **Rewards:**\n${faction2Items}`;
@@ -589,7 +593,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                                 name: member.name,
                                                 id: memberIndex[member.name],
                                                 direction: flagIcon.direction,
-                                                flag : flagIcon.flag,
+                                                flag: flagIcon.flag,
                                                 hospital: hospital
                                             }
                                         );
@@ -600,7 +604,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                                 name: member.name,
                                                 id: memberIndex[member.name],
                                                 direction: flagIcon.direction,
-                                                flag : flagIcon.flag,
+                                                flag: flagIcon.flag,
                                                 hospital: hospital
                                             }
                                         );
@@ -619,7 +623,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                             name: member.name,
                                             id: memberIndex[member.name],
                                             direction: flagIcon.direction,
-                                            flag : flag,
+                                            flag: flag,
                                             statusUntil: member.status.until
                                         }
                                     );
@@ -648,6 +652,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             statusEmbed.addFields({ name: `${faction.name} [${factionID}]`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}\n\n:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
 
                             travelingMembersList.sort((a, b) => a.flag.localeCompare(b.flag));
+                            abroadMembersList.sort((a, b) => a.flag.localeCompare(b.flag));
                             const travelingToList = travelingMembersList.filter(member => member.direction === '`> `');
                             const travelingFromList = travelingMembersList.filter(member => member.direction === '`< `');
 
@@ -658,7 +663,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                             const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
                             const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
-    
+
                             if (factionID == ownFactionID) {
 
                                 travelToChunks.forEach((chunk, index) => {
@@ -666,7 +671,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
                                     ownTravelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
                                 });
-                                
+
                                 travelFromChunks.forEach((chunk, index) => {
                                     const travelFromChunksLength = (chunk.match(/\n/g) || []).length;
                                     travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_backward: Traveling fom: (${travelFromChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
@@ -700,7 +705,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     const travelToChunksLength = (chunk.match(/\n/g) || []).length;
                                     travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
                                 });
-                                
+
                                 travelFromChunks.forEach((chunk, index) => {
                                     const travelFromChunksLength = (chunk.match(/\n/g) || []).length;
                                     travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_backward: Traveling fom: (${travelFromChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
@@ -711,7 +716,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                 abroadChunks.forEach((chunk, index) => {
                                     abroadEmbed.addFields({ name: `${faction.name} [${factionID}]\n:pause_button: Abroad: (${abroadMemberCount}/${memberCount})`, value: chunk, inline: true });
                                 });
-                                abroadEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });  
+                                abroadEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });
 
                                 hospitalChunks.forEach((chunk, index) => {
                                     if (index < 2) hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\n:hospital: In hospital: (${hospitalMemberCount}/${memberCount})`, value: chunk, inline: true });
@@ -770,7 +775,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 if (responseMainNews[0]) {
                     const newsJson = responseMainNews[2];
                     const mainnews = newsJson['mainnews'];
-                    let isEnlisted = false;
                     let enlistedTimestamp = 0;
                     let description = '';
                     for (var newsID in mainnews) {
@@ -830,13 +834,111 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         }
                     } else {
                         if (warChannel) {
-                            await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
+                            //await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
                         }
                     }
                 } else {
-                    if (warChannel) {
-                        await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
+
+                }
+            }
+            if (raidWar) {
+                printLog('Raid!');
+                const raiding_faction = raidWar['raiding_faction'];
+                const defending_faction = raidWar['defending_faction'];
+                const raider_score = raidWar['raider_score'];
+                const defender_score = raidWar['defender_score'];
+                let opponentFaction = 0;
+                let ownFactionScore = 0;
+                let opponendFactionScore = 0;
+
+                let ownFactionStatusIcon = ':hourglass:';
+                let opponentFactionStatusIcon = ':hourglass:';
+
+
+                if (raiding_faction === ownFactionID) {
+                    ownFactionStatusIcon = ':fox:';
+                    opponentFactionStatusIcon = ':skull_crossbones:';
+                    opponentFaction = defending_faction;
+                    ownFactionScore = raider_score;
+                    opponendFactionScore = defender_score;
+
+                } else {
+                    ownFactionStatusIcon = ':skull_crossbones:';
+                    opponentFactionStatusIcon = ':fox:';
+                    opponentFaction = raiding_faction;
+                    ownFactionScore = defender_score;
+                    opponendFactionScore = raider_score;
+                }
+
+                const responseMembers = await callTornApi('faction', 'basic', opponentFaction, undefined, undefined, undefined, undefined, 'rotate');
+
+                if (responseMembers) {
+                    let hospitalMembersList = [];
+                    let hospitalMemberCount = 0;
+
+                    const faction = responseMembers[2];
+                    const membersList = faction.members;
+                    const memberCount = Object.keys(membersList).length;
+
+                    let memberIndex = {};
+                    for (var id in membersList) {
+                        memberIndex[membersList[id].name] = id;
                     }
+
+                    const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
+
+                    for (var id in sortedMembers) {
+                        let member = sortedMembers[id];
+                        let memberStatusState = member.status.state;
+                        const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+
+                        if (memberStatusState === 'Hospital') {
+                            hospitalMemberCount++;
+                            let flag = flagIcon.flag;
+                            if (flag == ':flag_black:') flag = '';
+                            hospitalMembersList.push(
+                                {
+                                    name: member.name,
+                                    id: memberIndex[member.name],
+                                    direction: flagIcon.direction,
+                                    flag: flag,
+                                    statusUntil: member.status.until
+                                }
+                            );
+                        }
+                    }
+
+                    let opponentFactionName = faction.name;
+                    const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
+                    const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
+
+                    hospitalEmbed.setTitle(`:hospital: Members in hospital`)
+                        .setDescription(`List of the next members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`);
+
+                    hospitalChunks.forEach((chunk, index) => {
+                        if (index < 2) hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\n:hospital: In hospital: (${hospitalMemberCount}/${memberCount})`, value: chunk, inline: true });
+                    });
+
+                    const description = '**RAID!!**'
+                    rwEmbed.setTitle(`Raid between _${ownFactionName}_ and _${opponentFactionName}_`)
+                        .setURL(`https://byrod.cc/f/${ownFactionID}`)
+                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
+                        .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`);
+
+
+                        rwEmbed.addFields({ name: `${ownFactionStatusIcon} ${ownFactionName} [${ownFactionID}]`, value: `:game_die: **Score:** ${ownFactionScore}`, inline: true });
+                        rwEmbed.addFields({ name: `${opponentFactionStatusIcon} ${opponentFactionName} [${opponentFaction}]`, value: `:game_die: **Score:** ${opponendFactionScore}`, inline: true });
+
+                    if (warChannel) {
+                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed);
+                        await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                    }
+                }
+            }
+
+            if (!raidWar && !rankedWar && !isEnlisted) {
+                if (warChannel) {
+                    await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
                 }
             }
         }
@@ -1409,7 +1511,7 @@ async function getReviveStatus(factionId, message) {
                 let statusIcon = '`  `';
                 let statusUntil = '';
                 switch (member.status.state) {
-                    case 'Hospital': statusIcon = ':syringe:'; statusUntil =  `<t:${member.status.until}:R>`; break;
+                    case 'Hospital': statusIcon = ':syringe:'; statusUntil = `<t:${member.status.until}:R>`; break;
                     case 'Jail': statusIcon = ':oncoming_police_car:'; break;
                     case 'Abroad': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
                     case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
@@ -1419,7 +1521,8 @@ async function getReviveStatus(factionId, message) {
                     name: member.name,
                     id: memberId,
                     statusIcon: statusIcon,
-                    statusUntil: statusUntil});
+                    statusUntil: statusUntil
+                });
                 reviveCount++;
             }
         }
@@ -1432,7 +1535,7 @@ async function getReviveStatus(factionId, message) {
         const statusUntilA = a.statusUntil || '';
         const statusUntilB = b.statusUntil || '';
         return statusUntilA.localeCompare(statusUntilB);
-      });
+    });
 
     console.log(revivableMembersList);
 
@@ -1449,7 +1552,225 @@ async function getReviveStatus(factionId, message) {
 }
 
 
+async function memberInformation(factionId, selection, message, startDateTimestamp, endDateTimestamp, exportCSV = false) {
+    const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
 
+    if (!response[0]) {
+        await message.edit({ content: response[1] });
+        return;
+    }
+
+    const factionJson = response[2];
+    const members = factionJson?.members || {};
+    const memberLength = Object.keys(members).length;
+
+    if (memberLength === 0) {
+        await message.edit({ content: 'No members found!' });
+        return;
+    }
+
+    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
+
+    let returnResult = {};
+
+    const memberEmbed = initializeEmbed('Faction Member Information');
+    memberEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
+
+    const membersList = members;
+
+    const entriesListStart = [];
+    membersCount = 0;
+
+
+    for (const memberId in membersList) {
+        const member = membersList[memberId];
+        console.log(startDateTimestamp, memberId, member.name);
+
+        if (message) {
+            membersCount++;
+            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
+                let content = '';
+
+                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
+                content = `Executing Member check for [${faction_name}](https://byrod.cc/f/${faction_id}), ${startDateTimestamp}, please wait.\n`;
+
+                if (membersCount != memberLength) {
+                    content += `${progressBar}\n`;
+                }
+
+                content += `${membersCount} of ${memberLength} members processed, ${startDateTimestamp}`;
+                await message.edit({ content: content });
+                printLog(content);
+            }
+        }
+
+        let activeKeys = 1;
+        try {
+            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+            const apiKeys = apiConfig.apiKeys;
+            activeKeys = apiKeys.filter(key => key.active).length;
+
+            if (activeKeys === 0) {
+                activeKeys = 1;
+            }
+        } catch (error) {
+            activeKeys = 1;
+        }
+
+        const totalCalls = 100;
+        let delayInSeconds = (totalCalls / activeKeys / 15).toFixed(2);
+        if (delayInSeconds < 1) {
+            delayInSeconds = minDelay;
+        }
+
+        if (membersCount < 100) {
+            printLog(`Delay between calls: ${delayInSeconds} seconds`);
+            await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
+
+
+            const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, startDateTimestamp, selection, "rotate", undefined);
+            if (statsResponse[0]) {
+                const statsJson = statsResponse[2];
+                const personalstats = statsJson['personalstats'];
+
+                const selectionKeys = selection.split(',');
+
+                const player = {
+                    name: cleanUpString(member.name),
+                    id: memberId,
+                };
+
+                // Dynamically add the stats to the player object
+                selectionKeys.forEach(key => {
+                    if (personalstats.hasOwnProperty(key)) {
+                        player[key] = personalstats[key];
+                    }
+                });
+
+                entriesListStart.push(player);
+                //console.log(player);
+            }
+        }
+    }
+
+    const entriesListEnd = [];
+    membersCount = 0;
+
+    for (const memberId in membersList) {
+        const member = membersList[memberId];
+        console.log(endDateTimestamp, memberId, member.name);
+
+        if (message) {
+            membersCount++;
+            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
+                let content = '';
+
+                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
+                content = `Executing Member check for [${faction_name}](https://byrod.cc/f/${faction_id}), ${endDateTimestamp}, please wait.\n`;
+
+                if (membersCount != memberLength) {
+                    content += `${progressBar}\n`;
+                }
+
+                content += `${membersCount} of ${memberLength} members processed, ${endDateTimestamp}.`;
+                await message.edit({ content: content });
+                printLog(content);
+            }
+        }
+
+        let activeKeys = 1;
+        try {
+            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+            const apiKeys = apiConfig.apiKeys;
+            activeKeys = apiKeys.filter(key => key.active).length;
+
+            if (activeKeys === 0) {
+                activeKeys = 1;
+            }
+        } catch (error) {
+            activeKeys = 1;
+        }
+
+        const totalCalls = 100;
+        let delayInSeconds = (totalCalls / activeKeys / 15).toFixed(2);
+        if (delayInSeconds < 1) {
+            delayInSeconds = minDelay;
+        }
+
+        if (membersCount < 100) {
+
+            printLog(`Delay between calls: ${delayInSeconds} secondss`);
+            await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
+
+            const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, endDateTimestamp, selection, "rotate", undefined);
+            if (statsResponse[0]) {
+                const statsJson = statsResponse[2];
+                const personalstats = statsJson['personalstats'];
+
+                const selectionKeys = selection.split(',');
+
+                const player = {
+                    name: cleanUpString(member.name),
+                    id: memberId,
+                };
+
+                // Dynamically add the stats to the player object
+                selectionKeys.forEach(key => {
+                    if (personalstats.hasOwnProperty(key)) {
+                        player[key] = personalstats[key];
+                    }
+                });
+
+                entriesListEnd.push(player);
+                //console.log(player);
+            }
+        }
+
+    }
+
+    //console.log(entriesListStart);
+    //console.log(entriesListEnd);
+
+    // Function to calculate differences
+    const calculateDifferences = (startList, endList) => {
+        return startList.map((startEntry, index) => {
+            const endEntry = endList[index];
+            const differences = {};
+
+            // Ensure the entries match by name and id
+            if (startEntry.name === endEntry.name && startEntry.id === endEntry.id) {
+                differences.name = startEntry.name;
+                differences.id = startEntry.id;
+
+                for (const key in startEntry) {
+                    if (key !== 'name' && key !== 'id' && typeof startEntry[key] === 'number') {
+                        differences[key] = endEntry[key] - startEntry[key];
+                    }
+                }
+            }
+
+            return differences;
+        });
+    };
+
+    // Calculate the differences
+    const differencesList = calculateDifferences(entriesListStart, entriesListEnd);
+
+    console.log(differencesList);
+
+    returnResult.embed = memberEmbed;
+    return returnResult;
+}
+
+/**
+ * Retrieves the war activity for a given faction.
+ *
+ * @param {string} factionId - The ID of the faction.
+ * @param {Message} message - The message object to update with progress.
+ * @param {boolean} [exportCSV=false] - Whether to export the results as a CSV file.
+ * @return {Promise<Object>} An object containing the war activity embed and, if exportCSV is true, the path to the CSV file.
+ */
 async function getWarActivity(factionId, message, exportCSV = false) {
 
     const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
@@ -1477,8 +1798,7 @@ async function getWarActivity(factionId, message, exportCSV = false) {
     const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
     const reviveEmbed = initializeEmbed('Faction War Activity');
-    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
-        ;
+    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
 
     let selectedMembers = '';
     const entriesList = [];
@@ -1632,7 +1952,7 @@ async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
 
             const environmentEmbed = initializeEmbed('Torn Insights');
             environmentEmbed.setDescription('Crimes Environment Data');
-            
+
             for (const key in searchForCash) {
                 const entry = `**${capitalize(key)}**\n- ${searchForCash[key].title}:\n- ${searchForCash[key].percentage}%\n`;
                 searchForCashValue += entry;
@@ -1650,7 +1970,7 @@ async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
 
                 const entry = `**${capitalize(key)}** \n${details}`;
                 shopliftingValue += entry;
-                
+
             }
 
             environmentEmbed.addFields({ name: ':department_store: Shoplifting', value: shopliftingValue, inline: true });
@@ -1664,4 +1984,4 @@ async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
 
 
 
-module.exports = { checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, timestampCache };
+module.exports = { memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, timestampCache };

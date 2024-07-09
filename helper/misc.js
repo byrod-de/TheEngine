@@ -234,7 +234,13 @@ async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit') {
 }
 
 
-// Function to calculate Unix timestamps for the first and last day of a selected month
+/**
+ * Function to calculate Unix timestamps for the first and last day of a selected month.
+ *
+ * @param {number} selectedMonth - The selected month for which to calculate timestamps.
+ * @param {number} [offsetInHours=0] - The offset in hours to adjust the timestamps.
+ * @return {Object} An object containing the Unix timestamps of the first and last day.
+ */
 function calculateMonthTimestamps(selectedMonth, offsetInHours = 0) {
     // Get the year
     var currentYear = new Date().getFullYear();
@@ -252,6 +258,13 @@ function calculateMonthTimestamps(selectedMonth, offsetInHours = 0) {
     return { firstDay: firstDayOfMonth, lastDay: lastDayOfMonth };
 }
 
+/**
+ * Calculate Unix timestamps for the first and last day of the last X days.
+ *
+ * @param {number} numDays - The number of days to go back
+ * @param {number} [offsetInHours=0] - The offset in hours to adjust the timestamps
+ * @return {Object} An object containing the Unix timestamps of the first and last day
+ */
 function calculateLastXDaysTimestamps(numDays, offsetInHours = 0) {
     const currentDate = new Date();
     const lastDayOfXDays = new Date(currentDate.getTime());
@@ -366,7 +379,12 @@ function initializeEmbed(title, category = 'default') {
     return embed;
 }
 
-
+/**
+ * Cleans the specified channel by deleting messages and threads.
+ *
+ * @param {Object} channel - The channel to be cleaned.
+ * @return {void} This function does not return a value.
+ */
 async function cleanChannel(channel) {
     if (!channel) {
         console.log(`Channel with ID ${channelId} does not exist.`);
@@ -379,13 +397,37 @@ async function cleanChannel(channel) {
 
         for (const id of messageIDs) {
             await channel.messages.delete(id);
-            //console.log(`Message ${id} deleted from channel ${channel.name}.`);
         }
 
-        printLog(`<${channel.name}> emptied!`);
+        printLog(`<${channel.name}> emptied from messaged!`);
     } catch (err) {
         console.error('Error deleting messages:', err);
     }
+
+    try {
+        await deleteThreads(channel);
+        printLog(`<${channel.name}> emptied from threads!`);
+    } catch (err) {
+        console.error('Error deleting threads:', err);
+    }
+}
+/**
+ * Deletes all threads in a given channel.
+ *
+ * @param {Object} channel - The channel from which to delete threads.
+ * @return {Promise<void>} A Promise that resolves when all threads have been deleted.
+ */
+async function deleteThreads(channel) {
+    if (!channel) {
+        console.log(`Channel with ID ${channelId} does not exist.`);
+        return;
+    }
+    channel.threads.cache.forEach(thread => {
+        if (thread.name != 'Flight Tracker') {
+            thread.delete();
+            printLog(`Thread ${thread.name} deleted!`);
+        }
+    });
 }
 
-module.exports = { cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed, getTravelTimes };
+module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed, getTravelTimes };

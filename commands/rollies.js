@@ -23,17 +23,27 @@ module.exports = {
     async execute(interaction) {
         let diceString = interaction.options.getString('dice') ?? '1d20';
         const show = interaction.options.getBoolean('show') ?? false;
+        
 
         if (diceString === 'Coin') {
             diceString = '1d2';
         }
 
         let [numDice, numSides] = diceString.split('d').map(Number);
-        console.log(numDice, numSides);
+
 
         if (numDice === undefined || numSides === undefined || numSides===0) {
             const errorEmbed = initializeEmbed('Error')
-                .setDescription('Invalid dice format. Please use the format `XdY`, where `X` is the number of dice and `Y` is the number of sides.');
+                .setDescription('Invalid dice format.\nPlease use the format `XdY`, where `X` is the number of dice and `Y` is the number of sides.');
+            await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            return;
+        }
+
+        const allowedDice = ['d2', 'd4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
+
+        if (!allowedDice.includes('d' + numSides)) {
+            const errorEmbed = initializeEmbed('Error')
+                .setDescription('Invalid dice size.\nPlease use one of the following dice sizes: `d2`, `d4`, `d6`, `d8`, `d10`, `d12`, `d20` or `d100`');
             await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
             return;
         }

@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 
-const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed, getTravelTimes, cleanChannel } = require('../helper/misc');
+const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed, getTravelTimes, cleanChannel, deleteThreads } = require('../helper/misc');
 const { abbreviateNumber, numberWithCommas, extractFromRegex, cleanUpString, createProgressBar, splitIntoChunks, capitalize } = require('../helper/formattings');
 
 const { callTornApi } = require('../functions/api');
@@ -8,6 +8,7 @@ const { callTornApi } = require('../functions/api');
 const NodeCache = require("node-cache");
 const territoryCache = new NodeCache();
 const timestampCache = new NodeCache();
+const messageIdCache = new NodeCache();
 const memberCache = new NodeCache();
 const itemCache = new NodeCache();
 
@@ -335,7 +336,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             const ownStatusEmbed = initializeEmbed(`Embed`);
 
             const rankedWar = Object.values(rankedWars)[0];
-            const raidWar = Object.values(raidWars)[0];
 
             let isEnlisted = false;
             let rankedWarActive = false;
@@ -515,8 +515,12 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                     .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
                     .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`);
 
+                const cachedMessageIdRw = messageIdCache.get(`${ownFactionID}-rw`);
 
-                //await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                if (!cachedMessageIdRw) {
+                    await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                }
+                messageIdCache.set(`${ownFactionID}-rw`, 'running', 3600);
 
                 if (isActive && !hasEnded) {
 
@@ -543,7 +547,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                     ownStatusEmbed.setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of ${ownFactionName}\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
-
+                                        
                     for (var factionID in rankedWar.factions) {
                         const responseMembers = await callTornApi('faction', 'basic', factionID, undefined, undefined, undefined, undefined, 'rotate');
 
@@ -732,7 +736,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                 }
                             }
 
-                            if (travelChannel) {
+                            if (warChannel) {
                                 await getTravelInformation(travelChannel, warUpdateInterval, factionID);
                             }
                         }
@@ -844,111 +848,143 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                 }
             }
-            if (raidWar) {
+
+            if (Array.isArray(raidWars) && raidWars.length > 0) {
                 printLog('Raid!');
-                raidWarActive = true;
-                const raiding_faction = raidWar['raiding_faction'];
-                const defending_faction = raidWar['defending_faction'];
-                const raider_score = raidWar['raider_score'];
-                const defender_score = raidWar['defender_score'];
-                let opponentFaction = 0;
-                let ownFactionScore = 0;
-                let opponendFactionScore = 0;
 
-                let ownFactionStatusIcon = ':hourglass:';
-                let opponentFactionStatusIcon = ':hourglass:';
+                for (const raidWar of raidWars) {
+                    console.log(raidWar);
+
+                    raidWarActive = true;
+                    const raiding_faction = raidWar['raiding_faction'];
+                    const defending_faction = raidWar['defending_faction'];
+                    const raider_score = raidWar['raider_score'];
+                    const defender_score = raidWar['defender_score'];
+                    let opponentFaction = 0;
+                    let ownFactionScore = 0;
+                    let opponendFactionScore = 0;
+
+                    let ownFactionStatusIcon = ':hourglass:';
+                    let opponentFactionStatusIcon = ':hourglass:';
 
 
-                if (raiding_faction === ownFactionID) {
-                    ownFactionStatusIcon = ':fox:';
-                    opponentFactionStatusIcon = ':skull_crossbones:';
-                    opponentFaction = defending_faction;
-                    ownFactionScore = raider_score;
-                    opponendFactionScore = defender_score;
+                    if (raiding_faction === ownFactionID) {
+                        ownFactionStatusIcon = ':fox:';
+                        opponentFactionStatusIcon = ':skull_crossbones:';
+                        opponentFaction = defending_faction;
+                        ownFactionScore = raider_score;
+                        opponendFactionScore = defender_score;
 
-                } else {
-                    ownFactionStatusIcon = ':skull_crossbones:';
-                    opponentFactionStatusIcon = ':fox:';
-                    opponentFaction = raiding_faction;
-                    ownFactionScore = defender_score;
-                    opponendFactionScore = raider_score;
-                }
-
-                const responseMembers = await callTornApi('faction', 'basic', opponentFaction, undefined, undefined, undefined, undefined, 'rotate');
-
-                if (responseMembers) {
-                    let hospitalMembersList = [];
-                    let hospitalMemberCount = 0;
-
-                    const faction = responseMembers[2];
-                    const membersList = faction.members;
-                    const memberCount = Object.keys(membersList).length;
-
-                    let memberIndex = {};
-                    for (var id in membersList) {
-                        memberIndex[membersList[id].name] = id;
+                    } else {
+                        ownFactionStatusIcon = ':skull_crossbones:';
+                        opponentFactionStatusIcon = ':fox:';
+                        opponentFaction = raiding_faction;
+                        ownFactionScore = defender_score;
+                        opponendFactionScore = raider_score;
                     }
 
-                    const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
+                    const responseMembers = await callTornApi('faction', 'basic', opponentFaction, undefined, undefined, undefined, undefined, 'rotate');
 
-                    for (var id in sortedMembers) {
-                        let member = sortedMembers[id];
-                        let memberStatusState = member.status.state;
-                        const flagIcon = getFlagIcon(memberStatusState, member.status.description);
+                    if (responseMembers) {
+                        let hospitalMembersList = [];
+                        let hospitalMemberCount = 0;
 
-                        if (memberStatusState === 'Hospital') {
-                            hospitalMemberCount++;
-                            let flag = flagIcon.flag;
-                            if (flag == ':flag_black:') flag = '';
-                            hospitalMembersList.push(
-                                {
-                                    name: member.name,
-                                    id: memberIndex[member.name],
-                                    direction: flagIcon.direction,
-                                    flag: flag,
-                                    statusUntil: member.status.until
-                                }
-                            );
+                        const faction = responseMembers[2];
+                        const membersList = faction.members;
+                        const memberCount = Object.keys(membersList).length;
+
+                        let memberIndex = {};
+                        for (var id in membersList) {
+                            memberIndex[membersList[id].name] = id;
                         }
-                    }
 
-                    let opponentFactionName = faction.name;
-                    const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
-                    const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
+                        const sortedMembers = Object.values(membersList).sort(sortByUntil).reverse();
 
-                    hospitalEmbed.setTitle(`:hospital: Members in hospital`)
-                        .setDescription(`List of the next members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`);
+                        for (var id in sortedMembers) {
+                            let member = sortedMembers[id];
+                            let memberStatusState = member.status.state;
+                            const flagIcon = getFlagIcon(memberStatusState, member.status.description);
 
-                    hospitalChunks.forEach((chunk, index) => {
-                        if (index < 2) hospitalEmbed.addFields({ name: `${faction.name} [${factionID}]\n:hospital: In hospital: (${hospitalMemberCount}/${memberCount})`, value: chunk, inline: true });
-                    });
+                            if (memberStatusState === 'Hospital') {
+                                hospitalMemberCount++;
+                                let flag = flagIcon.flag;
+                                if (flag == ':flag_black:') flag = '';
+                                hospitalMembersList.push(
+                                    {
+                                        name: member.name,
+                                        id: memberIndex[member.name],
+                                        direction: flagIcon.direction,
+                                        flag: flag,
+                                        statusUntil: member.status.until
+                                    }
+                                );
+                            }
+                        }
 
-                    const description = '**RAID!!**'
-                    rwEmbed.setTitle(`Raid between _${ownFactionName}_ and _${opponentFactionName}_`)
-                        .setURL(`https://byrod.cc/f/${ownFactionID}`)
-                        .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
-                        .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`);
+                        let opponentFactionName = faction.name;
+                        const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
+                        const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
+
+                        hospitalEmbed.setTitle(`:hospital: Members in hospital`)
+                            .setDescription(`List of the next members which will be out of hospital\n_Update interval: every ${warUpdateInterval} minutes._`);
+
+                        hospitalChunks.forEach((chunk, index) => {
+                            if (index < 2) hospitalEmbed.addFields({ name: `${opponentFactionName} [${opponentFaction}]\n:hospital: In hospital: (${hospitalMemberCount}/${memberCount})`, value: chunk, inline: true });
+                        });
+
+                        const description = '**RAID!!**'
+                        rwEmbed.setTitle(`Raid between _${ownFactionName}_ and _${opponentFactionName}_`)
+                            .setURL(`https://byrod.cc/f/${ownFactionID}`)
+                            .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
+                            .setDescription(`${description}\n_Update interval: every ${warUpdateInterval} minutes._`);
 
 
                         rwEmbed.addFields({ name: `${ownFactionStatusIcon} ${ownFactionName} [${ownFactionID}]`, value: `:game_die: **Score:** ${ownFactionScore}`, inline: true });
                         rwEmbed.addFields({ name: `${opponentFactionStatusIcon} ${opponentFactionName} [${opponentFaction}]`, value: `:game_die: **Score:** ${opponendFactionScore}`, inline: true });
 
-                    if (warChannel) {
-                        await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
-                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed);
+                        if (warChannel) {
+
+                            const threadName = `Raid between ${ownFactionName} and ${opponentFactionName}`;
+                            const thread = await findOrCreateThread(warChannel, threadName);
+
+                            const cachedMessageIdInfo = messageIdCache.get(`${thread.id}-info`);
+                            const cachedMessageIdHosp = messageIdCache.get(`${thread.id}-hosp`);
+                            if (cachedMessageIdInfo) {
+                                const originalMessage = await thread.messages.fetch(cachedMessageIdInfo);
+                                await originalMessage['edit']({ embeds: [rwEmbed], ephemeral: false });
+                                messageIdCache.set(`${thread.id}-info`, originalMessage.id, 3600);
+                            } else {
+                                const newMessage = await thread.send({ embeds: [rwEmbed], ephemeral: false });
+                                messageIdCache.set(`${thread.id}-info`, newMessage.id, 3600);
+                            }
+
+                            if (cachedMessageIdHosp) {
+                                const originalMessage = await thread.messages.fetch(cachedMessageIdHosp);
+                                await originalMessage['edit']({ embeds: [hospitalEmbed], ephemeral: false });
+                                messageIdCache.set(`${thread.id}-hosp`, originalMessage.id, 3600);
+                            } else {
+                                const newMessage = await thread.send({ embeds: [hospitalEmbed], ephemeral: false });
+                                messageIdCache.set(`${thread.id}-hosp`, newMessage.id, 3600);
+                            }
+
+                        }
                     }
                 }
             }
-            console.log('raidWarActive:',  raidWarActive);
-            console.log('rankedWarActive:', rankedWarActive);
-            console.log('isEnlisted:', isEnlisted);
+            printLog('raidWarActive: ' + raidWarActive + ' > rankedWarActive: ' + rankedWarActive + ' > isEnlisted: ' + isEnlisted);
 
-            if (!raidWarActive && !rankedWarActive && !isEnlisted) {
-                console.log('Deleting embeds');
+            if (!rankedWarActive && !isEnlisted) {
                 if (warChannel) {
                     await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
                 }
             }
+
+            if (!raidWarActive) {
+                if (warChannel) {
+                    await deleteThreads(warChannel);
+                }
+            } 
+
         }
     } else {
         printLog('warChannel is undefined');
@@ -957,7 +993,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
 
 /**
- * Retrieves travel information for a given faction and sends it to a specified channel.
+ * Retrieves travel information for a given faction and sends it to a specified thread.
  *
  * @param {Channel} travelChannel - The channel where the travel information will be sent.
  * @param {number} travelUpdateInterval - The interval in minutes at which the travel information should be updated.
@@ -966,7 +1002,10 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
  */
 async function getTravelInformation(travelChannel, travelUpdateInterval, factionId = homeFaction) {
 
-    if (travelChannel) {
+    const threadName = 'Flight Tracker';
+    const travelThread = await findOrCreateThread(travelChannel, threadName);
+
+    if (travelThread) {
 
         const responseMembers = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, 'rotate');
 
@@ -1024,7 +1063,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                                 const messageID = extractFromRegex(cachedTravelInfo, /\((\d+)\)/);
 
                                 try {
-                                    const originalMessage = await travelChannel.messages.fetch(messageID);
+                                    const originalMessage = await travelThread.messages.fetch(messageID);
 
                                     try {
                                         const travelTimes = getTravelTimes(memberStatusState, member.status.description);
@@ -1085,7 +1124,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                             travelEmbed.addFields({ name: `:airplane_departure: Estimated time of arrival:`, value: `${travelDetails}`, inline: true });
                         }
 
-                        const message = await travelChannel.send({ embeds: [travelEmbed], ephemeral: false });
+                        const message = await travelThread.send({ embeds: [travelEmbed], ephemeral: false });
 
                         travelInfo += ` (${message.id})`;
                     }
@@ -1110,7 +1149,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                             }
 
                             try {
-                                const originalMessage = await travelChannel.messages.fetch(messageID);
+                                const originalMessage = await travelThread.messages.fetch(messageID);
 
                                 try {
                                     await originalMessage.edit({ embeds: [travelEmbed], ephemeral: false });
@@ -1990,6 +2029,76 @@ async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
     }
 }
 
+/**
+ * Finds or creates a thread in a given channel with the specified name.
+ *
+ * @param {Channel} channel - The channel to search for the thread in.
+ * @param {string} threadName - The name of the thread to find or create.
+ * @return {Promise<Thread>} A Promise that resolves to the found or created thread.
+ */
+async function findOrCreateThread(channel, threadName) {
+    let thread;
+    thread = await channel.threads.cache.find((thread) => thread.name === threadName);
+
+    if (!thread) {
+        thread = await channel.threads.create({
+            name: threadName,
+        });
+        await thread.send(threadName);
+        printLog('>>> Thread created: ' + thread.name);
+    } else {
+        thread = await channel.threads.fetch(thread.id);
+        printLog('>> Thread found: ' + thread.name);
+    }
+    return thread;
+}
+
+/**
+ * Asynchronously retrieves a list of roles from a given guild, including their IDs, and filters the list by ID or role name.
+ *
+ * @param {Guild} guild - The guild to retrieve roles from.
+ * @param {string|number} [filter=null] - The ID or name of the role to filter the list by. If not provided, all roles will be returned.
+ * @return {Promise<Array<Object>>} A Promise that resolves to an array of objects containing role IDs and names.
+ */
+async function listServerRoles(guild, filter = null) {
+    const roles = await guild.roles.fetch();
+    let roleList = roles.map((role) => ({ id: role.id, name: role.name }));
+
+    if (filter) {
+        if (typeof filter === 'string') {
+            roleList = roleList.filter((role) => role.name.toLowerCase().includes(filter.toLowerCase()));
+        } else if (typeof filter === 'number') {
+            roleList = roleList.filter((role) => role.id === filter);
+        }
+    }
+
+    printLog('Roles in server: ' + JSON.stringify(roleList));
+
+    return roleList;
+}
+
+/**
+ * Asynchronously retrieves a list of users from a given guild who have a specific role, based on the role ID.
+ *
+ * @param {Guild} guild - The guild to retrieve users from.
+ * @param {string|number} roleId - The ID of the role to filter users by.
+ * @return {Promise<Array<User>>} A Promise that resolves to an array of User objects.
+ */
+async function getUsersByRole(guild, roleName) {
+    console.log(`Getting users with role: ${roleName}`);
+    const roleList = await listServerRoles(guild, roleName);
+
+    const roleId = roleList[0].id;
+    console.log(roleId);
+
+    const members = await guild.members.fetch();
+    console.log("dummy",members);
+    const users = members.filter((member) => member.roles.cache.has(roleId)).map((member) => member.user);
+
+    printLog('Users with role ID ' + roleId + ': ' + users.map((user) => user.tag).join(', '));
+
+    return users;
+}
 
 
-module.exports = { memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, timestampCache };
+module.exports = { memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };

@@ -8,7 +8,7 @@ const hostname = os.hostname();
 const moment = require('moment');
 
 const { readConfig, cleanChannel } = require('./helper/misc');
-const { checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getUsersByRole } = require('./functions/async');
 const { verifyKeys } = require('./functions/api');
 const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf } = readConfig();
 
@@ -36,16 +36,22 @@ client.once(Events.ClientReady, c => {
 		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval, startUpTime), 1000 * 60 * statusConf.updateInterval);
 	}
 
-	const activityPool = [
-		{ name: "in the basement", type: 0 },
-		{ name: "Torn(dot)com!", type: 0 },
-		{ name: "nothing", type: 1 },
-		{ name: "from the attic", type: 1 },
-		{ name: "people blaming Ched", type: 2 },
-		{ name: "Crimes 2.0", type: 3 },
-	];
+	let jsonData;
+	let activityPool;
+    try {
+        jsonData = JSON.parse(fs.readFileSync('./conf/activityPool.json'));
+        activityPool = jsonData.activity;
+    } catch (error) {
+        printLog("Error reading activityPool from file system.");
+    }
 
-	const randomActivity = activityPool[Math.floor(Math.random() * activityPool.length)];
+
+	if (!activityPool) {
+		printLog("No activityPool found.");
+		return;
+	}
+	const randomActivity = activityPool[Math.floor(Math.random() * activityPool.length)]
+	console.log (randomActivity.name);
 
 	client.user.setPresence({
 		activities: [{ name: randomActivity.name, type: randomActivity.type }],
@@ -80,8 +86,11 @@ client.on('ready', () => {
 	let isTravelInformationRunning = false;
 
 	if (channels.rankedWar) {
-		if (channels.travel) {
+		if (channels.travel && (channels.travel.id !== channels.rankedWar.id)) {
 			cleanChannel(channels.travel);
+		}
+		if (channels.rankedWar) {
+			cleanChannel(channels.rankedWar);
 		}
 		setInterval(() => {
 			if (!isTravelInformationRunning) {

@@ -365,7 +365,7 @@ function readConfig() {
 function initializeEmbed(title, category = 'default') {
     const { embedColor, successColor, errorColor } = readConfig().discordConf;
     let color = 0x2695d1;
-    switch (category) {
+    switch (category.toLowerCase()) {
         case 'success': color = successColor; break;
         case 'error': color = errorColor; break;
         default: color = embedColor;

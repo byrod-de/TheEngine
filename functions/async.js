@@ -366,30 +366,30 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                 let lead = '';
 
-                let isActive = false;
-                let hasEnded = false;
+                let rwIsActive = false;
+                let rwHasEnded = false;
                 const timestamp = factionJson.timestamp;
 
                 //start x min before
                 const preStart = 60 * 60;
                 if (war.start - preStart < timestamp) {
-                    isActive = true;
+                    rwIsActive = true;
                     if (war.end > 0) {
-                        isActive = false;
-                        hasEnded = true;
+                        rwIsActive = false;
+                        rwHasEnded = true;
                     }
                 }
 
                 if (faction1.score > faction2.score) {
                     lead = faction1.score - faction2.score;
-                    if (isActive) {
+                    if (rwIsActive) {
                         faction1StatusIcon = ':green_circle:';
                         faction2StatusIcon = ':red_circle:';
                         faction1StatusText = '**winning**';
                         faction2StatusText = '**losing**';
                     }
 
-                    if (hasEnded) {
+                    if (rwHasEnded) {
                         faction1StatusIcon = ':trophy:';
                         faction2StatusIcon = ':skull_crossbones:';
                         faction1StatusText = '**Winner!**';
@@ -401,13 +401,13 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                 if (faction1.score < faction2.score) {
                     lead = faction2.score - faction1.score;
-                    if (isActive) {
+                    if (rwIsActive) {
                         faction1StatusIcon = ':red_circle:';
                         faction2StatusIcon = ':green_circle:';
                         faction1StatusText = '**losing**';
                         faction2StatusText = '**winning**';
                     }
-                    if (hasEnded) {
+                    if (rwHasEnded) {
                         faction1StatusIcon = ':skull_crossbones:';
                         faction2StatusIcon = ':trophy:';
                         faction1StatusText = '**Loser!**';
@@ -420,7 +420,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                 description += `\n**Target:** \`${war.target.toString().padStart(6, ' ')}\` `;
 
-                if ((isActive || hasEnded) && lead > 0) {
+                if ((rwIsActive || rwHasEnded) && lead > 0) {
                     description += `**Lead:** \`${lead.toString().padStart(6, ' ')}\``;
                     let currentLead = lead;
                     if (faction1StatusText.toLocaleLowerCase().includes('win')) {
@@ -432,16 +432,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 fieldFaction1 = `${faction1StatusIcon} ${faction1StatusText}\n:game_die: **Score:** ${faction1.score}`;
                 fieldFaction2 = `${faction2StatusIcon} ${faction2StatusText}\n:game_die: **Score:** ${faction2.score}`;
 
-                if (hasEnded) {
-                    if (travelChannel) {
-                        let travelCleanupTimestamp = timestampCache.get('travelCleanupTimestamp');
-                        if (!travelCleanupTimestamp) {
-                            cleanChannel(travelChannel);
-                        }
-                        if (timestampCache.set('travelCleanupTimestamp', timestamp, 60 * warUpdateInterval)) printLog(`Cache updated for 'travelCleanupTimestamp' with ${timestamp}`);
-
-                    }
-
+                if (rwHasEnded) {
                     let rwId = Object.keys(rankedWars)[0];
 
                     let responseReport = await callTornApi('torn', 'rankedwarreport', rwId, undefined, undefined, undefined, undefined, 'rotate');
@@ -522,7 +513,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 }
                 messageIdCache.set(`${ownFactionID}-rw`, 'running', 3600);
 
-                if (isActive && !hasEnded) {
+                if (rwIsActive && !rwHasEnded) {
 
                     travelEmbed.setTitle(`:airplane: Members traveling`)
                         .setDescription(`List of members, which are traveling\n_Update interval: every ${warUpdateInterval} minutes._`);
@@ -983,8 +974,13 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 if (warChannel) {
                     await deleteThreads(warChannel);
                 }
-            } 
+            }
 
+            if (!isEnlisted && !rankedWarActive && !raidWarActive) {
+                if (warChannel) {
+                    cleanChannel(warChannel);
+                }
+            }
         }
     } else {
         printLog('warChannel is undefined');
@@ -2089,11 +2085,10 @@ async function getUsersByRole(guild, roleName) {
     const roleList = await listServerRoles(guild, roleName);
 
     const roleId = roleList[0].id;
-    console.log(roleId);
 
     const members = await guild.members.fetch();
-    console.log("dummy",members);
     const users = members.filter((member) => member.roles.cache.has(roleId)).map((member) => member.user);
+    console.log (users);
 
     printLog('Users with role ID ' + roleId + ': ' + users.map((user) => user.tag).join(', '));
 

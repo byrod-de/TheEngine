@@ -27,6 +27,8 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     let apiConfig; // Define apiConfig outside the try block
 
     let statusMessage;
+    let apiJson = '';
+    let status = false;
 
     try {
         apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
@@ -35,9 +37,6 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         statusMessage = "Error reading apiKeys from file system.";
         return [status, statusMessage, apiJson];
     }
-
-    let apiJson = '';
-    let status = false;
 
     let from = '', to = '', timestamp = '';
 

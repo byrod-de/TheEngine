@@ -25,6 +25,9 @@ const { apiKey, comment } = readConfig().apiConf;
 async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '') {
     let apiKeys;
     let apiConfig; // Define apiConfig outside the try block
+
+    let statusMessage;
+
     try {
         apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
         apiKeys = apiConfig.apiKeys;
@@ -33,7 +36,6 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         return [status, statusMessage, apiJson];
     }
 
-    let statusMessage;
     let apiJson = '';
     let status = false;
 

@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 
 const { SlashCommandBuilder } = require('discord.js');
-const { verifyAPIKey } = require('../functions/api');
+const { verifyAPIKey, verifyKeys } = require('../functions/api');
 const { printLog, checkAPIKey, readConfig, verifyChannelAccess, initializeEmbed } = require('../helper/misc');
 
 const apiConfigPath = './conf/apiConfig.json';
@@ -19,27 +19,31 @@ module.exports = {
                 .addChoices(
                     { name: 'Add', value: 'add' },
                     { name: 'Delete', value: 'delete' },
+                    { name: 'List', value: 'list' },
+                    { name: 'Verify', value: 'verify' }
                 )
                 .setRequired(true)
         )
         .addStringOption(option =>
             option.setName('apikey')
                 .setDescription('Torn API Key')
-                .setRequired(true)),
+                .setRequired(false)),
 
     async execute(interaction) {
 
         // Check if the user has access to the channel
         if (!await verifyChannelAccess(interaction, false, false)) return;
 
-        const keyToManage = interaction.options.getString('apikey');
+        const keyToManage = interaction.options.getString('apikey') || 'NOT_SET';
         const operation = interaction.options.getString('operation');
 
-        const embed = initializeEmbed('Manage API Key' + ' - ' + operation);
+        let embed = initializeEmbed('Manage API Key' + ' - ' + operation);
 
-        let checkedAPIKey = checkAPIKey(keyToManage);
-
-        if (checkedAPIKey.includes('Error')) {
+        let checkedAPIKey = '';
+        if (keyToManage !== 'NOT_SET') {
+            checkedAPIKey = checkAPIKey(keyToManage);
+        }
+        if (checkedAPIKey.includes('Error') && keyToManage !== 'NOT_SET') {
             embed.setColor(errorColor)
                 .setDescription('API Key not valid or inactive!');
 
@@ -108,6 +112,32 @@ module.exports = {
                 }
             
                 fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 2));
+            } else if (operation === 'list') {
+                const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
+
+                for (const key of apiConfig.apiKeys) {
+
+                    const symbols = {
+                        1: ':white_circle:',
+                        2: ':green_circle:',
+                        3: ':yellow_circle:',
+                        4: ':red_circle:',
+                      };
+
+                    const active = key.active ? '✅' : '❌';
+                    const reviver = key.reviver ? '✅' : '❌';
+                    const access_type = symbols[key.access_level] || '❓';
+                    
+
+                    const fieldValue = `\`Active :\` ${active}\n\`Reviver:\` ${reviver}\n\`Access :\` ${access_type} - ${key.access_type.toString()}`;
+                    embed.addFields(
+                        { name: key.name, value: fieldValue, inline: false },
+                    );
+                }
+
+                embed.setColor(successColor);
+            } else if (operation === 'verify') {
+                embed = await verifyKeys(null, 1, true);
             }
         }
 

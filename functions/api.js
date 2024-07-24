@@ -151,13 +151,16 @@ async function verifyKeys(statusChannel, verificationInterval, manualMode = fals
     const statusMessage = `API Key verification executed for ${verificationCount} active of ${totalKeys} total keys!`;
     printLog(statusMessage);
 
+    const verifyEmbed = initializeEmbed('API Key Status');
+
     if (manualMode) {
-        return;
+
+        verifyEmbed.addFields({ name: 'Check result', value: `\`${statusMessage}\``, inline: false });
+
+        return verifyEmbed;
     }
 
-    const verifyEmbed = initializeEmbed('API Key Status');
     verifyEmbed.setDescription(`_Verification interval: every ${verificationInterval} hours._\nNext status check: <t:${now.unix() + (verificationInterval) * 60 * 60}:R>`)
-
     verifyEmbed.addFields({ name: 'Last check result', value: `\`${statusMessage}\``, inline: false });
     await updateOrDeleteEmbed(statusChannel, 'verifyStatus', verifyEmbed);
 }

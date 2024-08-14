@@ -8,4 +8,4 @@ conf/**.json
 **.yaml
 testScript.js
 exports/**.csv
-theEngineReworked.js
+exports/**.json

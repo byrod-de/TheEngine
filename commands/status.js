@@ -20,7 +20,7 @@ module.exports = {
         const botStatusEmbed = initializeEmbed('Bot Status');
 
         if (startUpTime) botStatusEmbed.addFields({ name: 'Start Up Time', value: `\`${startUpTime}\``, inline: false });
-        botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });
+        botStatusEmbed.addFields({ name: '<:engine:1265695072750665738> Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });
         botStatusEmbed.addFields({ name: 'API Status', value: `\`${result[1]}\``, inline: false });
 
         await interaction.reply({ embeds: [botStatusEmbed], ephemeral: false });

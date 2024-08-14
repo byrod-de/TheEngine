@@ -15,10 +15,12 @@ const itemCache = new NodeCache();
 const moment = require('moment');
 const os = require('os');
 const { channel } = require('node:diagnostics_channel');
+const { time } = require('node:console');
 
 const hostname = os.hostname();
 
 const { homeFaction, minDelay } = readConfig().apiConf;
+const { exportAttacks } = readConfig().exportConf;
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -238,12 +240,16 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
 
     if (response[0]) {
         let attacksJson = response[2];
+        
         let faction_name = attacksJson['name'];
         let faction_tag = attacksJson['tag'];
         let faction_id = attacksJson['ID'];
         let faction_icon = `https://factiontags.torn.com/` + attacksJson['tag_image'];
 
         let attacks = attacksJson['attacks'];
+
+        //save json to file
+        if (exportAttacks && Object.keys(attacks).length > 0) fs.writeFileSync(`./exports/attacks_${faction_id}_${timestamp}.json`, JSON.stringify(attacks, null, 2));
 
         for (let attackID in attacks) {
 

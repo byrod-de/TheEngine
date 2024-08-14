@@ -22,7 +22,7 @@ const { apiKey, comment } = readConfig().apiConf;
  * @param {string} [keyUsage='default'] - the usage type of the API key
  * @return {Array} an array containing the status, status message, and API response JSON
  */
-async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '') {
+async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '', version = '') {
     let apiKeys;
     let apiConfig; // Define apiConfig outside the try block
 
@@ -45,7 +45,15 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     if (timestampTS > 0) timestamp = `&timestamp=${timestampTS}`;
     if (stats.length > 0) stats = `&stat=${stats}`;
 
-    let selectedKey = apiKey;
+    let selectedKey;
+
+    if (apiKey.includes(';')) {
+      const keys = apiKey.split(';');
+      selectedKey = keys[Math.floor(Math.random() * keys.length)];
+    } else {
+      selectedKey = apiKey;
+    }
+    
     let seletedID = 'default';
 
     if (keyUsage === 'rotate') {
@@ -75,12 +83,14 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     } else if (keyUsage === 'external') {
         selectedKey = externalApIKey;
     } else if (keyUsage === 'default') {
-        selectedKey = apiKey;
+        selectedKey = selectedKey;
     }
 
     selectedKey = decodeApiKeyWithCypher(selectedKey);
 
-    let apiURL = `https://api.torn.com/${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}&key=${selectedKey}&comment=${comment}`;
+    if (version.length > 0) version = `${version}/`;
+
+    let apiURL = `https://api.torn.com/${version}${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}&key=${selectedKey}&comment=${comment}`;
     printLog(`Key usage = ${keyUsage} (${seletedID}) >> ${apiURL}`);
 
     try {

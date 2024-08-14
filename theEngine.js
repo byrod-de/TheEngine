@@ -9,10 +9,11 @@ const moment = require('moment');
 
 const { readConfig, cleanChannel } = require('./helper/misc');
 const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getUsersByRole } = require('./functions/async');
+const { getTornEvents } = require('./functions/async.torn');
 const { verifyKeys } = require('./functions/api');
-const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf } = readConfig();
+const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf, tornDataConf } = readConfig();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -68,6 +69,7 @@ client.on('ready', () => {
 		retal: client.channels.cache.get(retalConf.channelId),
 		rankedWar: client.channels.cache.get(rankedWarConf.channelId),
 		verification: client.channels.cache.get(verificationConf.channelId),
+		torndata: client.channels.cache.get(tornDataConf.channelId),
 	};
 
 	if (channels.territory) {
@@ -110,6 +112,10 @@ client.on('ready', () => {
 
 	if (channels.verification) {
 		setInterval(() => verifyKeys(channels.verification, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
+	}
+
+	if (channels.torndata) {
+		setInterval(() => getTornEvents(channels.torndata, tornDataConf.updateInterval), 1000 * 60 * tornDataConf.updateInterval);
 	}
 });
 

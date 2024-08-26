@@ -7,7 +7,7 @@ const { decodeApiKeyWithCypher } = require('../helper/formattings');
 
 const apiConfigPath = './conf/apiConfig.json';
 
-const { apiKey, comment } = readConfig().apiConf;
+const { apiKey, comment, homeFaction } = readConfig().apiConf;
 
 /**
  * An asynchronous function to call the Torn API with specified parameters and key usage.
@@ -238,6 +238,7 @@ async function getAdditionalKeyInfo(apiKey) {
         const tornId = playerJson['player_id'];
         const discordId = playerJson.discord['discordID'];
 
+        //Check if key owner is reviver
         const reviveResponse = await callTornApi('user', 'profile', '2', undefined, undefined, undefined, undefined, "external", apiKey.key);
         if (reviveResponse[0]) {
             const reviveJson = reviveResponse[2];
@@ -250,6 +251,18 @@ async function getAdditionalKeyInfo(apiKey) {
             apiKey.id = tornId;
             apiKey.discordId = discordId;
             apiKey.name = tornUser;
+        }
+
+        //check if key owner has faction API access
+        const factionResponse = await callTornApi('faction', 'currency', undefined, undefined, undefined, undefined, undefined, "external", apiKey.key);
+        if (factionResponse[0]) {
+            const factionJson = factionResponse[2];
+            if (factionJson.faction_id.toString() === homeFaction) {
+                apiKey.factionAccess = true;
+            } else {
+                apiKey.factionAccess = false;
+            }
+            console.log(apiKey.factionAccess);
         }
     }
 }

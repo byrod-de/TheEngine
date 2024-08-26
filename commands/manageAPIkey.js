@@ -92,6 +92,7 @@ module.exports = {
                         { name: 'Access Type', value: newKey.access_type.toString(), inline: false },
                         { name: 'API Key', value: newKey.key, inline: false },
                         { name: 'Reviver', value: newKey.reviver.toString(), inline: false },
+                        { name: 'Faction Access', value: newKey.factionAccess.toString(), inline: false },
                     );
                 }
             } else if (operation === 'delete') {
@@ -127,9 +128,10 @@ module.exports = {
                     const active = key.active ? '✅' : '❌';
                     const reviver = key.reviver ? '✅' : '❌';
                     const access_type = symbols[key.access_level] || '❓';
+                    const factionAccess = key.factionAccess ? '✅' : '❌';
                     
 
-                    const fieldValue = `\`Active :\` ${active}\n\`Reviver:\` ${reviver}\n\`Access :\` ${access_type} - ${key.access_type.toString()}`;
+                    const fieldValue = `\`Active :\` ${active}\n\`Reviver:\` ${reviver}\n\`Access :\` ${access_type} - ${key.access_type.toString()}\n\`Faction:\` ${factionAccess}\n\`Key    :\` ${key.key.substring(0, 5)}\n`;
                     embed.addFields(
                         { name: key.name, value: fieldValue, inline: false },
                     );

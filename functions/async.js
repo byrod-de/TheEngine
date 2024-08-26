@@ -16,11 +16,12 @@ const moment = require('moment');
 const os = require('os');
 const { channel } = require('node:diagnostics_channel');
 const { time } = require('node:console');
+const { toNamespacedPath } = require('node:path');
 
 const hostname = os.hostname();
 
 const { homeFaction, minDelay } = readConfig().apiConf;
-const { exportAttacks } = readConfig().exportConf;
+const { exportAttacks, exportContributors } = readConfig().exportConf;
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -240,7 +241,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
 
     if (response[0]) {
         let attacksJson = response[2];
-        
+
         let faction_name = attacksJson['name'];
         let faction_tag = attacksJson['tag'];
         let faction_id = attacksJson['ID'];
@@ -544,7 +545,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                     ownStatusEmbed.setTitle(`:bar_chart: Member Overview`)
                         .setDescription(`Some details about the member status of ${ownFactionName}\n_Update interval: every ${warUpdateInterval} minutes._`)
                         .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` });
-                                        
+
                     for (var factionID in rankedWar.factions) {
                         const responseMembers = await callTornApi('faction', 'basic', factionID, undefined, undefined, undefined, undefined, 'rotate');
 
@@ -774,7 +775,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
             } else {
 
-                const responseMainNews = await callTornApi('faction', 'mainnews,timestamp', undefined, undefined, undefined, undefined, undefined, 'default');
+                const responseMainNews = false;//;await callTornApi('faction', 'mainnews,timestamp', undefined, undefined, undefined, undefined, undefined, 'default');
 
                 if (responseMainNews[0]) {
                     const newsJson = responseMainNews[2];
@@ -1430,6 +1431,33 @@ async function getOCStats(selection, selectedDateValue) {
     return ocEmbed;
 }
 
+async function getMemberContributions() {
+    const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
+    const tornParams = JSON.parse(tornParamsFile);
+    const contribution_categories = tornParams.contributions;
+
+    for (const category of contribution_categories) {
+        printLog('Calling member stats for: > ' + category + ' <');
+        const response = await callTornApi('faction', 'contributors,timestamp', undefined, undefined, undefined, undefined, category, 'faction', undefined, undefined);
+
+        if (response[0] === true) {
+            printLog('Successfully fetched member stats for: > ' + category + ' <');
+            const contributionsJson = response[2];
+            const contributions = contributionsJson.contributors[category];
+            const filteredContributions = Object.entries(contributions)
+                .filter(([id, data]) => data.in_faction === 1)
+                .reduce((acc, [id, data]) => {
+                    acc[id] = data;
+                    return acc;
+                }, {});
+            const timestamp = contributionsJson.timestamp;
+            if (exportContributors && Object.keys(filteredContributions).length > 0) fs.writeFileSync(`./exports/contributors_${homeFaction}_${category}_${timestamp}.json`, JSON.stringify(filteredContributions, null, 2));
+            await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
+
+        }
+    };
+}
+
 /**
  * Asynchronously checks the OCs for the member channel and updates the OC status embed.
  *
@@ -1601,6 +1629,19 @@ async function getReviveStatus(factionId, message) {
 }
 
 
+/**
+ * Retrieves the personal stats of all members in a faction between a specific start and end date.
+ * The function will return an embed with the differences in the stats between the start and end dates.
+ * The function will also print the execution progress to the console.
+ *
+ * @param {string} factionId - The ID of the faction for which the member stats are to be retrieved.
+ * @param {string} selection - The comma separated list of stats to retrieve.
+ * @param {Message} message - The message object for updating the execution progress.
+ * @param {number} startDateTimestamp - The start date timestamp for which the stats are to be retrieved.
+ * @param {number} endDateTimestamp - The end date timestamp for which the stats are to be retrieved.
+ * @param {boolean} [exportCSV=false] - If true, the function will export the differences list to a CSV file.
+ * @return {Promise<object>} - A promise that resolves with an object containing the embed with the differences in the stats.
+ */
 async function memberInformation(factionId, selection, message, startDateTimestamp, endDateTimestamp, exportCSV = false) {
     const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
 
@@ -1986,6 +2027,11 @@ async function getWarActivity(factionId, message, exportCSV = false) {
 }
 
 
+/**
+ * Checks the crimes environment data and sends an embed with the data to a provided channel at a specified interval.
+ * @param {Discord.TextChannel} tornDataChannel - The channel to send the data to.
+ * @param {number} tornDataUpdateInterval - The interval in minutes to update the data.
+ */
 async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
 
     if (tornDataChannel) {
@@ -2094,7 +2140,7 @@ async function getUsersByRole(guild, roleName) {
 
     const members = await guild.members.fetch();
     const users = members.filter((member) => member.roles.cache.has(roleId)).map((member) => member.user);
-    console.log (users);
+    console.log(users);
 
     printLog('Users with role ID ' + roleId + ': ' + users.map((user) => user.tag).join(', '));
 
@@ -2102,4 +2148,4 @@ async function getUsersByRole(guild, roleName) {
 }
 
 
-module.exports = { memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };
+module.exports = { getMemberContributions, memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };

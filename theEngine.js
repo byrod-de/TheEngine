@@ -5,15 +5,17 @@ const path = require('node:path');
 const os = require('os');
 const hostname = os.hostname();
 
+const cron = require('node-cron');
+
 const moment = require('moment');
 
 const { readConfig, cleanChannel } = require('./helper/misc');
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getUsersByRole } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getMemberContributions } = require('./functions/async');
 const { getTornEvents } = require('./functions/async.torn');
 const { verifyKeys } = require('./functions/api');
 const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf, tornDataConf } = readConfig();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -39,12 +41,12 @@ client.once(Events.ClientReady, c => {
 
 	let jsonData;
 	let activityPool;
-    try {
-        jsonData = JSON.parse(fs.readFileSync('./conf/activityPool.json'));
-        activityPool = jsonData.activity;
-    } catch (error) {
-        printLog("Error reading activityPool from file system.");
-    }
+	try {
+		jsonData = JSON.parse(fs.readFileSync('./conf/activityPool.json'));
+		activityPool = jsonData.activity;
+	} catch (error) {
+		printLog("Error reading activityPool from file system.");
+	}
 
 
 	if (!activityPool) {
@@ -52,11 +54,17 @@ client.once(Events.ClientReady, c => {
 		return;
 	}
 	const randomActivity = activityPool[Math.floor(Math.random() * activityPool.length)]
-	console.log (randomActivity.name);
+	console.log(randomActivity.name);
 
 	client.user.setPresence({
 		activities: [{ name: randomActivity.name, type: randomActivity.type }],
 		status: "online",
+	});
+
+	// Schedule getMemberContributions to run daily at 00:00 and 12:00
+	cron.schedule('0 0,12 * * *', async () => {
+		console.log('Running getMemberContributions task...');
+		await getMemberContributions();
 	});
 });
 

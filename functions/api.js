@@ -80,6 +80,18 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         selectedKey = activeReviverKeys[randomIndex].key;
         seletedID = activeReviverKeys[randomIndex].id;
         
+    } else if (keyUsage === 'faction') {
+        const activeFationKeys = apiKeys.filter(key => key.active && key.factionAccess);
+        
+        if (activeFationKeys.length === 0) {
+            statusMessage = "No active keys available.";
+            printLog(statusMessage);
+            return [status, statusMessage, apiJson];
+        }
+        const randomIndex = Math.floor(Math.random() * activeFationKeys.length);
+        selectedKey = activeFationKeys[randomIndex].key;
+        seletedID = activeFationKeys[randomIndex].id;
+        
     } else if (keyUsage === 'external') {
         selectedKey = externalApIKey;
     } else if (keyUsage === 'default') {

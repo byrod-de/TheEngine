@@ -127,6 +127,7 @@ async function playerHistory(interaction) {
 
         const statsEmbed = initializeEmbed(`${cleanUpString(tornUser)} [${tornId}]`);
         statsEmbed.setURL(`https://byrod.cc/p/${tornId}`)
+        statsEmbed.setDescription(`**Personal Stats** of *${cleanUpString(tornUser)} [${tornId}]* compared to ${days}d ago`);
 
         if (faction_id > 0) {
             statsEmbed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://byrod.cc/f/${faction_id}` })
@@ -173,7 +174,7 @@ async function playerHallOfFame(interaction) {
     let userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
     const hide = interaction.options.getBoolean('hide') ?? false;
 
-    const embed = initializeEmbed('Hall of Fame');
+    const hofEmbed = initializeEmbed('Hall of Fame');
 
     const response = await callTornApi('user', 'hof', userID, undefined, undefined, undefined, undefined, 'rotate', undefined, 'v2');
     if (response[0]) {
@@ -201,15 +202,17 @@ async function playerHallOfFame(interaction) {
             }
 
             if (faction_id > 0) {
-                embed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://byrod.cc/f/${faction_id}` })
+                hofEmbed.setAuthor({ name: `${position} of ${faction_tag} -  ${faction_name}`, iconURL: iconUrl, url: `https://byrod.cc/f/${faction_id}` })
             }
 
-            embed.setTitle(`${cleanUpString(tornUser)} [${tornId}]`);
+            hofEmbed.setTitle(`${cleanUpString(tornUser)} [${tornId}]`);
+            hofEmbed.setDescription(`**Hall of Fame** for *${cleanUpString(tornUser)} [${tornId}]*`);
         } else {
-            embed.setTitle('User Hall of Fame');
+            hofEmbed.setTitle('User Hall of Fame');
         }
         const hof = hofJson.hof;
-        embed.setURL(`https://byrod.cc/p/${userID}`)
+        hofEmbed.setURL(`https://byrod.cc/p/${userID}`);
+        
         const attacks = hof.attacks;
         const busts = hof.busts;
         const defends = hof.defends;
@@ -225,31 +228,31 @@ async function playerHallOfFame(interaction) {
         const traveltime = hof.travel_time;
         const workstats = hof.working_stats;
 
-        embed.addFields(
+        hofEmbed.addFields(
             { name: `:100: Level`, value: `\`Rank : ${level.rank}\nValue: ${numberWithCommas(level.value)}\`\n\u200B`, inline: true },
             { name: `:ninja: Offences`, value: `\`Rank : ${offences.rank}\nValue: ${numberWithCommas(offences.value)}\`\n\u200B`, inline: true },
             { name: `:bar_chart: Rank`, value: `\`Rank : ${rank.rank}\nValue: ${numberWithCommas(rank.value)}\`\n\u200B`, inline: true },
         )
         //embed.addFields({ name: '\u200B', value: '\u200B', inline: false });
-        embed.addFields(
+        hofEmbed.addFields(
             { name: `:crossed_swords: Attacks`, value: `\`Rank : ${attacks.rank}\nValue: ${numberWithCommas(attacks.value)}\`\n\u200B`, inline: true },
             { name: `:shield: Defends`, value: `\`Rank : ${defends.rank}\nValue: ${numberWithCommas(defends.value)}\`\n\u200B`, inline: true },
             { name: `:oncoming_police_car: Busts`, value: `\`Rank : ${busts.rank}\nValue: ${numberWithCommas(busts.value)}\`\n\u200B`, inline: true },
         )
         //embed.addFields({ name: '\u200B', value: '\u200B', inline: false });
-        embed.addFields(
+        hofEmbed.addFields(
             { name: `:medical_symbol: Revives`, value: `\`Rank : ${revives.rank}\nValue: ${numberWithCommas(revives.value)}\`\n\u200B`, inline: true },
             { name: `:airplane: Travel Time`, value: `\`Rank : ${traveltime.rank}\nValue: ${numberWithCommas(traveltime.value)}\`\n\u200B`, inline: true },
             { name: `:dollar: Networth`, value: `\`Rank : ${networth.rank}\nValue: ${numberWithCommas(networth.value)}\`\n\u200B`, inline: true },
         )
         //embed.addFields({ name: '\u200B', value: '\u200B', inline: false });
-        embed.addFields(
+        hofEmbed.addFields(
             { name: `~~Battle Stats~~`, value: '*hidden*', inline: true },
             { name: `:office_worker: Work Stats`, value: `\`Rank : ${workstats.rank}\nValue: ${numberWithCommas(workstats.value)}\`\n\u200B`, inline: true },
             { name: `:military_medal: Awards`, value: `\`Rank : ${awards.rank}\nValue: ${numberWithCommas(awards.value)}\`\n\u200B`, inline: true },
         )
         //embed.addFields({ name: '\u200B', value: '\u200B', inline: false });
-        embed.addFields(
+        hofEmbed.addFields(
             { name: `:trophy: Racing Wins`, value: `\`Rank : ${racingwins.rank}\nValue: ${numberWithCommas(racingwins.value)}\`\n\u200B`, inline: true },
             { name: `:race_car: Racing Points`, value: `\`Rank : ${racingpoints.rank}\nValue: ${numberWithCommas(racingpoints.value)}\`\n\u200B`, inline: true },
             { name: `:wrench: Racing Skills`, value: `\`Rank : ${racingskill.rank}\nValue: ${numberWithCommas(racingskill.value)}\`\n\u200B`, inline: true },
@@ -258,5 +261,5 @@ async function playerHallOfFame(interaction) {
     }
 
 
-    await interaction.reply({ embeds: [embed], ephemeral: hide });
+    await interaction.reply({ embeds: [hofEmbed], ephemeral: hide });
 }

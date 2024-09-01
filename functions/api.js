@@ -22,7 +22,7 @@ const { apiKey, comment, homeFaction } = readConfig().apiConf;
  * @param {string} [keyUsage='default'] - the usage type of the API key
  * @return {Array} an array containing the status, status message, and API response JSON
  */
-async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '', version = '') {
+async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '', version = '', urlParams = '') {
     let apiKeys;
     let apiConfig; // Define apiConfig outside the try block
 
@@ -102,7 +102,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
 
     if (version.length > 0) version = `${version}/`;
 
-    let apiURL = `https://api.torn.com/${version}${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}&key=${selectedKey}&comment=${comment}`;
+    let apiURL = `https://api.torn.com/${version}${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}${urlParams}&key=${selectedKey}&comment=${comment}`;
     printLog(`Key usage = ${keyUsage} (${seletedID}) >> ${apiURL}`);
 
     try {

@@ -294,4 +294,44 @@ function capitalize(str) {
     .join(" ");
 }
 
-module.exports = { capitalize, extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };
+function convertSecondsToDaysHours(seconds) {
+  const days = Math.floor(seconds / (24 * 60 * 60));
+  const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+  return `${days}d ${hours}h`;
+}
+
+function getRankNameById(rankId) {
+  const rankData = {
+    "1": "Absolute beginner",
+    "2": "Beginner",
+    "3": "Inexperienced",
+    "4": "Rookie",
+    "5": "Novice",
+    "6": "Below Average",
+    "7": "Average",
+    "8": "Reasonable",
+    "9": "Above Average",
+    "10": "Competent",
+    "11": "Highly competent",
+    "12": "Veteran",
+    "13": "Distinguished",
+    "14": "Highly distinguished",
+    "15": "Professional",
+    "16": "Star",
+    "17": "Master",
+    "18": "Outstanding",
+    "19": "Celebrity",
+    "20": "Supreme",
+    "21": "Idolized",
+    "22": "Champion",
+    "23": "Heroic",
+    "24": "Legendary",
+    "25": "Elite",
+    "26": "Invincible",
+    "27": "Invincible"
+  };
+
+  return rankData[rankId] || "Unknown Rank";
+}
+
+module.exports = { getRankNameById, convertSecondsToDaysHours, capitalize, extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };

@@ -101,6 +101,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     selectedKey = decodeApiKeyWithCypher(selectedKey);
 
     if (version.length > 0) version = `${version}/`;
+    if (version.includes('v2')) urlParams += `&id=${criteria}`;
 
     let apiURL = `https://api.torn.com/${version}${endpoint}/${criteria}?selections=${selections}${stats}${from}${to}${timestamp}${urlParams}&key=${selectedKey}&comment=${comment}`;
     printLog(`Key usage = ${keyUsage} (${seletedID}) >> ${apiURL}`);

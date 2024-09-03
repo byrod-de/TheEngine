@@ -286,6 +286,13 @@ function extractFromRegex(inputString, regex) {
   return match ? match[1] : null;
 }
 
+/**
+ * Converts a string to title case, by splitting it into words and capitalizing
+ * the first letter of each word. Replaces underscores with spaces.
+ *
+ * @param {string} str - The input string to convert.
+ * @return {string} The title-case string.
+ */
 function capitalize(str) {
   return str
     .replace(/_/g, " ")
@@ -294,12 +301,24 @@ function capitalize(str) {
     .join(" ");
 }
 
+/**
+ * Converts a number of seconds to a string in the format "X days Y hours".
+ *
+ * @param {number} seconds - The number of seconds to convert.
+ * @return {string} The converted string.
+ */
 function convertSecondsToDaysHours(seconds) {
   const days = Math.floor(seconds / (24 * 60 * 60));
   const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
   return `${days}d ${hours}h`;
 }
 
+/**
+ * Converts a Torn rank ID to its corresponding rank name.
+ *
+ * @param {string} rankId - The rank ID to convert.
+ * @return {string} The rank name corresponding to the provided rank ID, or "Unknown Rank" if no match is found.
+ */
 function getRankNameById(rankId) {
   const rankData = {
     "1": "Absolute beginner",
@@ -334,6 +353,11 @@ function getRankNameById(rankId) {
   return rankData[rankId] || "Unknown Rank";
 }
 
+/**
+ * Format a Torn timestamp into ISO 8601 format
+ * @param {number} timestamp Torn timestamp
+ * @returns {string} ISO 8601 formatted date string
+ */
 function formatTornDate(timestamp) {
   const date = new Date(timestamp * 1000);
   const formattedDate = date.toISOString();

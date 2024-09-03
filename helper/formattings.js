@@ -334,4 +334,10 @@ function getRankNameById(rankId) {
   return rankData[rankId] || "Unknown Rank";
 }
 
-module.exports = { getRankNameById, convertSecondsToDaysHours, capitalize, extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };
+function formatTornDate(timestamp) {
+  const date = new Date(timestamp * 1000);
+  const formattedDate = date.toISOString();
+  return formattedDate.replace('Z', '+00:00').replace('T', ' ').replace('.000', '');
+}
+
+module.exports = { formatTornDate, getRankNameById, convertSecondsToDaysHours, capitalize, extractFromRegex, abbreviateNumber, numberWithCommas, addSign, formatDiscordTimeWithOffset, getRemainingTime, encodeApiKeyWithCypher, decodeApiKeyWithCypher, cleanUpString, createProgressBar, splitIntoChunks };

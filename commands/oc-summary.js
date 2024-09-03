@@ -1,6 +1,8 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 const { getOCStats } = require('../functions/async');
-const { verifyChannelAccess } = require('../helper/misc');
+const { verifyChannelAccess, readConfig } = require('../helper/misc');
+
+const { adminChannelId } = readConfig().limitedAccessConf;
 
 
 module.exports = {
@@ -30,6 +32,11 @@ module.exports = {
                             { name: 'Dec', value: 12 }
                         )
                 )
+                .addBooleanOption(option =>
+                    option.setName('export')
+                        .setDescription('Hide response')
+                        .setRequired(false)
+                )
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -47,14 +54,29 @@ module.exports = {
         // Check if the user has access to the channel and category
         if (!await verifyChannelAccess(interaction, true, true)) return;
 
+        const command = interaction.options.getSubcommand();
+        const exportData = interaction.options.getBoolean('export') ?? false;
+
+
         var selectedDateValue;
 
-        if (interaction.options.getSubcommand() === 'months') selectedDateValue = interaction.options.getInteger('month');
-        if (interaction.options.getSubcommand() === 'last-x-days') selectedDateValue = interaction.options.getInteger('days');
+        if (command === 'months') selectedDateValue = interaction.options.getInteger('month');
+        if (command === 'last-x-days') selectedDateValue = interaction.options.getInteger('days');
 
-        const ocEmbed = await getOCStats(interaction.options.getSubcommand(), selectedDateValue);
+        const ocData = await getOCStats(interaction.options.getSubcommand(), selectedDateValue, exportData);
 
+        await interaction.reply({ embeds: [ocData.embed], ephemeral: false });
 
-        await interaction.reply({ embeds: [ocEmbed], ephemeral: false });
+        if (command === 'months') {
+
+            if (exportData) {
+                if (interaction.channelId != adminChannelId) {
+                    interaction.followUp({ content: `The export can only be used in the admin <#${adminChannelId}> channel.`, ephemeral: true });
+                    return;
+                }
+                const attachment = new AttachmentBuilder(ocData.csvFilePath);
+                await interaction.followUp({ files: [attachment], ephemeral: true });
+            }
+        }
     },
 };

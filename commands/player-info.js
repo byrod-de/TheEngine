@@ -124,7 +124,7 @@ async function playerHistory(interaction) {
 
     const [response, responseHist] = await Promise.all([
         callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
-        callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity,energydrinkused,awards,medicalitemsused', 'rotate')
+        callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity,energydrinkused,awards,medicalitemsused,overdosed', 'rotate')
     ]);
 
     if (response[0] && responseHist[0]) {
@@ -142,7 +142,7 @@ async function playerHistory(interaction) {
         const useractivityCur = personalstats['useractivity'] / 60 / 60;
         const medicalitemsusedCur = personalstats['medicalitemsused'];
         const awardsCur = personalstats['awards'];
-
+        const overdosedCur = personalstats['overdosed'];
 
         const networthHist = personalstatsHist['networth'];
         const refillsHist = personalstatsHist['refills'];
@@ -152,6 +152,7 @@ async function playerHistory(interaction) {
         const useractivityHist = personalstatsHist['useractivity'] / 60 / 60;
         const medicalitemsusedHist = personalstatsHist['medicalitemsused'];
         const awardsHist = personalstatsHist['awards'];
+        const overdosedHist = personalstatsHist['overdosed'];
 
         const tornUser = playerHistJson['name'];
         const tornId = playerHistJson['player_id'];
@@ -199,11 +200,11 @@ async function playerHistory(interaction) {
             { name: 'Refills', hist: refillsHist, cur: refillsCur, sign: '+', icon: ':recycle:' },
             { name: 'Networth', hist: networthHist, cur: networthCur, sign: networthDiff < 0 ? '-' : '+', icon: ':dollar:' },
             { name: 'Xanax', hist: xantakenHist, cur: xantakenCur, sign: '+', icon: ':pill:' },
+            { name: 'Overdoses', hist: overdosedHist, cur: overdosedCur, sign: '+', icon: ':face_vomiting:' },
             { name: 'Cans', hist: energydrinkusedHist, cur: energydrinkusedCur, sign: '+', icon: ':battery:' },
             { name: 'SE used', hist: statenhancersusedHist, cur: statenhancersusedCur, sign: '+', icon: ':boxing_glove:' },
             { name: 'Med. used', hist: medicalitemsusedHist, cur: medicalitemsusedCur, sign: '+', icon: ':adhesive_bandage:' },
             { name: 'Awards', hist: awardsHist, cur: awardsCur, sign: '+', icon: ':military_medal:' },
-            { name: 'Empty' },
         ];
 
         for (const stat of statArray) {

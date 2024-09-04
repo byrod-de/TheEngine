@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getReviveStatus, getOwnFactionReviveStatus } = require('../functions/async');
+const { getFactionReviveStatus, getOwnFactionReviveStatus } = require('../functions/async');
 const { verifyChannelAccess, readConfig } = require('../helper/misc');
 
 const { homeFaction } = readConfig().apiConf;
@@ -25,12 +25,12 @@ module.exports = {
         let reviveEmbed = '';
 
         if (factionID.toString() === homeFaction) reviveEmbed = await getOwnFactionReviveStatus(factionID, message);
-        else reviveEmbed = await getReviveStatus(factionID, message);
+        else reviveEmbed = await getFactionReviveStatus(factionID, message);
 
         if (!reviveEmbed) {
-            await interaction.editReply({ content: 'Revive status for ' + factionID + ' could not be determined.', ephemeral: false });
+            await message.edit({ content: 'Revive status for ' + factionID + ' could not be determined.', ephemeral: false });
             return;
         }
-        await interaction.editReply({ embeds: [reviveEmbed], ephemeral: false });
+        await message.edit({ content: '',embeds: [reviveEmbed], ephemeral: false });
     },
 };

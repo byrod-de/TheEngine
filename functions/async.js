@@ -1659,6 +1659,102 @@ async function getReviveStatus(factionId, message) {
     return reviveEmbed;
 }
 
+async function getFactionReviveStatus(factionId, message) {
+
+    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, "faction", undefined, 'v2');
+
+    if (!response[0]) {
+        await message.edit({ content: response[1] });
+        return;
+    }
+
+    const factionJson = response[2];
+
+    const members = factionJson?.members || {};
+    const memberLength = Object.keys(members).length;
+
+    if (memberLength === 0) {
+        await message.edit({ content: 'No members found!' });
+        return;
+    }
+
+    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+
+    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
+
+    const reviveEmbed = initializeEmbed('Faction Revive Status');
+    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
+        //.setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
+        ;
+
+    let revivableMembersList = [];
+    let reviveCount = 0;
+    let noneCount = 0;
+    let friendNFactionCount = 0;
+    let membersCount = 0;
+
+    const membersList = members;
+
+    let memberIndex = {}
+
+    for (var id in membersList) {
+        memberIndex[membersList[id].name] = id;
+    }
+    const sortedMembers = Object.values(membersList).sort(sortByName).reverse();
+
+    for (const id in sortedMembers) {
+
+        const member = sortedMembers[id];
+        const memberId = memberIndex[member.name];
+        membersCount++;
+
+        printLog(`${member.name} checked, revive status = ${member.is_revivable}`);
+        if (member.is_revivable) {
+
+            let statusIcon = '`  `';
+            let statusUntil = '';
+            switch (member.status.state) {
+                case 'Hospital': statusIcon = ':syringe:'; statusUntil = `<t:${member.status.until}:R>`; break;
+                case 'Jail': statusIcon = ':oncoming_police_car:'; break;
+                case 'Abroad': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
+                case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
+            }
+
+            revivableMembersList.push({
+                name: member.name,
+                id: memberId,
+                statusIcon: statusIcon,
+                statusUntil: statusUntil
+            });
+            reviveCount++;
+        } else {
+            noneCount++;
+        }
+    }
+
+    const content = `>>> Found ${reviveCount} revivable members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`;
+    printLog(content);
+
+    revivableMembersList.sort((a, b) => {
+        const statusUntilA = a.statusUntil || '';
+        const statusUntilB = b.statusUntil || '';
+        return statusUntilA.localeCompare(statusUntilB);
+    });
+
+    reviveEmbed.addFields({ name: 'Overview', value: `:red_circle: \`Revivable    : ${reviveCount}\`\n:green_circle: \`Not revivable: ${noneCount}\``, inline: false });
+
+    const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
+    const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
+
+    reviveChunks.forEach((chunk, index) => {
+        reviveEmbed.addFields({ name: `(${index + 1}/${reviveChunks.length})`, value: chunk, inline: true });
+    });
+
+    reviveEmbed.setTitle(`Players with revives on (${reviveCount}/${membersCount})`);
+
+    return reviveEmbed;
+}
+
 async function getOwnFactionReviveStatus(factionId, message) {
 
     const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, "faction", undefined, 'v2');
@@ -2281,4 +2377,4 @@ async function getUsersByRole(guild, roleName) {
 }
 
 
-module.exports = { getMemberContributions, memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getOwnFactionReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };
+module.exports = { getMemberContributions, memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getOwnFactionReviveStatus, getFactionReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };

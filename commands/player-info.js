@@ -30,14 +30,15 @@ module.exports = {
     ,
 
 
-    async execute(interaction) {
 
+    async execute(interaction) {
         // Check if the user has access to the channel and category
         if (!await verifyChannelAccess(interaction, true, true)) return;
 
         const command = interaction.options.getString('operation') ?? 'history';
         const hide = interaction.options.getBoolean('hide') ?? false;
 
+        // Define buttons
         const btnHistory = new ButtonBuilder()
             .setCustomId('history')
             .setLabel('History')
@@ -53,60 +54,67 @@ module.exports = {
             .setLabel('Attack Info')
             .setStyle(ButtonStyle.Secondary);
 
-        let embed = '';
+        // Determine which embed to use
+        let embed;
         switch (command) {
             case 'history':
                 embed = await playerHistory(interaction);
                 btnHistory.setStyle(ButtonStyle.Primary);
                 break;
-
             case 'hall-of-fame':
                 embed = await playerHallOfFame(interaction);
                 btnHallOfFame.setStyle(ButtonStyle.Primary);
                 break;
-
             case 'attacks':
                 embed = await playerAttackInfo(interaction);
                 btnAttackInfo.setStyle(ButtonStyle.Primary);
                 break;
-        }
-
-        await interaction.reply({ embeds: [embed], ephemeral: hide });
-
-        let row = new ActionRowBuilder().addComponents(btnHistory, btnHallOfFame, btnAttackInfo);
-
-        await interaction.editReply({ components: [row] });
-
-        // Add a collector for the select menu interaction
-        const filter = i => i.user.id === interaction.user.id;
-        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
-        collector.on('collect', async i => {
-
-            btnHistory.setStyle(ButtonStyle.Secondary);
-            btnHallOfFame.setStyle(ButtonStyle.Secondary);
-            btnAttackInfo.setStyle(ButtonStyle.Secondary);
-
-            if (i.customId === 'history') {
+            default:
                 embed = await playerHistory(interaction);
                 btnHistory.setStyle(ButtonStyle.Primary);
-            } else if (i.customId === 'hall-of-fame') {
-                embed = await playerHallOfFame(interaction);
-                btnHallOfFame.setStyle(ButtonStyle.Primary);
-            } else if (i.customId === 'attacks') {
-                embed = await playerAttackInfo(interaction);
-                btnAttackInfo.setStyle(ButtonStyle.Primary);
+                break;
+        }
+
+        // Send initial reply with components
+        const row = new ActionRowBuilder().addComponents(btnHistory, btnHallOfFame, btnAttackInfo);
+        await interaction.reply({ embeds: [embed], components: [row], ephemeral: hide });
+
+        // Create a collector for button interactions
+        const filter = i => i.user.id === interaction.user.id;
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+        collector.on('collect', async i => {
+            try {
+                // Reset button styles
+                btnHistory.setStyle(ButtonStyle.Secondary);
+                btnHallOfFame.setStyle(ButtonStyle.Secondary);
+                btnAttackInfo.setStyle(ButtonStyle.Secondary);
+
+                // Determine which embed to use based on interaction
+                if (i.customId === 'history') {
+                    embed = await playerHistory(interaction);
+                    btnHistory.setStyle(ButtonStyle.Primary);
+                } else if (i.customId === 'hall-of-fame') {
+                    embed = await playerHallOfFame(interaction);
+                    btnHallOfFame.setStyle(ButtonStyle.Primary);
+                } else if (i.customId === 'attacks') {
+                    embed = await playerAttackInfo(interaction);
+                    btnAttackInfo.setStyle(ButtonStyle.Primary);
+                }
+
+                // Rebuild the row with updated button styles
+                const updatedRow = new ActionRowBuilder().addComponents(btnHistory, btnHallOfFame, btnAttackInfo);
+
+                // Update the interaction with the new embed and buttons
+                await i.update({ embeds: [embed], components: [updatedRow] });
+            } catch (error) {
+                console.error('Error handling interaction:', error);
             }
-
-            row = new ActionRowBuilder().addComponents(btnHistory, btnHallOfFame, btnAttackInfo);
-
-            await i.update({ embeds: [embed], components: [row] });
-
         });
 
-        collector.on('end', collected => {
-            interaction.editReply({
-                components: [],  // Remove the dropdown if no selection was made
-            });
+        collector.on('end', () => {
+            // Remove buttons after collector ends
+            interaction.editReply({ components: [] });
         });
     },
 };

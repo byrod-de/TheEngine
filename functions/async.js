@@ -1705,11 +1705,14 @@ async function getFactionReviveStatus(factionId, message) {
     for (const id in sortedMembers) {
 
         const member = sortedMembers[id];
-        const memberId = memberIndex[member.name];
+        const memberId = member.id;
         membersCount++;
 
+        console.log(memberIndex[member.name]);
+
         printLog(`${member.name} checked, revive status = ${member.is_revivable}`);
-        if (member.is_revivable) {
+        if (member.is_revivable && member.status.state !== 'Fallen') {
+            console.log(member);
 
             let statusIcon = '`  `';
             let statusUntil = '';
@@ -1801,11 +1804,12 @@ async function getOwnFactionReviveStatus(factionId, message) {
     for (const id in sortedMembers) {
 
         const member = sortedMembers[id];
-        const memberId = memberIndex[member.name];
+        const memberId = member.id;
+
         membersCount++;
 
         printLog(`${member.name} checked, revive status = ${member.revive_setting}`);
-        if (member.revive_setting == 'Everyone') {
+        if (member.revive_setting == 'Everyone' && member.status.state !== 'Fallen') {
 
             let statusIcon = '`  `';
             let statusUntil = '';

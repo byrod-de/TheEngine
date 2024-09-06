@@ -3,6 +3,9 @@ const fs = require('node:fs');
 const { printLog, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, readConfig, calculateMonthTimestamps, calculateLastXDaysTimestamps, initializeEmbed, getTravelTimes, cleanChannel, deleteThreads } = require('../helper/misc');
 const { abbreviateNumber, numberWithCommas, extractFromRegex, cleanUpString, createProgressBar, splitIntoChunks, capitalize, formatTornDate } = require('../helper/formattings');
 
+const { importCsvToSheet } = require('../functions/google');
+
+
 const { callTornApi } = require('../functions/api');
 
 const NodeCache = require("node-cache");
@@ -1322,6 +1325,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
 
     let timestamps;
     let title = '';
+    let filenameSuffix = '';
 
     if (selection === 'months') {
         var today = new Date();
@@ -1339,8 +1343,9 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     }
 
     if (selection === 'last-x-days') {
-        title = `*Last ${selectedDateValue} Days*`;
+        title = `Last ${selectedDateValue} Days`;
         timestamps = calculateLastXDaysTimestamps(selectedDateValue, 192);
+        filenameSuffix = title;
     }
 
     var firstDay = timestamps.firstDay;
@@ -1372,10 +1377,11 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     const lastDateFormatted = (new Date(lastDay * 1000)).toISOString().replace('T', ' ').replace('.000Z', '');
 
     if (title === '') {
-        title = `*${lastDateFormatted.substring(0, 7)}*`;
+        title = lastDateFormatted.substring(0, 7);
+        filenameSuffix = title;
     }
 
-    const ocEmbed = initializeEmbed(`OC Overview for ${title}`);
+    const ocEmbed = initializeEmbed(`OC Overview for *${title}*`);
     ocEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
 
     const crimeSummary = {};
@@ -1427,12 +1433,14 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
                             total: 0,
                             success: 0,
                             failed: 0,
-                            money_gain: 0
+                            money_gain: 0,
+                            respect_gain: 0
                         };
                     }
 
                     crimeSummary[crime.crime_name].total++;
                     crimeSummary[crime.crime_name].money_gain += crime.money_gain;
+                    crimeSummary[crime.crime_name].respect_gain += crime.respect_gain;
 
                     if (crime.success === 1) {
                         crimeSummary[crime.crime_name].success++;
@@ -1449,13 +1457,17 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
         const successRate = (success / total) * 100;
         printLog(crimeName + " " + total + " " + successRate.toFixed(2) + "%");
         ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
+        entry += `${crimeName};;;${successRate.toFixed(2)}%;${crimeSummary[crimeName].respect_gain};${crimeSummary[crimeName].money_gain}\n`;
     }
 
     let returnResult = {};
     if (exportData) {
-        const fileName = `./exports/oc_overview_${homeFaction}_${selectedDateValue}.csv`;
+
+        const fileName = `./exports/PA_Overview_${homeFaction}_${filenameSuffix}.csv`;
         fs.writeFileSync(fileName, entry);
         returnResult.csvFilePath = fileName;
+
+        await importCsvToSheet(fileName);
     }
 
     returnResult.embed = ocEmbed;

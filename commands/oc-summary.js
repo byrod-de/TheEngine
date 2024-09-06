@@ -34,7 +34,7 @@ module.exports = {
                 )
                 .addBooleanOption(option =>
                     option.setName('export')
-                        .setDescription('Hide response')
+                        .setDescription('Export CSV')
                         .setRequired(false)
                 )
         )
@@ -46,6 +46,11 @@ module.exports = {
                     option.setName('days')
                         .setDescription('Enter the number of days')
                         .setRequired(true)
+                )
+                .addBooleanOption(option =>
+                    option.setName('export')
+                        .setDescription('Export CSV')
+                        .setRequired(false)
                 )
         ),
 
@@ -67,16 +72,14 @@ module.exports = {
 
         await interaction.reply({ embeds: [ocData.embed], ephemeral: false });
 
-        if (command === 'months') {
-
-            if (exportData) {
-                if (interaction.channelId != adminChannelId) {
-                    interaction.followUp({ content: `The export can only be used in the admin <#${adminChannelId}> channel.`, ephemeral: true });
-                    return;
-                }
-                const attachment = new AttachmentBuilder(ocData.csvFilePath);
-                await interaction.followUp({ files: [attachment], ephemeral: true });
+        if (exportData) {
+            if (interaction.channelId != adminChannelId) {
+                interaction.followUp({ content: `The export can only be used in the admin <#${adminChannelId}> channel.`, ephemeral: true });
+                return;
             }
+            const attachment = new AttachmentBuilder(ocData.csvFilePath);
+            await interaction.followUp({ files: [attachment], ephemeral: true });
         }
+
     },
 };

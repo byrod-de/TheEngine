@@ -22,7 +22,7 @@ async function authenticate() {
 }
 
 // CSV-Import
-async function importCsvToSheet(csvFilePath) {
+async function importCsvToSheet(csvFilePath, spreadsheetId = config.payoutSheetId) {
     const auth = await authenticate();
     const sheets = google.sheets({ version: 'v4', auth });
 
@@ -43,7 +43,7 @@ async function importCsvToSheet(csvFilePath) {
             try {
                 // Hole Spreadsheet-Informationen
                 const spreadsheet = await sheets.spreadsheets.get({
-                    spreadsheetId: config.payoutSheetId,
+                    spreadsheetId: spreadsheetId,
                 });
 
                 // Überprüfen, ob das Sheet bereits existiert
@@ -54,7 +54,7 @@ async function importCsvToSheet(csvFilePath) {
                 if (!sheetExists) {
                     // Neues Sheet erstellen, falls nicht vorhanden
                     await sheets.spreadsheets.batchUpdate({
-                        spreadsheetId: config.payoutSheetId,
+                        spreadsheetId: spreadsheetId,
                         requestBody: {
                             requests: [
                                 {
@@ -74,7 +74,7 @@ async function importCsvToSheet(csvFilePath) {
 
                 // Füge zuerst die Header-Zeile ein
                 await sheets.spreadsheets.values.update({
-                    spreadsheetId: config.payoutSheetId,
+                    spreadsheetId: spreadsheetId,
                     range: `${sheetName}!A1`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: {
@@ -84,7 +84,7 @@ async function importCsvToSheet(csvFilePath) {
 
                 // Füge dann die CSV-Daten ein (unterhalb der Header-Zeile)
                 await sheets.spreadsheets.values.update({
-                    spreadsheetId: config.payoutSheetId,
+                    spreadsheetId: spreadsheetId,
                     range: `${sheetName}!A2`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: {

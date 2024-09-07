@@ -17,14 +17,14 @@ const itemCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
-const { channel } = require('node:diagnostics_channel');
-const { time } = require('node:console');
-const { toNamespacedPath } = require('node:path');
 
 const hostname = os.hostname();
 
 const { homeFaction, minDelay } = readConfig().apiConf;
 const { exportAttacks, exportContributors } = readConfig().exportConf;
+
+const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
+const tornParams = JSON.parse(tornParamsFile);
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -1345,7 +1345,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     if (selection === 'last-x-days') {
         title = `Last ${selectedDateValue} Days`;
         timestamps = calculateLastXDaysTimestamps(selectedDateValue, 192);
-        filenameSuffix = title;
+        filenameSuffix = formatTornDate(timestamps.lastDay).substring(0, 10) + ' -' + selectedDateValue + ' Days';
     }
 
     var firstDay = timestamps.firstDay;
@@ -1474,10 +1474,10 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     return returnResult;
 }
 
-async function getMemberContributions() {
-    const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
-    const tornParams = JSON.parse(tornParamsFile);
-    const contribution_categories = tornParams.contributions;
+async function getMemberContributions(contribution_categories = tornParams.contributions) {
+    let exportFilename = '';
+
+    console.log(contribution_categories);
 
     for (const category of contribution_categories) {
         printLog('Calling member stats for: > ' + category + ' <');
@@ -1494,11 +1494,16 @@ async function getMemberContributions() {
                     return acc;
                 }, {});
             const timestamp = contributionsJson.timestamp;
-            if (exportContributors && Object.keys(filteredContributions).length > 0) fs.writeFileSync(`./exports/contributors_${homeFaction}_${category}_${timestamp}.json`, JSON.stringify(filteredContributions, null, 2));
-            await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
+            if (exportContributors && Object.keys(filteredContributions).length > 0) {
+                exportFilename = `./exports/contributors_${homeFaction}_${category}_${timestamp}.json`;
+                fs.writeFileSync(exportFilename, JSON.stringify(filteredContributions, null, 2));
+            }
 
+            await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
         }
     };
+    
+    return exportFilename;
 }
 
 /**

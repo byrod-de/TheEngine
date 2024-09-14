@@ -1807,6 +1807,7 @@ async function getOwnFactionReviveStatus(factionId, message) {
     let reviveCount = 0;
     let noneCount = 0;
     let friendNFactionCount = 0;
+    let everyoneCount = 0;
     let membersCount = 0;
 
     const membersList = members;
@@ -1826,7 +1827,7 @@ async function getOwnFactionReviveStatus(factionId, message) {
         membersCount++;
 
         printLog(`${member.name} checked, revive status = ${member.revive_setting}`);
-        if (member.revive_setting == 'Everyone' && member.status.state !== 'Fallen') {
+        if (member.revive_setting !== 'No one' && member.status.state !== 'Fallen') {
 
             let statusIcon = '`  `';
             let statusUntil = '';
@@ -1837,17 +1838,28 @@ async function getOwnFactionReviveStatus(factionId, message) {
                 case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
             }
 
+            let memberNameFormatted = '';
+            if (member.revive_setting == 'Friends & faction') {
+                memberNameFormatted = `${member.name} *`;
+            } else {
+                memberNameFormatted = `${member.name}`;
+            }
+
             revivableMembersList.push({
-                name: member.name,
+                name: memberNameFormatted,
                 id: memberId,
                 statusIcon: statusIcon,
                 statusUntil: statusUntil
             });
             reviveCount++;
-        }
 
-        if (member.revive_setting == 'Friends & faction') {
-            friendNFactionCount++;
+            if (member.revive_setting == 'Friends & faction') {
+                friendNFactionCount++;
+            }
+
+            if (member.revive_setting == 'Everyone') {
+                everyoneCount++;
+            }
         }
 
         if (member.revive_setting == 'No one') {
@@ -1864,16 +1876,24 @@ async function getOwnFactionReviveStatus(factionId, message) {
         return statusUntilA.localeCompare(statusUntilB);
     });
 
-    reviveEmbed.addFields({ name: 'Overview', value: `:red_circle: \`Everyone         : ${reviveCount}\`\n:yellow_circle: \`Friends & faction: ${friendNFactionCount}\`\n:green_circle: \`No one           : ${noneCount}\``, inline: false });
+    reviveEmbed.addFields({ name: 'Overview', value: `:red_circle: \`Everyone         : ${everyoneCount}\`\n:yellow_circle: \`Friends & faction: ${friendNFactionCount}\`\n:green_circle: \`No one           : ${noneCount}\``, inline: false });
 
     const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
     const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
 
+    let embedCount = 0;
     reviveChunks.forEach((chunk, index) => {
+        embedCount++;
         reviveEmbed.addFields({ name: `(${index + 1}/${reviveChunks.length})`, value: chunk, inline: true });
+        if (embedCount % 2 === 0) reviveEmbed.addFields({ name: '\u200B', value: '\u200B', inline: false });
+
     });
 
     reviveEmbed.setTitle(`Players with revives set to Everyone (${reviveCount}/${membersCount})`);
+
+    if (friendNFactionCount > 0) {
+        reviveEmbed.setDescription(`*Note: Members with "Friends & faction" settings arte highlighted with an asterisk (\*).*`);
+    }
 
     return reviveEmbed;
 }

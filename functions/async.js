@@ -1516,10 +1516,11 @@ async function getMemberContributions(contribution_categories = tornParams.contr
 async function checkOCs(memberChannel, memberUpdateInterval) {
     const now = moment();
 
-    const ownStatusEmbed = await getOCStats('months');
-    ownStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)
+    const ocStatus = await getOCStats('months');
+    const ocStatusEmbed = ocStatus.embed;
+    ocStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)
 
-    await updateOrDeleteEmbed(memberChannel, 'ocStatus', ownStatusEmbed);
+    await updateOrDeleteEmbed(memberChannel, 'ocStatus', ocStatusEmbed);
 }
 
 

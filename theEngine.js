@@ -10,7 +10,7 @@ const cron = require('node-cron');
 const moment = require('moment');
 
 const { readConfig, cleanChannel } = require('./helper/misc');
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getMemberContributions } = require('./functions/async');
+const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getMemberContributions, memberStats } = require('./functions/async');
 const { getTornEvents } = require('./functions/async.torn');
 const { verifyKeys } = require('./functions/api');
 const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf, tornDataConf } = readConfig();
@@ -65,6 +65,18 @@ client.once(Events.ClientReady, c => {
 	cron.schedule('0 0,12 * * *', async () => {
 		console.log('Running getMemberContributions task...');
 		await getMemberContributions();
+	});
+
+	// Schedule memberStats to run daily at 00:00
+	cron.schedule('0 0 * * *', async () => {
+	//	cron.schedule('*/5 * * * *', async () => {
+
+		const channels = { member: client.channels.cache.get(memberConf.channelId), };
+
+		if (channels.member) {
+			console.log('Running memberStats task...');
+			await memberStats(channels.member, undefined);
+		}
 	});
 });
 

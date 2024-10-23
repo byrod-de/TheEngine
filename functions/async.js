@@ -1354,7 +1354,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     const response = await callTornApi('faction', 'basic,crimes,timestamp', undefined, firstDay, lastDay);
 
     if (!response[0]) {
-        await interaction.reply({ content: response[1], ephemeral: true });
+        //await interaction.reply({ content: response[1], ephemeral: true });
         return;
     }
 
@@ -1502,7 +1502,7 @@ async function getMemberContributions(contribution_categories = tornParams.contr
             await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
         }
     };
-    
+
     return exportFilename;
 }
 
@@ -2118,10 +2118,68 @@ async function memberInformation(factionId, selection, message, startDateTimesta
     // Calculate the differences
     const differencesList = calculateDifferences(entriesListStart, entriesListEnd);
 
-    console.log(differencesList);
+    //console.log(differencesList);
+
+    if (exportCSV) {
+
+        let csvString = '';
+
+        csvString = `name,id,${selection}\n`;
+
+        differencesList.forEach(entry => {
+            // Format the entry into a CSV string
+            if (selection.includes('rankedwarhits')) {
+                const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.raidhits},${entry.territoryclears},${entry.territoryjoins},${entry.rankedwarringwins},${entry.respectforfaction},${entry.attacksassisted},${entry.attackswon},${entry.retals}\n`;
+                csvString += entryString;
+            }
+            if (selection.includes('networth')) {
+                const entryString = `${entry.name},${entry.id},${entry.networth},${entry.refills},${entry.xantaken},${entry.statenhancersused},${entry.useractivity},${entry.energydrinkused}\n`;
+                csvString += entryString;
+            }
+        });
+
+
+        if (csvString.length > 0) {
+            const csvFilePath = `./exports/member-activity_${factionId}_${Date.now()}.csv`;
+            fs.writeFileSync(csvFilePath, csvString);
+            returnResult.csvFilePath = csvFilePath;
+        }
+    }
+
+    if (selection.includes('attackswon')) {
+        const sortedArray = differencesList.sort((a, b) => b.attackswon - a.attackswon);
+        const entryFormat = `\`{{attackswon}}\` [»»](https://byrod.cc/p/{{id}}) {{name}}\n`;
+        const memberChunks = splitIntoChunks(sortedArray, entryFormat);
+
+        memberChunks.forEach((chunk, index) => {
+            memberEmbed.addFields({ name: `(${index + 1}/${memberChunks.length})`, value: chunk, inline: true });
+        });
+
+        memberEmbed.setTitle(`Faction members sorted by number of attacks won`);
+        memberEmbed.setDescription(`\`Start time:\` ${formatTornDate(startDateTimestamp).replace('+00:00', '')}\n\`End time  :\` ${formatTornDate(endDateTimestamp).replace('+00:00', '')}`);
+    }
 
     returnResult.embed = memberEmbed;
     return returnResult;
+}
+
+
+async function memberStats(memberChannel, memberUpdateInterval) {
+    const now = moment();
+
+    const yesterday = now.clone().subtract(1, 'day').startOf('day');
+    const startOfDayYesterday = yesterday.clone();
+    const endOfDayYesterday = yesterday.endOf('day');
+    
+    const startOfDayYesterdayUnix = startOfDayYesterday.unix();
+    const endOfDayYesterdayUnix = endOfDayYesterday.unix();
+
+    printLog(`Fetching Member stats for: ${startOfDayYesterday} to ${endOfDayYesterday}`);
+
+    const memberOutput = await memberInformation(homeFaction, 'attackswon', undefined, startOfDayYesterdayUnix, endOfDayYesterdayUnix, false);
+    const memberEmbed = memberOutput.embed;
+
+    await memberChannel.send({ embeds: [memberEmbed], ephemeral: false });
 }
 
 /**
@@ -2419,4 +2477,4 @@ async function getUsersByRole(guild, roleName) {
 }
 
 
-module.exports = { getMemberContributions, memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getOwnFactionReviveStatus, getFactionReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };
+module.exports = { memberStats, getMemberContributions, memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getOwnFactionReviveStatus, getFactionReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };

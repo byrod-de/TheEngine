@@ -249,14 +249,14 @@ function splitIntoChunks(membersList, entryFormat) {
   let currentChunk = [];
   for (const member of membersList) {
     const entry = entryFormat
-      .replace(/{{id}}/g, member.id)
-      .replace(/{{name}}/g, cleanUpString(member.name))
-      .replace(/{{statusUntil}}/g, member.statusUntil)
-      .replace(/{{direction}}/g, member.direction)
-      .replace(/{{flag}}/g, member.flag)
-      .replace(/{{statusIcon}}/g, member.statusIcon)
-      .replace(/{{hospital}}/g, member.hospital)
-      .replace(/{{attackswon}}/g, member.attackswon.toString().padStart(5, ' '));
+    .replace(/{{id}}/g, member.id)
+    .replace(/{{name}}/g, cleanUpString(member.name))
+    .replace(/{{statusUntil}}/g, member.statusUntil)
+    .replace(/{{direction}}/g, member.direction)
+    .replace(/{{flag}}/g, member.flag)
+    .replace(/{{statusIcon}}/g, member.statusIcon)
+    .replace(/{{hospital}}/g, member.hospital)
+    .replace(/{{attackswon}}/g, (member.attackswon || '').toString().padStart(5, ' '));
 
     if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {
       if (currentChunk.length > 0) {

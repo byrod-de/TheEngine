@@ -22,12 +22,12 @@ async function authenticate() {
 }
 
 // CSV-Import
-async function importCsvToSheet(csvFilePath, spreadsheetId = config.payoutSheetId) {
+async function importCsvToSheet(csvFilePath, spreadsheetId = config.payoutSheetId, sheetName = 'NOT_SET') {
     const auth = await authenticate();
     const sheets = google.sheets({ version: 'v4', auth });
 
     const csvData = [];
-    const sheetName = path.basename(csvFilePath, path.extname(csvFilePath));  // Verwende den Dateinamen als Sheet-Name
+    if (sheetName === 'NOT_SET') sheetName = path.basename(csvFilePath, path.extname(csvFilePath));  // Verwende den Dateinamen als Sheet-Name
     let headers = [];
 
     // CSV-Datei lesen und in ein Array konvertieren
@@ -83,15 +83,62 @@ async function importCsvToSheet(csvFilePath, spreadsheetId = config.payoutSheetI
                 });
 
                 // Füge dann die CSV-Daten ein (unterhalb der Header-Zeile)
-                await sheets.spreadsheets.values.update({
+                await sheets.spreadsheets.values.append({
                     spreadsheetId: spreadsheetId,
-                    range: `${sheetName}!A2`,
+                    range: `${sheetName}!A1`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: {
                         values: csvData,
                     },
                 });
                 console.log('CSV data successfully imported to the sheet.');
+
+                // Get the last row number
+                const lastRowResponse = await sheets.spreadsheets.values.get({
+                    spreadsheetId: spreadsheetId,
+                    range: `${sheetName}!A:A`,
+                });
+                const lastRowNumber = lastRowResponse.data.values.length;
+
+
+                // Get the sheet information
+                const sheetResponse = await sheets.spreadsheets.get({
+                    spreadsheetId: spreadsheetId,
+                    fields: 'sheets.properties',
+                });
+                const sheetsArray = sheetResponse.data.sheets;
+                const sheetId = sheetsArray.find((sheet) => sheet.properties.title === sheetName).properties.sheetId;
+                console.log(lastRowNumber, sheetId);
+
+                // Change the color of the last filled line
+                await sheets.spreadsheets.batchUpdate({
+                    spreadsheetId: spreadsheetId,
+                    requestBody: {
+                        requests: [
+                            {
+                                repeatCell: {
+                                    range: {
+                                        sheetId: sheetId, // Use the sheetId from the sheet information
+                                        startRowIndex: lastRowNumber - 1, // -1 because row numbers are 0-based
+                                        endRowIndex: lastRowNumber,
+                                    },
+                                    cell: {
+                                        userEnteredFormat: {
+                                            backgroundColor: {
+                                                red: 223 / 255, // df
+                                                green: 105 / 255, // 69
+                                                blue: 26 / 255, // 1a
+                                            },
+                                        },
+                                    },
+                                    fields: 'userEnteredFormat(backgroundColor)',
+                                },
+                            },
+                        ],
+                    },
+                });
+
+                console.log('Last filled line color changed successfully.');
                 //console.log(getSheetLink());
             } catch (error) {
                 console.error('Error during CSV import:', error);

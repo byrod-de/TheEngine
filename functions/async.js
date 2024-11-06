@@ -181,14 +181,13 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
         for (let newsID in armouryNews) {
 
             let news = armouryNews[newsID].news;
-            let timestamp = armouryNews[newsID].timestamp;
 
             if (!news.includes('deposited') && !news.includes('returned')) {
 
                 let player_url = news.substring(news.indexOf('"') + 1, news.lastIndexOf('"'));
                 let tornId = player_url.substring(player_url.indexOf('=') + 1, player_url.length);
                 let tornUser = news.substring(news.lastIndexOf('"') + 2, news.lastIndexOf('/') - 1);
-                let newstext = news.substring(news.lastIndexOf('>') + 2, news.lastIndexOf('.'));
+                let newstext = news.substring(news.lastIndexOf('>') + 2, news.length);
                 let item = newstext.substring(newstext.lastIndexOf('faction\'s') + 10, newstext.lastIndexOf('items') - 1);
                 if (newstext.includes('loaned')) {
                     item = newstext.substring(newstext.indexOf('loaned') + 7, newstext.lastIndexOf('to') - 1);
@@ -1457,7 +1456,9 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
         const successRate = (success / total) * 100;
         printLog(crimeName + " " + total + " " + successRate.toFixed(2) + "%");
         ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
-        entry += `${crimeName};;;${successRate.toFixed(2)}%;${crimeSummary[crimeName].respect_gain};${crimeSummary[crimeName].money_gain}\n`;
+        //money per member
+        const moneyPerMember = crimeSummary[crimeName].money_gain / total / 5;
+        entry += `${crimeName};;;${successRate.toFixed(2)}%;${crimeSummary[crimeName].respect_gain};${crimeSummary[crimeName].money_gain};${moneyPerMember}\n`;
     }
 
     let returnResult = {};
@@ -1466,8 +1467,9 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
         const fileName = `./exports/PA_Overview_${homeFaction}_${filenameSuffix}.csv`;
         fs.writeFileSync(fileName, entry);
         returnResult.csvFilePath = fileName;
-
-        await importCsvToSheet(fileName);
+        let year = new Date().getFullYear();
+        
+        await importCsvToSheet(fileName, undefined, 'PA_Overview' + year);
     }
 
     returnResult.embed = ocEmbed;

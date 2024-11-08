@@ -195,17 +195,18 @@ module.exports = {
 
 // Helper functions remain unchanged
 
+
 const parseBalance = (balance, userBalance) => {
     balance = balance.replace(/[\s,$]/g, '');
-    const validFormat = /^(\d+[mb]?)$|^(all)$/i;
+    const validFormat = /^(\d+(?:\.\d+)?[mb]?)$|^(all)$/i;
     if (!validFormat.test(balance)) {
-        throw new Error("Invalid format! Please enter a valid balance in formats: any number, 1m, 1b, or ALL.");
+      throw new Error(`Invalid format (${balance})! Please enter a valid balance in formats: any number, 1m, 1b, or ALL.`);
     }
     if (balance === 'all') return userBalance;
-    if (balance.endsWith('m')) return parseInt(balance) * 1_000_000;
-    if (balance.endsWith('b')) return parseInt(balance) * 1_000_000_000;
-    return parseInt(balance);
-};
+    if (balance.endsWith('m')) return parseFloat(balance) * 1_000_000;
+    if (balance.endsWith('b')) return parseFloat(balance) * 1_000_000_000;
+    return parseFloat(balance);
+  };
 
 const userInformation = async (discordId) => {
     const response = await callTornApi('user', 'basic,discord,profile', discordId);

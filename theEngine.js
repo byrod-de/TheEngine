@@ -5,15 +5,12 @@ const path = require('node:path');
 const os = require('os');
 const hostname = os.hostname();
 
-const cron = require('node-cron');
-
 const moment = require('moment');
 
-const { readConfig, cleanChannel } = require('./helper/misc');
-const { checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg, getMemberContributions, memberStats } = require('./functions/async');
-const { getTornEvents } = require('./functions/async.torn');
+const { readConfig, cleanChannel, printLog } = require('./helper/misc');
+const { checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusMsg } = require('./functions/async');
 const { verifyKeys } = require('./functions/api');
-const { discordConf, statusConf, territoryConf, armouryConf, retalConf, travelConf, rankedWarConf, memberConf, verificationConf, tornDataConf } = readConfig();
+const { discordConf, botConf, factions } = readConfig();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -30,8 +27,9 @@ for (const file of commandFiles) {
 client.once(Events.ClientReady, c => {
 	let startUpTime = moment().format().replace('T', ' ');
 
-	const statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
+	const statusConf = botConf.status;
 
+	const statusMessage = `Successfully started on ${hostname}! Logged in as ${c.user.tag}`;
 	const statusChannel = client.channels.cache.get(statusConf.channelId);
 
 	if (statusChannel) {
@@ -60,82 +58,67 @@ client.once(Events.ClientReady, c => {
 		activities: [{ name: randomActivity.name, type: randomActivity.type }],
 		status: "online",
 	});
-
-	// Schedule getMemberContributions to run daily at 00:00 and 12:00
-	cron.schedule('0 0,12 * * *', async () => {
-		console.log('Running getMemberContributions task...');
-		await getMemberContributions();
-	});
-
-	// Schedule memberStats to run daily at 00:00
-	cron.schedule('0 0 * * *', async () => {
-	//	cron.schedule('*/5 * * * *', async () => {
-
-		const channels = { member: client.channels.cache.get(memberConf.channelId), };
-
-		if (channels.member) {
-			console.log('Running memberStats task...');
-			await memberStats(channels.member, undefined);
-		}
-	});
 });
 
 client.on('ready', () => {
-	const channels = {
-		territory: client.channels.cache.get(territoryConf.channelId),
-		armoury: client.channels.cache.get(armouryConf.channelId),
-		member: client.channels.cache.get(memberConf.channelId),
-		travel: client.channels.cache.get(travelConf.channelId),
-		retal: client.channels.cache.get(retalConf.channelId),
-		rankedWar: client.channels.cache.get(rankedWarConf.channelId),
-		verification: client.channels.cache.get(verificationConf.channelId),
-		torndata: client.channels.cache.get(tornDataConf.channelId),
-	};
 
-	if (channels.territory) {
-		setInterval(() => checkTerritories(channels.territory, territoryConf.updateInterval), 1000 * 60 * territoryConf.updateInterval);
+	const verificationConf = botConf.verification;
+	const verificationChannel = client.channels.cache.get(verificationConf.channelId);
+
+	if (verificationChannel) {
+		setInterval(() => verifyKeys(verificationChannel, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
 	}
 
-	if (channels.armoury) {
-		setInterval(() => checkArmoury(channels.armoury, armouryConf.updateInterval), 1000 * 60 * armouryConf.updateInterval);
-	}
+	for (const factionId in factions) {
+		if (factions.hasOwnProperty(factionId)) {
+			const factionConfig = factions[factionId];
+			printLog(`${factionId} > faction found: ${factionConfig.name}`);
 
-	if (channels.retal) {
-		cleanChannel(channels.retal);
-		setInterval(() => checkRetals(channels.retal, retalConf.updateInterval), 1000 * 60 * retalConf.updateInterval);
-	}
+			const channels = {
+				armoury: client.channels.cache.get(factionConfig.channels.armouryChannelId),
+				member: client.channels.cache.get(factionConfig.channels.memberChannelId),
+				travel: client.channels.cache.get(factionConfig.channels.travelChannelId),
+				retal: client.channels.cache.get(factionConfig.channels.retalChannelId),
+				rankedWar: client.channels.cache.get(factionConfig.channels.rankedWarChannelId),
+			};
 
-	let isTravelInformationRunning = false;
-
-	if (channels.rankedWar) {
-		if (channels.travel && (channels.travel.id !== channels.rankedWar.id)) {
-			cleanChannel(channels.travel);
-		}
-		if (channels.rankedWar) {
-			cleanChannel(channels.rankedWar);
-		}
-		setInterval(() => {
-			if (!isTravelInformationRunning) {
-				isTravelInformationRunning = true;
-				checkWar(channels.rankedWar, channels.member, rankedWarConf.updateInterval, channels.travel)
-					.finally(() => {
-						isTravelInformationRunning = false;
-					});
+			if (channels.member) {
+				const memberUpdateInterval = factionConfig.updateIntervals.member || 5;
+				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId), 1000 * 60 * memberUpdateInterval);
+				setInterval(() => checkOCs(channels.member, memberUpdateInterval, factionId), 1000 * 60 * memberUpdateInterval);
 			}
-		}, 1000 * 60 * rankedWarConf.updateInterval);
-	}
 
-	if (channels.member) {
-		setInterval(() => checkMembers(channels.member, memberConf.updateInterval), 1000 * 60 * memberConf.updateInterval);
-		setInterval(() => checkOCs(channels.member, memberConf.updateInterval), 1000 * 60 * 60 * memberConf.updateInterval);
-	}
+			if (channels.armoury) {
+				const armouryUpdateInterval = factionConfig.updateIntervals.armoury || 5;
+				setInterval(() => checkArmoury(channels.armoury, factionId), 1000 * 60 * armouryUpdateInterval);
+			}
 
-	if (channels.verification) {
-		setInterval(() => verifyKeys(channels.verification, verificationConf.updateInterval), 1000 * 60 * 60 * verificationConf.updateInterval);
-	}
+			if (channels.retal) {
+				const retalUpdateInterval = factionConfig.updateIntervals.retal || 5;
+				setInterval(() => checkRetals(channels.retal, factionId), 1000 * 60 * retalUpdateInterval);
+			}
 
-	if (channels.torndata) {
-		setInterval(() => getTornEvents(channels.torndata, tornDataConf.updateInterval), 1000 * 60 * tornDataConf.updateInterval);
+			let isTravelInformationRunning = false;
+
+			if (channels.rankedWar) {
+				const rankedWarUpdateInterval = factionConfig.updateIntervals.rankedWar || 5;
+				if (channels.travel && (channels.travel.id !== channels.rankedWar.id)) {
+					cleanChannel(channels.travel);
+				}
+				if (channels.rankedWar) {
+					cleanChannel(channels.rankedWar);
+				}
+				setInterval(() => {
+					if (!isTravelInformationRunning) {
+						isTravelInformationRunning = true;
+						checkWar(channels.rankedWar, channels.member, rankedWarUpdateInterval, channels.travel, factionId)
+							.finally(() => {
+								isTravelInformationRunning = false;
+							});
+					}
+				}, 1000 * 60 * rankedWarUpdateInterval);
+			}
+		}
 	}
 });
 

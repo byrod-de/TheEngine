@@ -26,10 +26,7 @@ module.exports = {
         .addBooleanOption(option =>
             option.setName('hide')
                 .setDescription('Hide response'))
-
     ,
-
-
 
     async execute(interaction) {
         // Check if the user has access to the channel and category

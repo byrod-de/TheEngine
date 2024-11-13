@@ -30,7 +30,7 @@ function checkAPIKey(apikey) {
  */
 function printLog(logtext) {
     let currentDate = moment().format().replace('T', ' ');
-    let message = currentDate + ' > ' + logtext
+    let message = currentDate + ' | ' + logtext
     console.log(message);
     return message;
 }
@@ -106,6 +106,7 @@ function writeNewMessageId(key, newMessageId) {
         messageIds[key] = newMessageId;
         // Write the updated data back to the file
         fs.writeFileSync(messageIdFile, JSON.stringify(messageIds, null, 2), 'utf8');
+        console.log(`Message ID associated with key '${key}' has been updated to '${newMessageId}'.`);
     } catch (error) {
         // Handle JSON parsing or writing errors
         console.error('Error writing new message ID:', error.message);
@@ -215,22 +216,29 @@ function sortByName(a, b) {
  * @param {Object} embed - The embed message to update or delete.
  * @param {string} [method='edit'] - The method to use for updating or deleting the embed message.
  */
-async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit') {
+async function updateOrDeleteEmbed(channel, embedType, embed, method = 'edit', factionId = '') {
+    if (factionId != '') factionId = `_${factionId}`;
 
-    const embedMessageId = readStoredMessageId(`${embedType}EmbedMessageId`);
-    if (embedMessageId) {
-        try {
+    const messageIdName = `${embedType}EmbedMessageId${factionId}`;
+    const embedMessageId = readStoredMessageId(messageIdName);
+
+    try {
+        if (embedMessageId) {
             const originalMessage = await channel.messages.fetch(embedMessageId);
             await originalMessage[method]({ embeds: [embed], ephemeral: false });
-        } catch (error) {
-            if (method !== 'delete') {
-                const newMessage = await channel.send({ embeds: [embed], ephemeral: false });
-                writeNewMessageId(`${embedType}EmbedMessageId`, newMessage.id);
-            } else {
-                //deleteStoredMessageId(`${embedType}EmbedMessageId`);
-            }
+        } else {
+            const newMessage = await channel.send({ embeds: [embed], ephemeral: false });
+            writeNewMessageId(messageIdName, newMessage.id);
+        }
+    } catch (error) {
+        if (method !== 'delete') {
+            const newMessage = await channel.send({ embeds: [embed], ephemeral: false });
+            writeNewMessageId(messageIdName, newMessage.id);
+        } else {
+            //deleteStoredMessageId(`${embedType}EmbedMessageId`);
         }
     }
+
 }
 
 
@@ -303,7 +311,7 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     if (limitChannel) {
         if (!channelIds.includes(interaction.channelId)) {
             if (channelIds.length > 0) {
-                accessList = channelIds.map(id => `<#${id}>`).join(' or ');
+                accessList += '\n- ' + channelIds.map(id => `<#${id}>`).join(' or ');
             }
         } else {
             accessGranted = true;
@@ -313,10 +321,7 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     if (limitCategory) {
         if (!categories.includes(interaction.channel.parentId)) {
             if (categories.length > 0) {
-                if (accessList) {
-                    accessList += ' or the ';
-                }
-                accessList += categories.map(id => `**<#${id}>**`).join(' or ') + ' category';
+                accessList += '\n- the ' + categories.map(id => `**<#${id}>**`).join(' or ') + ' category';
             }
         } else {
             accessGranted = true;
@@ -324,7 +329,7 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     }
 
     if (!accessGranted) {
-        accessList = `the **admin channel** <#${adminChannelId}>`;
+        accessList += `\n- the **admin channel** <#${adminChannelId}>`;
     }
 
     if (adminChannelId.includes(interaction.channelId)) {
@@ -332,8 +337,8 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
     }
 
     if (!accessGranted) {
-        const notificationEmbed = initializeEmbed(`Error 418 - I'am a teapot`, 'error');
-        notificationEmbed.setDescription(`:teapot: Nice try! This command can only be used in ${accessList}.`);
+        const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+        notificationEmbed.setDescription(`:teapot: Nice try!\nThis command can only be used in ${accessList}.`);
         await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
     }
 

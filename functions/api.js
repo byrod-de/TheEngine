@@ -9,6 +9,7 @@ const apiConfigPath = './conf/apiConfig.json';
 
 const { apiKey, comment, homeFaction } = readConfig().apiConf;
 
+
 /**
  * An asynchronous function to call the Torn API with specified parameters and key usage.
  *
@@ -20,9 +21,12 @@ const { apiKey, comment, homeFaction } = readConfig().apiConf;
  * @param {number} [timestampTS=0] - the specific timestamp for the API request
  * @param {string} [stats=''] - the additional stats to be included in the request
  * @param {string} [keyUsage='default'] - the usage type of the API key
+ * @param {string} [externalApIKey=''] - the external API key to use
+ * @param {string} [version=''] - the version of the API to use
+ * @param {string} [urlParams=''] - the additional URL parameters to include in the request
  * @return {Array} an array containing the status, status message, and API response JSON
  */
-async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '', version = '', urlParams = '') {
+async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS = 0, timestampTS = 0, stats = '', keyUsage = 'default', externalApIKey = '', version = '', urlParams = '', homeFactionId = '') {
     let apiKeys;
     let apiConfig; // Define apiConfig outside the try block
 
@@ -95,7 +99,13 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     } else if (keyUsage === 'external') {
         selectedKey = externalApIKey;
     } else if (keyUsage === 'default') {
-        selectedKey = selectedKey;
+        if (homeFactionId.length > 0) {
+            selectedKey = readConfig().factions[homeFactionId].apiKey;
+            console.log('Oi, key found');
+        } else {
+            selectedKey = selectedKey;    
+        }
+        
     }
 
     selectedKey = decodeApiKeyWithCypher(selectedKey);
@@ -270,8 +280,13 @@ async function getAdditionalKeyInfo(apiKey) {
         const factionResponse = await callTornApi('faction', 'currency', undefined, undefined, undefined, undefined, undefined, "external", apiKey.key);
         if (factionResponse[0]) {
             const factionJson = factionResponse[2];
-            if (factionJson.faction_id.toString() === homeFaction) {
+            const faction = readConfig().factions;
+
+            const homeFactions = Object.keys(faction);
+            console.log(homeFactions);
+            if (homeFactions.includes(factionJson.faction_id.toString())) {
                 apiKey.factionAccess = true;
+                apiKey.factionId = factionJson.faction_id;
             } else {
                 apiKey.factionAccess = false;
             }

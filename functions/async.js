@@ -5,11 +5,9 @@ const { abbreviateNumber, numberWithCommas, extractFromRegex, cleanUpString, cre
 
 const { importCsvToSheet } = require('../functions/google');
 
-
 const { callTornApi } = require('../functions/api');
 
 const NodeCache = require("node-cache");
-const territoryCache = new NodeCache();
 const timestampCache = new NodeCache();
 const messageIdCache = new NodeCache();
 const memberCache = new NodeCache();
@@ -20,7 +18,7 @@ const os = require('os');
 
 const hostname = os.hostname();
 
-const { homeFaction, minDelay } = readConfig().apiConf;
+const { minDelay } = readConfig().apiConf;
 const { exportAttacks, exportContributors } = readConfig().exportConf;
 
 const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
@@ -28,9 +26,7 @@ const tornParams = JSON.parse(tornParamsFile);
 
 const apiConfigPath = './conf/apiConfig.json';
 
-let memberTitle = 'Criminal';
-if (homeFaction === '7709') memberTitle = 'Fox';
-if (homeFaction === '9032') memberTitle = 'Wolf';
+const homeFaction = "";
 
 /**
  * Send a status message to the specified channel at regular intervals.
@@ -64,112 +60,30 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
 }
 
 
-/**
- * Asynchronously checks territories for updates and sends a message to the territory channel.
- *
- * @param {string} territoryChannel - The channel for territory updates
- * @param {number} territoryUpdateInterval - The interval for territory updates
- * @return {Promise<void>} A promise that resolves when the function completes
- */
-async function checkTerritories(territoryChannel, territoryUpdateInterval) {
-
-    let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
-
-    let tornParams = JSON.parse(tornParamsFile);
-
-    let territorywars = await callTornApi('torn', 'territorywars', '', undefined, undefined, undefined, undefined, 'rotate');
-
-    let territoriesInWar;
-    if (territorywars[0]) {
-        let territoryWarJson = territorywars[2];
-        territoriesInWar = territoryWarJson && territoryWarJson.territorywars !== null ? Object.keys(territoryWarJson.territorywars).sort() : null;
-    }
-
-
-    for (let key in tornParams.ttFactionIDs) {
-        let faction_id = tornParams.ttFactionIDs[key];
-
-        let response = await callTornApi('faction', 'territory,basic', faction_id, undefined, undefined, undefined, undefined, 'rotate');
-        if (response[0]) {
-            let territoryJson = response[2];
-
-            let faction_name = territoryJson['name'];
-            let faction_tag = territoryJson['tag'];
-            let faction_icon = `https://factiontags.torn.com/` + territoryJson['tag_image'];
-
-
-            let territoryEmbed = initializeEmbed('Territory Status');
-            territoryEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://byrod.cc/f/${faction_id}` });
-
-            let territories = territoryJson ? Object.keys(territoryJson.territory).sort() : null;
-            if (!territories || territories.length <= 0) {
-                continue;
-            }
-
-            let cachedTTs = territoryCache.get(faction_id);
-            if (cachedTTs !== undefined) {
-
-                let diffInCache = cachedTTs.filter(x => !territories.includes(x));
-
-                if (diffInCache.length > 0)
-                    territoryEmbed.addFields({ name: `${faction_name} abandoned:`, value: `${diffInCache.toString()}`, inline: false })
-
-                let diffInTTs = territories.filter(x => !cachedTTs.includes(x));
-                if (diffInTTs.length > 0)
-                    territoryEmbed.addFields({ name: `${faction_name} claimed:`, value: `${diffInTTs.toString()}`, inline: false })
-
-                if (territoriesInWar) {
-                    factionTTInAssault = territories.filter(x => territoriesInWar.includes(x));
-                } else {
-                    factionTTInAssault = []; // Handle the case when territoriesInWar is null or undefined
-                }
-
-                if (factionTTInAssault.length > 0) {
-                    territoryEmbed.addFields({ name: `${faction_name} is defending:`, value: `${factionTTInAssault}.`, inline: false })
-                }
-
-                if (diffInCache.length > 0 || diffInTTs.length > 0) {
-                    territoryEmbed.addFields({ name: `${faction_name} holds now:`, value: `${territories}.`, inline: false })
-                    territoryChannel.send({ embeds: [territoryEmbed], ephemeral: false })
-                };
-
-            } else {
-                printLog('Territory cache empty');
-            }
-
-
-
-            if (territoryCache.set(faction_id, territories, 120)) printLog(`Cache updated for ${faction_name} [${faction_id}] with ${territories}`);
-        }
-
-    }
-}
-
 
 /**
- * Asynchronously checks the armoury for updates and posts relevant information to the specified channel.
+ * Checks the faction's armoury news and sends a message to the specified channel
+ * if a user has used an item from the armoury.
  *
- * @param {string} armouryChannel - The channel where the armoury updates will be posted
- * @param {number} armouryUpdateInterval - The interval at which the armoury will be checked for updates
- * @return {Promise<void>} A promise that resolves once the armoury check is completed
+ * @param {Object} armouryChannel - The channel to send the message to
+ * @param {number} homeFactionId - The ID of the faction to check
+ * @return {Promise<void>} A promise that resolves once the message is sent
  */
-async function checkArmoury(armouryChannel, armouryUpdateInterval) {
+async function checkArmoury(armouryChannel, homeFactionId) {
+    const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
+    const tornParams = JSON.parse(tornParamsFile);
 
-    let tornParamsFile = fs.readFileSync('./conf/tornParams.json');
-
-    let tornParams = JSON.parse(tornParamsFile);
-
-    let currentTimestamp = Math.floor(Date.now() / 1000);
+    const currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
 
-    let lastTimestamp = timestampCache.get('armouryExecTime');
+    let lastTimestamp = timestampCache.get('armouryExecTime_' + homeFactionId);
     if (lastTimestamp !== undefined) {
         timestamp = lastTimestamp;
     } else {
-        printLog('Armoury timestamp cache empty');
+        printLog(homeFactionId + ' > Armoury timestamp cache empty');
     }
 
-    let response = await callTornApi('faction', 'armorynews,basic', '', timestamp);
+    let response = await callTornApi('faction', 'armorynews,basic', homeFactionId, timestamp, undefined, undefined, undefined, undefined, undefined, undefined, undefined, homeFactionId);
 
     if (response[0]) {
         let armouryJson = response[2];
@@ -209,37 +123,38 @@ async function checkArmoury(armouryChannel, armouryUpdateInterval) {
                     if (armouryChannel) {
                         armouryChannel.send({ embeds: [armouryEmbed], ephemeral: false });
                     } else {
-                        printLog('armouryChannel is undefined');
+                        printLog(homeFactionId + ' > armouryChannel is undefined');
                     }
                 }
             }
         }
 
-        if (timestampCache.set('armouryExecTime', currentTimestamp, 120)) printLog(`Cache updated for 'armouryExecTime' with ${currentTimestamp}`);
+        if (timestampCache.set('armouryExecTime_' + homeFactionId, currentTimestamp, 120)) printLog(homeFactionId + ` > Cache updated for 'armouryExecTime_${homeFactionId}' with ${currentTimestamp}`);
 
     }
 }
 
 
 /**
- * Asynchronously checks the retals based on the provided retals channel and retals update interval.
+ * Asynchronously checks the retals for the faction and updates the retal channel.
  *
- * @param {string} retalChannel - The channel to send retals to
- * @param {number} retalUpdateInterval - The interval at which to update retals
+ * @param {Object} retalChannel - The retal channel to check for retals
+ * @param {number} homeFactionId - The ID of the faction to check
+ * @return {Promise<void>} A Promise that resolves once the embed is updated or deleted
  */
-async function checkRetals(retalChannel, retalUpdateInterval) {
+async function checkRetals(retalChannel, homeFactionId) {
 
-    let currentTimestamp = Math.floor(Date.now() / 1000);
+    const currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
 
-    let lastTimestamp = timestampCache.get('retalExecTime');
+    let lastTimestamp = timestampCache.get('retalExecTime_' + homeFactionId);
     if (lastTimestamp !== undefined) {
         timestamp = lastTimestamp;
     } else {
-        printLog('Retal timestamp cache empty');
+        printLog(homeFactionId + ' > Retal timestamp cache empty');
     }
 
-    let response = await callTornApi('faction', 'attacks,basic', '', timestamp);
+    let response = await callTornApi('faction', 'attacks,basic', homeFactionId, timestamp, undefined, undefined, undefined, undefined, undefined, undefined, undefined, homeFactionId);
 
     if (response[0]) {
         let attacksJson = response[2];
@@ -269,7 +184,7 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
             let overseas = false;
             if (attacks[attackID].modifiers.overseas > 1) overseas = true;
 
-            if (attacker_faction.toString() != homeFaction.toString() && stealthed === 0 && respect > 0) {
+            if (attacker_faction.toString() != homeFactionId.toString() && stealthed === 0 && respect > 0) {
                 const attackEmbed = initializeEmbed(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`);
 
                 attackEmbed.setURL(`https://byrod.cc/a/${attacker_id}`)
@@ -300,12 +215,12 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
                     }, 15 * 60 * 1000); // Delete after 15 minutes
 
                 } else {
-                    printLog('retalChannel is undefined');
+                    printLog( homeFactionId + ' > retalChannel is undefined');
                 }
             }
         }
 
-        if (timestampCache.set('retalExecTime', currentTimestamp, 120)) printLog(`Cache updated for 'retalExecTime' with ${currentTimestamp}`);
+        if (timestampCache.set('retalExecTime_' + homeFactionId, currentTimestamp, 120)) printLog(`${homeFactionId} > Cache updated for 'retalExecTime_${homeFactionId}' with ${currentTimestamp}`);
 
     }
 }
@@ -318,11 +233,11 @@ async function checkRetals(retalChannel, retalUpdateInterval) {
  * @param {number} warUpdateInterval - The interval for updating war-related information.
  * @return {Promise} A promise that resolves when the war status is checked and the information is updated.
  */
-async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChannel = undefined) {
+async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChannel = undefined, homeFactionId = undefined) {
 
     if (warChannel) {
 
-        const responseRW = await callTornApi('faction', 'basic,timestamp');
+        const responseRW = await callTornApi('faction', 'basic,timestamp', homeFactionId, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, homeFactionId);
 
         if (responseRW[0]) {
             const factionJson = responseRW[2];
@@ -518,7 +433,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                 const cachedMessageIdRw = messageIdCache.get(`${ownFactionID}-rw`);
 
                 if (!cachedMessageIdRw) {
-                    await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                    await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'edit', homeFactionId);
                 }
                 messageIdCache.set(`${ownFactionID}-rw`, 'running', 3600);
 
@@ -743,17 +658,17 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                     }
 
                     if (warChannel) {
-                        await updateOrDeleteEmbed(warChannel, 'status', statusEmbed); // Defaults to 'edit'
-                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed); // Defaults to 'edit'
-                        await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed); // Defaults to 'edit'
-                        await updateOrDeleteEmbed(warChannel, 'abroad', abroadEmbed); // Defaults to 'edit'
+                        await updateOrDeleteEmbed(warChannel, 'status', statusEmbed, 'edit', homeFactionId);
+                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'edit', homeFactionId);
+                        await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'edit', homeFactionId);
+                        await updateOrDeleteEmbed(warChannel, 'abroad', abroadEmbed, 'edit', homeFactionId);
                     }
 
                     if (memberChannel) {
-                        //await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed); // Defaults to 'edit'
-                        await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed); // Defaults to 'edit'
-                        await updateOrDeleteEmbed(memberChannel, 'ownTravel', ownTravelEmbed); // Defaults to 'edit'
-                        await updateOrDeleteEmbed(memberChannel, 'ownAbroad', ownAbroadEmbed); // Defaults to 'edit'
+                        //await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed);
+                        await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed, 'edit', homeFactionId);
+                        await updateOrDeleteEmbed(memberChannel, 'ownTravel', ownTravelEmbed, 'edit', homeFactionId);
+                        await updateOrDeleteEmbed(memberChannel, 'ownAbroad', ownAbroadEmbed, 'edit', homeFactionId);
                     }
 
                 } else {
@@ -774,59 +689,14 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                 rwEmbed.addFields({ name: `${faction1.name} [${faction1ID}]`, value: fieldFaction1, inline: true });
                 rwEmbed.addFields({ name: `${faction2.name} [${faction2ID}]`, value: fieldFaction2, inline: true });
-                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'edit', homeFactionId);
             } else {
 
-                const responseMainNews = false;//;await callTornApi('faction', 'mainnews,timestamp', undefined, undefined, undefined, undefined, undefined, 'default');
+                const enlistedStatus = await callTornApi('faction', 'basic,timestamp', undefined, undefined, undefined, undefined, undefined, 'default', undefined, 'v2', undefined, homeFactionId);
 
-                if (responseMainNews[0]) {
-                    const newsJson = responseMainNews[2];
-                    const mainnews = newsJson['mainnews'];
-                    let enlistedTimestamp = 0;
-                    let description = '';
-                    for (var newsID in mainnews) {
-                        let news = mainnews[newsID];
-
-                        if (news['news'].includes(' could not be matched with a suitable opponent')) {
-                            description = `:warning: **${ownFactionName}** could not be matched with a suitable opponent - we remain enlisted for priority matchmaking.\n\n`;
-                        }
-
-                        if (news['news'].includes(' enlisted the faction')) {
-                            isEnlisted = true;
-                            enlistedTimestamp = `<t:${news['timestamp']}:f>`;
-                            description += `:ballot_box_with_check: Faction is enlisted since ${enlistedTimestamp}`;
-
-                            //
-                            const currentDate = new Date();
-                            const currentDay = currentDate.getUTCDay(); // 0 (Sunday) to 6 (Saturday)
-                            const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
-                            let daysUntilTuesday = (2 + 7 - currentDay) % 7;
-
-                            // Check if it's already Tuesday and past 12:00 PM
-                            if (currentDay === 2 && currentDate.getUTCHours() >= 12) {
-                                daysUntilTuesday += 7; // Move to next week
-                            }
-
-                            printLog(`Current day: ${dayName}, Days until Tuesday: ${daysUntilTuesday}`);
-
-                            const nextTuesday = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate() + daysUntilTuesday));
-                            nextTuesday.setUTCHours(12, 0, 0, 0);
-
-                            let nextTuesdayTS = Math.floor(nextTuesday.getTime() / 1000);
-                            nextTuesdayTS = `<t:${nextTuesdayTS}:R>`;
-                            description += `\n:hourglass: Next matchmaking ${nextTuesdayTS}`;
-
-                            break;
-                        }
-
-                        if (news['news'].includes(' unenlisted the faction')) {
-                            break;
-                        }
-
-                        if (news['news'].includes('defeated') && news['news'].includes('in a ranked war')) {
-                            break;
-                        }
-                    }
+                if (enlistedStatus[0]) {
+                    const factionJson = enlistedStatus[2];
+                    isEnlisted = factionJson['basic'].is_enlisted;
 
                     if (isEnlisted) {
 
@@ -834,10 +704,10 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                         rwEmbed.setTitle(`Faction is currently enlisted!`)
                             .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
-                            .setDescription(description);
+                            .setDescription(`:ballot_box_with_check: Faction is enlisted`);
 
                         if (warChannel) {
-                            await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed);
+                            await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'edit', homeFactionId);
                         }
                     } else {
                         if (warChannel) {
@@ -1202,11 +1072,13 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
  * @param {number} memberUpdateInterval - The interval in milliseconds at which the member status and information will be updated.
  * @return {Promise<void>} A promise that resolves once the member status and information are updated in the Discord embeds.
  */
-async function checkMembers(memberChannel, memberUpdateInterval) {
+async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId) {
+    const memberTitle = readConfig().factions[homeFactionId].memberTitle;
+    printLog(homeFactionId + ' > Checking members - ' + memberTitle);
 
     if (memberChannel) {
 
-        const response = await callTornApi('faction', 'basic,timestamp', homeFaction);
+        const response = await callTornApi('faction', 'basic,timestamp', homeFactionId, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, homeFactionId);
         const jailEmbed = initializeEmbed(`:oncoming_police_car: Bust a ${memberTitle}!`);
         const ownStatusEmbed = initializeEmbed(`:bar_chart: Member Overview`);
 
@@ -1216,7 +1088,6 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
             const ownFactionTag = factionJson['tag'];
             const ownFactionId = factionJson['ID'];
             const ownFactionIcon = `https://factiontags.torn.com/` + factionJson['tag_image'];
-            const timestamp = factionJson['timestamp'];
             const membersList = factionJson['members'];
 
             let hospitalMemberCount = 0;
@@ -1292,9 +1163,9 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                     jailEmbed.addFields({ name: `Members in jail (${index + 1}/${jailChunks.length})`, value: chunk, inline: true });
                 });
 
-                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed);
+                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'edit', homeFactionId);
             } else {
-                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete');
+                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete', homeFactionId);
             }
             ownStatusEmbed.setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
                 .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` });
@@ -1309,7 +1180,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
                 }
                 ownStatusEmbed.addFields({ name: 'Offline > 1 day', value: offlineMembersEntries, inline: false });
             }
-            await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed);
+            await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed, 'edit', homeFactionId);
         }
     }
 }
@@ -1320,7 +1191,7 @@ async function checkMembers(memberChannel, memberUpdateInterval) {
  * @param {number} selectedDateValue - The value representing the selected month.
  * @return An embed containing OC statistics for the specified month.
  */
-async function getOCStats(selection, selectedDateValue, exportData = false) {
+async function getOCStats(selection, selectedDateValue, exportData = false, homeFactionId = undefined) {
 
     let timestamps;
     let title = '';
@@ -1350,10 +1221,9 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     var firstDay = timestamps.firstDay;
     var lastDay = timestamps.lastDay;
 
-    const response = await callTornApi('faction', 'basic,crimes,timestamp', undefined, firstDay, lastDay);
+    const response = await callTornApi('faction', 'basic,crimes,timestamp', homeFactionId, firstDay, lastDay, undefined, undefined, undefined, undefined, undefined, undefined, homeFactionId);
 
     if (!response[0]) {
-        //await interaction.reply({ content: response[1], ephemeral: true });
         return;
     }
 
@@ -1421,8 +1291,6 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
                                 memberIdList += `${key};`;
                             })
                         });
-                        //console.log(memberList);
-                        //console.log(memberIdList);
                         const result = crime.success === 1 ? 'success' : 'failed';
                         entry += `${crime.crime_name};${formatTornDate(crime.time_completed)};${crime.time_completed};${result};${crime.respect_gain};${crime.money_gain};${memberList}${memberIdList}\n`;
                     }
@@ -1454,7 +1322,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     for (const crimeName in crimeSummary) {
         const { total, success, failed } = crimeSummary[crimeName];
         const successRate = (success / total) * 100;
-        printLog(crimeName + " " + total + " " + successRate.toFixed(2) + "%");
+        printLog(homeFactionId + " > " + crimeName + " " + total + " " + successRate.toFixed(2) + "%");
         ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
         //money per member
         const moneyPerMember = crimeSummary[crimeName].money_gain / total / 5;
@@ -1464,7 +1332,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     let returnResult = {};
     if (exportData) {
 
-        const fileName = `./exports/PA_Overview_${homeFaction}_${filenameSuffix}.csv`;
+        const fileName = `./exports/PA_Overview_${homeFactionId}_${filenameSuffix}.csv`;
         fs.writeFileSync(fileName, entry);
         returnResult.csvFilePath = fileName;
         let year = new Date().getFullYear();
@@ -1476,212 +1344,33 @@ async function getOCStats(selection, selectedDateValue, exportData = false) {
     return returnResult;
 }
 
-async function getMemberContributions(contribution_categories = tornParams.contributions) {
-    let exportFilename = '';
-
-    console.log(contribution_categories);
-
-    for (const category of contribution_categories) {
-        printLog('Calling member stats for: > ' + category + ' <');
-        const response = await callTornApi('faction', 'contributors,timestamp', undefined, undefined, undefined, undefined, category, 'faction', undefined, undefined);
-
-        if (response[0] === true) {
-            printLog('Successfully fetched member stats for: > ' + category + ' <');
-            const contributionsJson = response[2];
-            const contributions = contributionsJson.contributors[category];
-            const filteredContributions = Object.entries(contributions)
-                .filter(([id, data]) => data.in_faction === 1)
-                .reduce((acc, [id, data]) => {
-                    acc[id] = data;
-                    return acc;
-                }, {});
-            const timestamp = contributionsJson.timestamp;
-            if (exportContributors && Object.keys(filteredContributions).length > 0) {
-                exportFilename = `./exports/contributors_${homeFaction}_${category}_${timestamp}.json`;
-                fs.writeFileSync(exportFilename, JSON.stringify(filteredContributions, null, 2));
-            }
-
-            await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
-        }
-    };
-
-    return exportFilename;
-}
 
 /**
- * Asynchronously checks the OCs for the member channel and updates the OC status embed.
+ * Checks the OC stats for a given faction and updates the OC status embed in the member channel.
  *
- * @param {Object} memberChannel - The member channel to check for OCs
- * @param {number} memberUpdateInterval - The interval for updating the member channel
- * @return {Promise<void>} A Promise that resolves once the embed is updated or deleted
+ * @param {Channel} memberChannel - The channel where the OC status embed will be updated.
+ * @param {number} memberUpdateInterval - The interval in minutes at which the OC stats should be updated.
+ * @param {number} homeFactionId - The ID of the faction for which the OC stats are being retrieved.
+ * @return {Promise<void>} A promise that resolves once the OC status embed has been updated.
  */
-async function checkOCs(memberChannel, memberUpdateInterval) {
+async function checkOCs(memberChannel, memberUpdateInterval, homeFactionId) {
+    printLog(homeFactionId + ' > Checking OCs');
     const now = moment();
 
-    const ocStatus = await getOCStats('months');
+    const ocStatus = await getOCStats('months', undefined, false, homeFactionId);
+    if (ocStatus === undefined) return;
     const ocStatusEmbed = ocStatus.embed;
     ocStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)
 
-    await updateOrDeleteEmbed(memberChannel, 'ocStatus', ocStatusEmbed);
+    await updateOrDeleteEmbed(memberChannel, 'ocStatus', ocStatusEmbed, 'edit', homeFactionId);
 }
 
 
-/**
- * Asynchronously retrieves the revive status for a faction and generates an embed with the status of revivable members.
- *
- * @param {string} factionId - The ID of the faction for which the revive status is to be retrieved.
- * @param {Message} message - The message object for updating the revive status progress.
- * @return The embed containing the revive status of faction members.
- */
-async function getReviveStatus(factionId, message) {
 
-    const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
-
-    await new Promise(resolve => setTimeout(resolve, minDelay * 1000));
-
-
-    if (!response[0]) {
-        await message.edit({ content: response[1] });
-        return;
-    }
-
-    const factionJson = response[2];
-
-    const members = factionJson?.members || {};
-    const memberLength = Object.keys(members).length;
-
-    if (memberLength === 0) {
-        await message.edit({ content: 'No members found!' });
-        return;
-    }
-
-    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
-
-    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
-
-    const reviveEmbed = initializeEmbed('Faction Revive Status');
-    reviveEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
-        .setDescription('*Note: Members with "Friends & faction" settings might be displayed too.*')
-        ;
-
-    let revivableMembersList = [];
-    let reviveCount = 0;
-    let membersCount = 0;
-
-    const membersList = members;
-
-    let memberIndex = {}
-
-    for (var id in membersList) {
-        memberIndex[membersList[id].name] = id;
-    }
-    const sortedMembers = Object.values(membersList).sort(sortByName).reverse();
-
-    for (const id in sortedMembers) {
-
-        const member = sortedMembers[id];
-        const memberId = memberIndex[member.name];
-
-        if (message) {
-            membersCount++;
-            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
-                let content = '';
-
-                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
-                content = `Executing Revive Status for [${faction_name}](https://byrod.cc/f/${faction_id}), please wait.\n`;
-
-                if (membersCount != memberLength) {
-                    content += `${progressBar}\n`;
-                }
-
-                content += `${membersCount} of ${memberLength} members processed.`;
-                await message.edit({ content: content });
-                printLog(content);
-            }
-        }
-
-        let activeReviverKeys = 1;
-        try {
-            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
-            const apiKeys = apiConfig.apiKeys;
-            activeReviverKeys = apiKeys.filter(key => key.active && key.reviver).length;
-
-            if (activeReviverKeys === 0) {
-                activeReviverKeys = 1;
-            }
-        } catch (error) {
-            activeReviverKeys = 1;
-        }
-
-        const totalCalls = 100;
-        let delayInSeconds = (totalCalls / activeReviverKeys / 15).toFixed(2);
-        if (delayInSeconds < 1) {
-            delayInSeconds = minDelay;
-        }
-        printLog(`Delay between calls: ${delayInSeconds} seconds`);
-        await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
-
-        const reviveResponse = await callTornApi('user', 'profile', memberId, undefined, undefined, undefined, undefined, "revive", undefined);
-        if (reviveResponse[0]) {
-            const reviveJson = reviveResponse[2];
-            printLog(`${member.name} checked, revive status = ${reviveJson.revivable}`);
-            if (reviveJson.revivable == 1) {
-
-                let reviveIcon = '';
-                if (reviveJson.gender === 'Male') {
-                    reviveIcon = ':man_health_worker:';
-                } else if (reviveJson.gender === 'Female') {
-                    reviveIcon = ':woman_health_worker:';
-                } else {
-                    reviveIcon = ':health_worker:';
-                }
-
-                let statusIcon = '`  `';
-                let statusUntil = '';
-                switch (member.status.state) {
-                    case 'Hospital': statusIcon = ':syringe:'; statusUntil = `<t:${member.status.until}:R>`; break;
-                    case 'Jail': statusIcon = ':oncoming_police_car:'; break;
-                    case 'Abroad': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
-                    case 'Traveling': statusIcon = getFlagIcon(member.status.state, member.status.description).flag; break;
-                }
-
-                revivableMembersList.push({
-                    name: member.name,
-                    id: memberId,
-                    statusIcon: statusIcon,
-                    statusUntil: statusUntil
-                });
-                reviveCount++;
-            }
-        }
-    }
-
-    const content = `>>> Found ${reviveCount} revivable members out of ${membersCount} members for faction ${faction_name} [${faction_id}].`;
-    printLog(content);
-
-    revivableMembersList.sort((a, b) => {
-        const statusUntilA = a.statusUntil || '';
-        const statusUntilB = b.statusUntil || '';
-        return statusUntilA.localeCompare(statusUntilB);
-    });
-
-    console.log(revivableMembersList);
-
-    const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
-    const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
-
-    reviveChunks.forEach((chunk, index) => {
-        reviveEmbed.addFields({ name: `(${index + 1}/${reviveChunks.length})`, value: chunk, inline: true });
-    });
-
-    reviveEmbed.setTitle(`Players with revives on (${reviveCount}/${membersCount})`);
-
-    return reviveEmbed;
-}
 
 async function getFactionReviveStatus(factionId, message) {
 
-    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, "faction", undefined, 'v2');
+    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, 'faction', undefined, 'v2');
 
     if (!response[0]) {
         await message.edit({ content: response[1] });
@@ -1698,7 +1387,7 @@ async function getFactionReviveStatus(factionId, message) {
         return;
     }
 
-    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+    const { name: faction_name, id: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson.basic;
 
     const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
@@ -1710,7 +1399,6 @@ async function getFactionReviveStatus(factionId, message) {
     let revivableMembersList = [];
     let reviveCount = 0;
     let noneCount = 0;
-    let friendNFactionCount = 0;
     let membersCount = 0;
 
     const membersList = members;
@@ -1764,7 +1452,7 @@ async function getFactionReviveStatus(factionId, message) {
         return statusUntilA.localeCompare(statusUntilB);
     });
 
-    reviveEmbed.addFields({ name: 'Overview', value: `:red_circle: \`Revivable    : ${reviveCount}\`\n:green_circle: \`Not revivable: ${noneCount}\``, inline: false });
+    reviveEmbed.addFields({ name: 'Overview', value: `:green_circle: \`Revivable    : ${reviveCount}\`\n:red_circle: \`Not revivable: ${noneCount}\``, inline: false });
 
     const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
     const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
@@ -1780,7 +1468,7 @@ async function getFactionReviveStatus(factionId, message) {
 
 async function getOwnFactionReviveStatus(factionId, message) {
 
-    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, "faction", undefined, 'v2');
+    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, 'faction', undefined, 'v2');
 
     if (!response[0]) {
         await message.edit({ content: response[1] });
@@ -1797,7 +1485,7 @@ async function getOwnFactionReviveStatus(factionId, message) {
         return;
     }
 
-    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
+    const { name: faction_name, id: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson.basic;
 
     const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
@@ -1843,7 +1531,7 @@ async function getOwnFactionReviveStatus(factionId, message) {
 
             let memberNameFormatted = '';
             if (member.revive_setting == 'Friends & faction') {
-                memberNameFormatted = `${member.name} *`;
+                memberNameFormatted = `* ${member.name}`;
             } else {
                 memberNameFormatted = `${member.name}`;
             }
@@ -1879,7 +1567,7 @@ async function getOwnFactionReviveStatus(factionId, message) {
         return statusUntilA.localeCompare(statusUntilB);
     });
 
-    reviveEmbed.addFields({ name: 'Overview', value: `:red_circle: \`Everyone         : ${everyoneCount}\`\n:yellow_circle: \`Friends & faction: ${friendNFactionCount}\`\n:green_circle: \`No one           : ${noneCount}\``, inline: false });
+    reviveEmbed.addFields({ name: 'Overview', value: `:green_circle: \`Everyone         : ${everyoneCount}\`\n:yellow_circle: \`Friends & faction: ${friendNFactionCount}\`\n:red_circle: \`No one           : ${noneCount}\``, inline: false });
 
     const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
     const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
@@ -1895,293 +1583,10 @@ async function getOwnFactionReviveStatus(factionId, message) {
     reviveEmbed.setTitle(`Players with revives set to Everyone (${reviveCount}/${membersCount})`);
 
     if (friendNFactionCount > 0) {
-        reviveEmbed.setDescription(`*Note: Members with "Friends & faction" settings arte highlighted with an asterisk (\*).*`);
+        reviveEmbed.setDescription(`*Note: Members with "Friends & faction" settings arte highlighted with an asterisk* *`);
     }
 
     return reviveEmbed;
-}
-
-
-/**
- * Retrieves the personal stats of all members in a faction between a specific start and end date.
- * The function will return an embed with the differences in the stats between the start and end dates.
- * The function will also print the execution progress to the console.
- *
- * @param {string} factionId - The ID of the faction for which the member stats are to be retrieved.
- * @param {string} selection - The comma separated list of stats to retrieve.
- * @param {Message} message - The message object for updating the execution progress.
- * @param {number} startDateTimestamp - The start date timestamp for which the stats are to be retrieved.
- * @param {number} endDateTimestamp - The end date timestamp for which the stats are to be retrieved.
- * @param {boolean} [exportCSV=false] - If true, the function will export the differences list to a CSV file.
- * @return {Promise<object>} - A promise that resolves with an object containing the embed with the differences in the stats.
- */
-async function memberInformation(factionId, selection, message, startDateTimestamp, endDateTimestamp, exportCSV = false) {
-    const response = await callTornApi('faction', 'basic,timestamp', factionId, undefined, undefined, undefined, undefined, "rotate", undefined);
-
-    if (!response[0]) {
-        await message.edit({ content: response[1] });
-        return;
-    }
-
-    const factionJson = response[2];
-    const members = factionJson?.members || {};
-    const memberLength = Object.keys(members).length;
-
-    if (memberLength === 0) {
-        await message.edit({ content: 'No members found!' });
-        return;
-    }
-
-    const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
-    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
-
-    let returnResult = {};
-
-    const memberEmbed = initializeEmbed('Faction Member Information');
-    memberEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name} [${faction_id}]`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
-
-    const membersList = members;
-
-    const entriesListStart = [];
-    membersCount = 0;
-
-
-    for (const memberId in membersList) {
-        const member = membersList[memberId];
-        console.log(startDateTimestamp, memberId, member.name);
-
-        if (message) {
-            membersCount++;
-            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
-                let content = '';
-
-                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
-                content = `Executing Member check for [${faction_name}](https://byrod.cc/f/${faction_id}), ${startDateTimestamp}, please wait.\n`;
-
-                if (membersCount != memberLength) {
-                    content += `${progressBar}\n`;
-                }
-
-                content += `${membersCount} of ${memberLength} members processed, ${startDateTimestamp}`;
-                await message.edit({ content: content });
-                printLog(content);
-            }
-        }
-
-        let activeKeys = 1;
-        try {
-            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
-            const apiKeys = apiConfig.apiKeys;
-            activeKeys = apiKeys.filter(key => key.active).length;
-
-            if (activeKeys === 0) {
-                activeKeys = 1;
-            }
-        } catch (error) {
-            activeKeys = 1;
-        }
-
-        const totalCalls = 100;
-        let delayInSeconds = (totalCalls / activeKeys / 15).toFixed(2);
-        if (delayInSeconds < 1) {
-            delayInSeconds = minDelay;
-        }
-
-        if (membersCount < 100) {
-            printLog(`Delay between calls: ${delayInSeconds} seconds`);
-            await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
-
-
-            const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, startDateTimestamp, selection, "rotate", undefined);
-            if (statsResponse[0]) {
-                const statsJson = statsResponse[2];
-                const personalstats = statsJson['personalstats'];
-
-                const selectionKeys = selection.split(',');
-
-                const player = {
-                    name: cleanUpString(member.name),
-                    id: memberId,
-                };
-
-                // Dynamically add the stats to the player object
-                selectionKeys.forEach(key => {
-                    if (personalstats.hasOwnProperty(key)) {
-                        player[key] = personalstats[key];
-                    }
-                });
-
-                entriesListStart.push(player);
-                //console.log(player);
-            }
-        }
-    }
-
-    const entriesListEnd = [];
-    membersCount = 0;
-
-    for (const memberId in membersList) {
-        const member = membersList[memberId];
-        console.log(endDateTimestamp, memberId, member.name);
-
-        if (message) {
-            membersCount++;
-            if (membersCount === 1 || membersCount % 5 === 0 || membersCount === memberLength) {
-                let content = '';
-
-                const progressBar = createProgressBar(membersCount, memberLength, 'circle');
-                content = `Executing Member check for [${faction_name}](https://byrod.cc/f/${faction_id}), ${endDateTimestamp}, please wait.\n`;
-
-                if (membersCount != memberLength) {
-                    content += `${progressBar}\n`;
-                }
-
-                content += `${membersCount} of ${memberLength} members processed, ${endDateTimestamp}.`;
-                await message.edit({ content: content });
-                printLog(content);
-            }
-        }
-
-        let activeKeys = 1;
-        try {
-            const apiConfig = JSON.parse(fs.readFileSync(apiConfigPath));
-            const apiKeys = apiConfig.apiKeys;
-            activeKeys = apiKeys.filter(key => key.active).length;
-
-            if (activeKeys === 0) {
-                activeKeys = 1;
-            }
-        } catch (error) {
-            activeKeys = 1;
-        }
-
-        const totalCalls = 100;
-        let delayInSeconds = (totalCalls / activeKeys / 15).toFixed(2);
-        if (delayInSeconds < 1) {
-            delayInSeconds = minDelay;
-        }
-
-        if (membersCount < 100) {
-
-            printLog(`Delay between calls: ${delayInSeconds} secondss`);
-            await new Promise(resolve => setTimeout(resolve, delayInSeconds * 1000));
-
-            const statsResponse = await callTornApi('user', 'profile,personalstats', memberId, undefined, undefined, endDateTimestamp, selection, "rotate", undefined);
-            if (statsResponse[0]) {
-                const statsJson = statsResponse[2];
-                const personalstats = statsJson['personalstats'];
-
-                const selectionKeys = selection.split(',');
-
-                const player = {
-                    name: cleanUpString(member.name),
-                    id: memberId,
-                };
-
-                // Dynamically add the stats to the player object
-                selectionKeys.forEach(key => {
-                    if (personalstats.hasOwnProperty(key)) {
-                        player[key] = personalstats[key];
-                    }
-                });
-
-                entriesListEnd.push(player);
-                //console.log(player);
-            }
-        }
-
-    }
-
-    //console.log(entriesListStart);
-    //console.log(entriesListEnd);
-
-    // Function to calculate differences
-    const calculateDifferences = (startList, endList) => {
-        return startList.map((startEntry, index) => {
-            const endEntry = endList[index];
-            const differences = {};
-
-            // Ensure the entries match by name and id
-            if (startEntry.name === endEntry.name && startEntry.id === endEntry.id) {
-                differences.name = startEntry.name;
-                differences.id = startEntry.id;
-
-                for (const key in startEntry) {
-                    if (key !== 'name' && key !== 'id' && typeof startEntry[key] === 'number') {
-                        differences[key] = endEntry[key] - startEntry[key];
-                    }
-                }
-            }
-
-            return differences;
-        });
-    };
-
-    // Calculate the differences
-    const differencesList = calculateDifferences(entriesListStart, entriesListEnd);
-
-    //console.log(differencesList);
-
-    if (exportCSV) {
-
-        let csvString = '';
-
-        csvString = `name,id,${selection}\n`;
-
-        differencesList.forEach(entry => {
-            // Format the entry into a CSV string
-            if (selection.includes('rankedwarhits')) {
-                const entryString = `${entry.name},${entry.id},${entry.rankedwarhits},${entry.raidhits},${entry.territoryclears},${entry.territoryjoins},${entry.rankedwarringwins},${entry.respectforfaction},${entry.attacksassisted},${entry.attackswon},${entry.retals}\n`;
-                csvString += entryString;
-            }
-            if (selection.includes('networth')) {
-                const entryString = `${entry.name},${entry.id},${entry.networth},${entry.refills},${entry.xantaken},${entry.statenhancersused},${entry.useractivity},${entry.energydrinkused}\n`;
-                csvString += entryString;
-            }
-        });
-
-
-        if (csvString.length > 0) {
-            const csvFilePath = `./exports/member-activity_${factionId}_${Date.now()}.csv`;
-            fs.writeFileSync(csvFilePath, csvString);
-            returnResult.csvFilePath = csvFilePath;
-        }
-    }
-
-    if (selection.includes('attackswon')) {
-        const sortedArray = differencesList.sort((a, b) => b.attackswon - a.attackswon);
-        const entryFormat = `\`{{attackswon}}\` [»»](https://byrod.cc/p/{{id}}) {{name}}\n`;
-        const memberChunks = splitIntoChunks(sortedArray, entryFormat);
-
-        memberChunks.forEach((chunk, index) => {
-            memberEmbed.addFields({ name: `(${index + 1}/${memberChunks.length})`, value: chunk, inline: true });
-        });
-
-        memberEmbed.setTitle(`Faction members sorted by number of attacks won`);
-        memberEmbed.setDescription(`\`Start time:\` ${formatTornDate(startDateTimestamp).replace('+00:00', '')}\n\`End time  :\` ${formatTornDate(endDateTimestamp).replace('+00:00', '')}`);
-    }
-
-    returnResult.embed = memberEmbed;
-    return returnResult;
-}
-
-
-async function memberStats(memberChannel, memberUpdateInterval) {
-    const now = moment();
-
-    const yesterday = now.clone().subtract(1, 'day').startOf('day');
-    const startOfDayYesterday = yesterday.clone();
-    const endOfDayYesterday = yesterday.endOf('day');
-    
-    const startOfDayYesterdayUnix = startOfDayYesterday.unix();
-    const endOfDayYesterdayUnix = endOfDayYesterday.unix();
-
-    printLog(`Fetching Member stats for: ${startOfDayYesterday} to ${endOfDayYesterday}`);
-
-    const memberOutput = await memberInformation(homeFaction, 'attackswon', undefined, startOfDayYesterdayUnix, endOfDayYesterdayUnix, false);
-    const memberEmbed = memberOutput.embed;
-
-    await memberChannel.send({ embeds: [memberEmbed], ephemeral: false });
 }
 
 /**
@@ -2359,56 +1764,6 @@ async function getWarActivity(factionId, message, exportCSV = false) {
 
 
 /**
- * Checks the crimes environment data and sends an embed with the data to a provided channel at a specified interval.
- * @param {Discord.TextChannel} tornDataChannel - The channel to send the data to.
- * @param {number} tornDataUpdateInterval - The interval in minutes to update the data.
- */
-async function checkCrimeEnvironment(tornDataChannel, tornDataUpdateInterval) {
-
-    if (tornDataChannel) {
-        const responseEnvironment = await callTornApi('torn', 'shoplifting,searchforcash,timestamp');
-
-        if (responseEnvironment[0]) {
-            const envorinmentJson = responseEnvironment[2];
-            const searchForCash = envorinmentJson['searchforcash'];
-            const shoplifting = envorinmentJson['shoplifting'];
-
-            let searchForCashValue = '';
-            let shopliftingValue = '';
-
-            const environmentEmbed = initializeEmbed('Torn Insights');
-            environmentEmbed.setDescription('Crimes Environment Data');
-
-            for (const key in searchForCash) {
-                const entry = `**${capitalize(key)}**\n- ${searchForCash[key].title}:\n- ${searchForCash[key].percentage}%\n`;
-                searchForCashValue += entry;
-            }
-
-            environmentEmbed.addFields({ name: ':dollar: Search For Cash', value: searchForCashValue, inline: true });
-
-            for (const key in shoplifting) {
-                let details = '';
-                for (const subKey in shoplifting[key]) {
-                    let disabled = ':o:';
-                    if (shoplifting[key][subKey].disabled) disabled = ':green_circle:';
-                    details += `- ${disabled} ${shoplifting[key][subKey].title}\n`;
-                }
-
-                const entry = `**${capitalize(key)}** \n${details}`;
-                shopliftingValue += entry;
-
-            }
-
-            environmentEmbed.addFields({ name: ':department_store: Shoplifting', value: shopliftingValue, inline: true });
-
-            const message = await tornDataChannel.send({ embeds: [attackEmbed], ephemeral: false });
-
-
-        }
-    }
-}
-
-/**
  * Finds or creates a thread in a given channel with the specified name.
  *
  * @param {Channel} channel - The channel to search for the thread in.
@@ -2479,4 +1834,4 @@ async function getUsersByRole(guild, roleName) {
 }
 
 
-module.exports = { memberStats, getMemberContributions, memberInformation, checkCrimeEnvironment, checkTerritories, checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getReviveStatus, getOwnFactionReviveStatus, getFactionReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };
+module.exports = { checkArmoury, checkRetals, checkWar, checkMembers, sendStatusMsg, getOCStats, checkOCs, getOwnFactionReviveStatus, getFactionReviveStatus, getWarActivity, getTravelInformation, getUsersByRole, timestampCache };

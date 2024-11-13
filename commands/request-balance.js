@@ -26,7 +26,10 @@ const sassyUnavailableMessages = [
     "Claiming requests while MIA? Bold move, but nope!"
 ];
 
-const { bankerRoleId } = readConfig().discordConf;
+const { factions } = readConfig();
+const factionConfig = factions[7709];
+const bankerRoleId = factionConfig.discordConf.bankerRoleId;
+
 
 const BANKER_ROLE_ID = bankerRoleId;  // Replace this with your actual Banker role ID
 
@@ -86,7 +89,7 @@ module.exports = {
                 .setTitle(`✅ Request sent`)
                 .addFields({
                     name: 'Request Details',
-                    value: `Request for \$${numberWithCommas(requestedAmount)} has been sent by <@${discordId}>!\n [Banker Link](https://www.torn.com/factions.php?step=your#/tab=controls&giveMoneyTo=${tornId}&money=${requestedAmount})`,
+                    value: `Request for \$${numberWithCommas(requestedAmount)} has been sent by <@${discordId}>!`,
                     inline: true
                 });
 
@@ -128,7 +131,7 @@ module.exports = {
                     }
                 
                     bankRequestEmbed.setTitle(":hourglass: Request Claimed")
-                        .setDescription(`The request has been claimed by <@${i.user.id}>.`)
+                        .setDescription(`The request has been claimed by <@${i.user.id}>. \n [Banker Link](https://www.torn.com/factions.php?step=your#/tab=controls&giveMoneyTo=${tornId}&money=${requestedAmount})`)
                         .setColor("Yellow");
                 
                     // Check if banker is available

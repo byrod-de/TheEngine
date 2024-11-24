@@ -525,41 +525,39 @@ async function deleteThreads(channel) {
  * @return {string|null} The faction ID if found and enabled, otherwise null.
  */
 function getFactionConfigFromChannel(interaction) {
-    // Ensure no null values cause issues
+    const guild = interaction.guild;
+
+    // Get channel and thread details
     const channelId = interaction.channelId || null;
-    const categoryId = interaction.channel?.parentId || null;
+    const channel = guild.channels.cache.get(channelId);
+    const parentChannelId = channel?.parentId || null; // Parent of a thread
+    const categoryId = parentChannelId 
+        ? guild.channels.cache.get(parentChannelId)?.parentId 
+        : channel?.parentId || null;
+
     const factionsConfig = readConfig().factions;
 
-    const guild = interaction.guild;
-    const channel = guild.channels.cache.get(channelId);
-    const category = categoryId ? guild.channels.cache.get(categoryId) : null;
-
-    // Iterate through all factions and check channels/categories
     for (const factionId in factionsConfig) {
         const faction = factionsConfig[factionId];
         const factionChannels = faction.channels || {};
 
-        // Check if faction is enabled and channels/categories match
         if (
-            faction.enabled && // Only consider enabled factions
+            faction.enabled &&
             (Object.values(factionChannels).includes(channelId) || // Check channel
-                Object.values(factionChannels).includes(categoryId)) // Check category
+             Object.values(factionChannels).includes(parentChannelId) || // Check thread's parent
+             Object.values(factionChannels).includes(categoryId)) // Check category
         ) {
             console.log(
-                `Faction ${faction.name} (${factionId}) matched by channel: "${channel?.name || 'Unknown'}" or category: "${category?.name || 'Unknown'}".`
+                `Faction ${faction.name} (${factionId}) matched by channel: "${channel?.name || 'Unknown'}", parent: "${guild.channels.cache.get(parentChannelId)?.name || 'Unknown'}", or category: "${guild.channels.cache.get(categoryId)?.name || 'Unknown'}".`
             );
             return { id: factionId, ...faction };
         }
     }
 
-    // Log details if no faction is found
     console.warn(
-        `No enabled faction found for channel: "${channel?.name || 'Unknown'}" (ID: ${channelId}), category: "${category?.name || 'Unknown'}" (ID: ${categoryId}).`
+        `No enabled faction found for channel: "${channel?.name || 'Unknown'}" (ID: ${channelId}), parent: "${guild.channels.cache.get(parentChannelId)?.name || 'Unknown'}" (ID: ${parentChannelId}), category: "${guild.channels.cache.get(categoryId)?.name || 'Unknown'}" (ID: ${categoryId}).`
     );
     return null;
 }
-
-
-
 
 module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyRoleAccess, readConfig, initializeEmbed, getTravelTimes, getFactionConfigFromChannel, verifyAdminAccess, verifyCategoryAccess };

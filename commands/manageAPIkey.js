@@ -2,7 +2,7 @@ const fs = require('node:fs');
 
 const { SlashCommandBuilder } = require('discord.js');
 const { verifyAPIKey, verifyKeys } = require('../functions/api');
-const { printLog, checkAPIKey, readConfig, verifyChannelAccess, initializeEmbed } = require('../helper/misc');
+const { printLog, checkAPIKey, readConfig, verifyAdminAccess, initializeEmbed } = require('../helper/misc');
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -32,7 +32,7 @@ module.exports = {
     async execute(interaction) {
 
         // Check if the user has access to the channel
-        if (!await verifyChannelAccess(interaction, false, false)) return;
+        if (!await verifyAdminAccess(interaction, readConfig().limitedAccessConf)) return;
 
         const keyToManage = interaction.options.getString('apikey') || 'NOT_SET';
         const operation = interaction.options.getString('operation');

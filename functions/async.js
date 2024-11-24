@@ -673,17 +673,17 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                 } else {
                     if (warChannel) {
-                        await updateOrDeleteEmbed(warChannel, 'status', statusEmbed, 'delete');
-                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete');
-                        await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete');
-                        await updateOrDeleteEmbed(warChannel, 'abroad', abroadEmbed, 'delete');
+                        await updateOrDeleteEmbed(warChannel, 'status', statusEmbed, 'delete', homeFactionId);
+                        await updateOrDeleteEmbed(warChannel, 'hospital', hospitalEmbed, 'delete', homeFactionId);
+                        await updateOrDeleteEmbed(warChannel, 'travel', travelEmbed, 'delete', homeFactionId);
+                        await updateOrDeleteEmbed(warChannel, 'abroad', abroadEmbed, 'delete', homeFactionId);
                     }
 
                     if (memberChannel) {
                         //await updateOrDeleteEmbed(memberChannel, 'ownStatus', ownStatusEmbed, 'delete');
-                        await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed, 'delete');
-                        await updateOrDeleteEmbed(memberChannel, 'ownTravel', ownTravelEmbed, 'delete');
-                        await updateOrDeleteEmbed(memberChannel, 'ownAbroad', ownAbroadEmbed, 'delete');
+                        await updateOrDeleteEmbed(memberChannel, 'ownHospital', ownHospitalEmbed, 'delete', homeFactionId);
+                        await updateOrDeleteEmbed(memberChannel, 'ownTravel', ownTravelEmbed, 'delete', homeFactionId);
+                        await updateOrDeleteEmbed(memberChannel, 'ownAbroad', ownAbroadEmbed, 'delete', homeFactionId);
                     }
                 }
 
@@ -845,7 +845,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
             if (!rankedWarActive && !isEnlisted) {
                 if (warChannel) {
-                    await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete');
+                    await updateOrDeleteEmbed(warChannel, 'rw', rwEmbed, 'delete', homeFactionId);
                 }
             }
 
@@ -1468,7 +1468,7 @@ async function getFactionReviveStatus(factionId, message) {
 
 async function getOwnFactionReviveStatus(factionId, message) {
 
-    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, 'faction', undefined, 'v2');
+    const response = await callTornApi('faction', 'basic,members', factionId, undefined, undefined, undefined, undefined, 'default', undefined, 'v2', undefined, factionId);
 
     if (!response[0]) {
         await message.edit({ content: response[1] });

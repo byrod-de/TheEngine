@@ -1,8 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getFactionReviveStatus, getOwnFactionReviveStatus } = require('../functions/async');
-const { verifyChannelAccess, readConfig } = require('../helper/misc');
-
-const { factions } = readConfig().apiConf;
+const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,21 +14,32 @@ module.exports = {
 
     async execute(interaction) {
 
-        // Check if the user has access to the channel and category
-        if (!await verifyChannelAccess(interaction, true, false)) return;
 
-        const homeFaction = 7709;
+        const factionData = getFactionConfigFromChannel(interaction) || {};
+        const factionId = factionData.id || ''; // Safely extract factionId
+        
+        if (!factionId) {
+            const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+            notificationEmbed.setDescription(
+                `:teapot: Nice try!\nThis command can only be used in a faction-related channel!`
+            );
+            await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+            return; // Exit early if no factionId
+        }
 
-        const factionID = interaction.options.getInteger('factionid') ?? homeFaction;
+        const hasRole = await verifyRoleAccess(interaction, factionData);
+        if (!hasRole) return;
 
-        const message = await interaction.reply({ content: `Executing Revive Status for ${factionID}, please wait...`, ephemeral: false });
+        const factionToCheck = interaction.options.getInteger('factionid') ?? factionId;
+
+        const message = await interaction.reply({ content: `Executing Revive Status for ${factionToCheck}, please wait...`, ephemeral: false });
         let reviveEmbed = '';
 
-        if (factionID.toString() === homeFaction.toString()) reviveEmbed = await getOwnFactionReviveStatus(factionID, message);
-        else reviveEmbed = await getFactionReviveStatus(factionID, message);
+        if (factionToCheck.toString() === factionId.toString()) reviveEmbed = await getOwnFactionReviveStatus(factionToCheck, message);
+        else reviveEmbed = await getFactionReviveStatus(factionToCheck, message);
 
         if (!reviveEmbed) {
-            await message.edit({ content: 'Revive status for ' + factionID + ' could not be determined.', ephemeral: false });
+            await message.edit({ content: 'Revive status for ' + factionToCheck + ' could not be determined.', ephemeral: false });
             return;
         }
         await message.edit({ content: '',embeds: [reviveEmbed], ephemeral: false });

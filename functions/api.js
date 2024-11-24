@@ -101,7 +101,6 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
     } else if (keyUsage === 'default') {
         if (homeFactionId.length > 0) {
             selectedKey = readConfig().factions[homeFactionId].apiKey;
-            console.log('Oi, key found');
         } else {
             selectedKey = selectedKey;    
         }

@@ -71,8 +71,14 @@ client.on('ready', () => {
 
 	for (const factionId in factions) {
 		if (factions.hasOwnProperty(factionId)) {
+			
 			const factionConfig = factions[factionId];
-			printLog(`${factionId} > faction found: ${factionConfig.name}`);
+			const isFactionEnabled = factionConfig.enabled || false;
+			printLog(`${factionId} > faction found: ${factionConfig.name} is ${isFactionEnabled ? 'enabled' : 'disabled'}`);
+
+			if (!isFactionEnabled) {
+				continue;
+			}
 
 			const channels = {
 				armoury: client.channels.cache.get(factionConfig.channels.armouryChannelId),
@@ -85,7 +91,7 @@ client.on('ready', () => {
 			if (channels.member) {
 				const memberUpdateInterval = factionConfig.updateIntervals.member || 5;
 				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId), 1000 * 60 * memberUpdateInterval);
-				setInterval(() => checkOCs(channels.member, memberUpdateInterval, factionId), 1000 * 60 * memberUpdateInterval);
+				setInterval(() => checkOCs(channels.member, memberUpdateInterval, factionId), 1000 * 60 * 60 * memberUpdateInterval);
 			}
 
 			if (channels.armoury) {

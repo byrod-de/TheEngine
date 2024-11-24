@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { abbreviateNumber, cleanUpString, numberWithCommas, convertSecondsToDaysHours, getRankNameById } = require('../helper/formattings');
-const { printLog, initializeEmbed, verifyChannelAccess } = require('../helper/misc');
+const { printLog, initializeEmbed, verifyCategoryAccess, readConfig } = require('../helper/misc');
 
 const he = require('he');
 const moment = require('moment');
@@ -29,8 +29,15 @@ module.exports = {
     ,
 
     async execute(interaction) {
-        // Check if the user has access to the channel and category
-        if (!await verifyChannelAccess(interaction, true, true)) return;
+
+        const isValidCategory = await verifyCategoryAccess(interaction, readConfig().limitedAccessConf, readConfig().factions);
+
+        if (!isValidCategory) {
+            const notificationEmbed = initializeEmbed('Access Denied', 'error');
+            notificationEmbed.setDescription(':no_entry: You can only execute this command in the family or faction category.');
+            await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+            return;
+        }
 
         const command = interaction.options.getString('operation') ?? 'history';
         const hide = interaction.options.getBoolean('hide') ?? false;

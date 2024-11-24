@@ -2,6 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const moment = require('moment');
 const fs = require('fs');
 const yaml = require('yaml');
+const { compileFunction } = require('vm');
 const messageIdFile = './conf/messageIds.json';
 const configFilename = './conf/config.yaml';
 
@@ -300,6 +301,7 @@ function calculateLastXDaysTimestamps(numDays, offsetInHours = 0) {
  * @param {boolean} [limitChannel=false] - Whether to limit the access based on channel.
  * @param {boolean} [limitCategory=false] - Whether to limit the access based on category.
  * @return {boolean} Whether the user has access or not.
+ * @deprecated Use verifyRoleAccess instead
  */
 async function verifyChannelAccess(interaction, limitChannel = false, limitCategory = false) {
 
@@ -344,6 +346,87 @@ async function verifyChannelAccess(interaction, limitChannel = false, limitCateg
 
     return accessGranted;
 }
+
+/**
+ * Checks if the user has at least one of the allowed roles to execute the command.
+ * If the user does not have permission, sends an ephemeral error message with the allowed roles.
+ * @param {Interaction} interaction - The interaction object.
+ * @param {Object} factionData - The faction data from the configuration file.
+ * @return {boolean} If the user has permission to execute the command.
+ */
+async function verifyRoleAccess(interaction, factionData) {
+    const allowedRoles = factionData.discordConf.allowedRoles || [];
+    const userRoles = interaction.member.roles.cache; // Get the user's roles
+
+    console.log(`User roles: ${userRoles.map(role => role.name).join(', ')}`);
+    console.log(`User roles: ${userRoles.map(role => role.id).join(', ')}`);
+    console.log(`Allowed roles: ${allowedRoles.join(', ')}`);
+
+    // Check if user has at least one of the allowed roles
+    const hasRole = allowedRoles.some(roleId => userRoles.has(roleId));
+
+    const allowedRolesMentions = allowedRoles.map(roleId => `<@&${roleId}>`);
+
+    const allowedRolesString = allowedRolesMentions.join(", ");
+
+
+    if (!hasRole) {
+        const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+        notificationEmbed.setDescription(`:no_entry: You do not have permission to use this command in this channel.\nAllowed roles: ${allowedRolesString}`);
+        await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+    }
+
+    return hasRole;
+}
+
+/**
+ * Verifies if the user is in the admin channel.
+ *
+ * @param {Object} interaction - The interaction object representing the user's interaction.
+ * @param {Object} limitedAccessConf - The config containing the admin channel ID.
+ * @return {boolean} True if the user is in the admin channel, false otherwise.
+ */
+async function verifyAdminAccess(interaction, limitedAccessConf) {
+    // Check if the user is in the admin channel
+    const isInAdminChannel = interaction.channelId === limitedAccessConf.adminChannelId;
+
+    if (!isInAdminChannel) {
+        const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+        notificationEmbed.setDescription(`:teapot: Nice try!\nThis command can only be used in the **admin channel** <#${limitedAccessConf.adminChannelId}>.`);
+        await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+    }
+
+    return isInAdminChannel; // Admin access granted if user is in the admin channel
+}
+
+/**
+ * Verifies if the command is executed in a valid category (family or faction).
+ *
+ * @param {Object} interaction - The interaction object representing the user's interaction.
+ * @param {Object} limitedAccessConf - The config containing the family category ID.
+ * @param {Object} factions - The config containing faction categories.
+ * @return {boolean} True if the user is in an allowed category (family or faction), false otherwise.
+ */
+async function verifyCategoryAccess(interaction, limitedAccessConf, factions) {
+    const categoryId = interaction.channel?.parentId; // Get the category ID of the channel
+
+    // Check if the user is in the family category or any faction category
+    if (categoryId === limitedAccessConf.familyCategoryId) {
+        return true; // Access allowed if in the family category
+    }
+
+    // Check if the category is one of the faction categories
+    for (const factionId in factions) {
+        const faction = factions[factionId];
+        if (categoryId === faction.channels.factionCategoryId) {
+            return true; // Access allowed if in the faction category
+        }
+    }
+
+    return false; // Access denied if not in a valid category
+}
+
+
 
 
 /**
@@ -435,4 +518,48 @@ async function deleteThreads(channel) {
     });
 }
 
-module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyChannelAccess, readConfig, initializeEmbed, getTravelTimes };
+/**
+ * Retrieves the faction configuration based on the interaction's channel or category.
+ *
+ * @param {Object} interaction - The interaction object representing the user's interaction.
+ * @return {string|null} The faction ID if found and enabled, otherwise null.
+ */
+function getFactionConfigFromChannel(interaction) {
+    // Ensure no null values cause issues
+    const channelId = interaction.channelId || null;
+    const categoryId = interaction.channel?.parentId || null;
+    const factionsConfig = readConfig().factions;
+
+    const guild = interaction.guild;
+    const channel = guild.channels.cache.get(channelId);
+    const category = categoryId ? guild.channels.cache.get(categoryId) : null;
+
+    // Iterate through all factions and check channels/categories
+    for (const factionId in factionsConfig) {
+        const faction = factionsConfig[factionId];
+        const factionChannels = faction.channels || {};
+
+        // Check if faction is enabled and channels/categories match
+        if (
+            faction.enabled && // Only consider enabled factions
+            (Object.values(factionChannels).includes(channelId) || // Check channel
+                Object.values(factionChannels).includes(categoryId)) // Check category
+        ) {
+            console.log(
+                `Faction ${faction.name} (${factionId}) matched by channel: "${channel?.name || 'Unknown'}" or category: "${category?.name || 'Unknown'}".`
+            );
+            return { id: factionId, ...faction };
+        }
+    }
+
+    // Log details if no faction is found
+    console.warn(
+        `No enabled faction found for channel: "${channel?.name || 'Unknown'}" (ID: ${channelId}), category: "${category?.name || 'Unknown'}" (ID: ${categoryId}).`
+    );
+    return null;
+}
+
+
+
+
+module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyRoleAccess, readConfig, initializeEmbed, getTravelTimes, getFactionConfigFromChannel, verifyAdminAccess, verifyCategoryAccess };

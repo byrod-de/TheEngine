@@ -1,16 +1,16 @@
 const { SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyChannelAccess, initializeEmbed, readConfig } = require('../helper/misc');
+const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
 const { numberWithCommas, cleanUpString } = require('../helper/formattings');
 const he = require('he');
 
 const sassySuccessMessages = [
-    "Don't spend it all at once! 💸",
-    "Try not to blow it on candy. 🍬",
-    "A little treat for yourself, huh? 😉",
-    "Try to make it last this time! 😆",
-    "Handle with care, big spender! 💰",
-    "Better save some for a rainy day! ☔️"
+    "Don't spend it all at once!",
+    "Try not to blow it on candy.",
+    "A little treat for yourself, huh?",
+    "Try to make it last this time!",
+    "Handle with care, big spender!",
+    "Better save some for a rainy day!"
 ];
 
 const sassyUnavailableMessages = [
@@ -26,12 +26,6 @@ const sassyUnavailableMessages = [
     "Claiming requests while MIA? Bold move, but nope!"
 ];
 
-const { factions } = readConfig();
-const factionConfig = factions[7709];
-const bankerRoleId = factionConfig.discordConf.bankerRoleId;
-
-
-const BANKER_ROLE_ID = bankerRoleId;  // Replace this with your actual Banker role ID
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -49,20 +43,44 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        if (!await verifyChannelAccess(interaction, true, false)) return;
+
+        const factionData = getFactionConfigFromChannel(interaction) || {};
+        const factionId = factionData.id || ''; // Safely extract factionId
+        
+        if (!factionId) {
+            const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+            notificationEmbed.setDescription(
+                `:teapot: Nice try!\nThis command can only be used in a faction-related channel!`
+            );
+            await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+            return; // Exit early if no factionId
+        }
+
+        const bankerRoleId = factionData.discordConf.bankerRoleId || ''; // Extract factionId safely
+
+        const hasRole = true //await verifyRoleAccess(interaction, factionData);
+        if (!hasRole) return;
 
         const requestedBalance = interaction.options.getString('balance') ?? 'ALL';
         const discordId = interaction.user.id;
-        const user = await userInformation(discordId);
+        const user = await userInformation(discordId, factionId);
 
         if (!user) {
-            return interaction.reply({ content: `🚫 Unable to retrieve user information. Please try again later.`, ephemeral: true });
+            const notificationEmbed = initializeEmbed(`Error`, 'error');
+            notificationEmbed.setDescription(
+                `🚫 Unable to retrieve user information. Please try again later.`
+            );
+            return await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
         }
 
-        const userBalance = await getUserBalance(user.player_id);
+        const userBalance = await getUserBalance(user.player_id, factionId);
 
         if (userBalance == null) {
-            return interaction.reply({ content: `🚫 Unable to retrieve balance information. Please try again later.`, ephemeral: true });
+            const notificationEmbed = initializeEmbed(`Error`, 'error');
+            notificationEmbed.setDescription(
+                `🚫 Unable to retrieve balance information. Please try again later.`
+            );
+            return await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
         }
 
         const bankRequestEmbed = initializeEmbed('Money Requested');
@@ -106,7 +124,7 @@ module.exports = {
                         .setStyle(ButtonStyle.Success)
                 );
 
-            await interaction.channel.send({ content: `Hey <@&${BANKER_ROLE_ID}>, you got work to do!`, ephemeral: false });
+            await interaction.channel.send({ content: `Hey <@&${bankerRoleId}>, you got work to do!`, ephemeral: false });
             const message = await interaction.reply({ embeds: [bankRequestEmbed], components: [actionRow], ephemeral: false });
 
             const collector = message.createMessageComponentCollector({ time: expiryTime > 0 ? expiryTime * 60 * 1000 : 0 });
@@ -126,7 +144,7 @@ module.exports = {
 
                 } // Modify the "claim_request" section inside the collector.on('collect') function
                 else if (i.customId === 'claim_request') {
-                    if (!i.member.roles.cache.has(BANKER_ROLE_ID)) {
+                    if (!i.member.roles.cache.has(bankerRoleId)) {
                         return i.reply({ content: "🚫 Only bankers can claim this request.", ephemeral: true });
                     }
                 
@@ -211,13 +229,13 @@ const parseBalance = (balance, userBalance) => {
     return parseFloat(balance);
   };
 
-const userInformation = async (discordId) => {
-    const response = await callTornApi('user', 'basic,discord,profile', discordId);
+const userInformation = async (discordId, factionId) => {
+    const response = await callTornApi('user', 'basic,discord,profile', discordId, undefined, undefined, undefined, undefined, 'default', undefined, undefined, undefined, factionId);
     return response[0] && response[2] ? response[2] : null;
 };
 
-const getUserBalance = async (playerId) => {
-    const response = await callTornApi('faction', 'donations');
+const getUserBalance = async (playerId, factionId) => {
+    const response = await callTornApi('faction', 'donations', undefined, undefined, undefined, undefined, undefined, 'default', undefined, undefined, undefined, factionId);
 
     return response[0] && response[2]?.donations?.[playerId]?.money_balance !== undefined 
         ? response[2].donations[playerId].money_balance 

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 const { getOCStats } = require('../functions/async');
-const { verifyChannelAccess, readConfig } = require('../helper/misc');
+const { verifyChannelAccess, readConfig, getFactionConfigFromChannel, initializeEmbed } = require('../helper/misc');
 
 const { adminChannelId } = readConfig().limitedAccessConf;
 
@@ -56,8 +56,20 @@ module.exports = {
 
     async execute(interaction) {
 
-        // Check if the user has access to the channel and category
-        if (!await verifyChannelAccess(interaction, true, true)) return;
+        const factionData = getFactionConfigFromChannel(interaction) || {};
+        const factionId = factionData.id || ''; // Safely extract factionId
+        
+        if (!factionId) {
+            const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+            notificationEmbed.setDescription(
+                `:teapot: Nice try!\nThis command can only be used in a faction-related channel!`
+            );
+            await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+            return; // Exit early if no factionId
+        }
+
+        const hasRole = true //await verifyRoleAccess(interaction, factionData);
+        if (!hasRole) return;
 
         const command = interaction.options.getSubcommand();
         const exportData = interaction.options.getBoolean('export') ?? false;

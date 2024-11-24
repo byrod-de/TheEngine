@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyChannelAccess, initializeEmbed } = require('../helper/misc');
+const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,8 +18,20 @@ module.exports = {
 
     async execute(interaction) {
 
-        // Check if the user has access to the channel
-        if (!await verifyChannelAccess(interaction, true, false)) return;
+        const factionData = getFactionConfigFromChannel(interaction) || {};
+        const factionId = factionData.id || ''; // Safely extract factionId
+        
+        if (!factionId) {
+            const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
+            notificationEmbed.setDescription(
+                `:teapot: Nice try!\nThis command can only be used in a faction-related channel!`
+            );
+            await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
+            return; // Exit early if no factionId
+        }
+
+        const hasRole = await verifyRoleAccess(interaction, factionData);
+        if (!hasRole) return;
 
         const type = interaction.options.getString('type') ?? 'temporary';
         const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
@@ -29,9 +41,7 @@ module.exports = {
             selection = 'armor,boosters,caches,cesium,drugs,medical,temporary,weapons';
         }
 
-        const response = await callTornApi('faction', `basic,${selection},timestamp`);
-
-
+        const response = await callTornApi('faction', `basic,${selection},timestamp`, factionId, undefined, undefined, undefined, undefined, 'default', undefined, undefined, undefined, factionId)
 
         if (response[0]) {
             const factionJson = response[2];

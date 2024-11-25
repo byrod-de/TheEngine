@@ -12,7 +12,7 @@ module.exports = {
 
         const factionData = getFactionConfigFromChannel(interaction) || {};
         const factionId = factionData.id || ''; // Safely extract factionId
-        
+                
         if (!factionId) {
             const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
             notificationEmbed.setDescription(
@@ -64,7 +64,7 @@ module.exports = {
         const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
 
-        const ceEmbed = initializeEmbed('Crime Experience');
+        const ceEmbed = initializeEmbed('Crime Experience', 'overwrite', factionData.embedColor);
         ceEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
             .setDescription('Faction members ordered by crime experience.\n*Members printed in italic are currently not in a PA.*\n*The faction has currently ' + numberOfPAs + ' active PA teams.*');
 

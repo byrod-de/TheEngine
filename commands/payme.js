@@ -29,7 +29,7 @@ const sassyUnavailableMessages = [
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('request-balance')
+        .setName('payme')
         .setDescription('Request faction balance!')
         .addStringOption(option =>
             option.setName('balance')
@@ -38,7 +38,7 @@ module.exports = {
         )
         .addIntegerOption(option =>
             option.setName('expiry')
-                .setDescription('Enter the time in minutes before the request expires. 0 for "send whenever".')
+                .setDescription('Optional: Enter the time in minutes before the request expires. 0 for "send whenever".')
                 .setRequired(false)
         ),
 
@@ -83,7 +83,7 @@ module.exports = {
             return await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
         }
 
-        const bankRequestEmbed = initializeEmbed('Money Requested');
+        const bankRequestEmbed = initializeEmbed('Money Requested', 'overwrite', factionData.embedColor);
         const tornUser = user.name;
         const tornId = user.player_id;
 

@@ -69,7 +69,7 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
  * @param {number} homeFactionId - The ID of the faction to check
  * @return {Promise<void>} A promise that resolves once the message is sent
  */
-async function checkArmoury(armouryChannel, homeFactionId) {
+async function checkArmoury(armouryChannel, homeFactionId, factionConfig) {
     const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
     const tornParams = JSON.parse(tornParamsFile);
 
@@ -114,7 +114,7 @@ async function checkArmoury(armouryChannel, homeFactionId) {
                 }
 
                 if (tornParams.armouryFilter.some(i => item.includes(i))) {
-                    const armouryEmbed = initializeEmbed('Armoury Usage');
+                    const armouryEmbed = initializeEmbed('Armoury Usage', 'overwrite', factionConfig.embedColor)
                     armouryEmbed.setAuthor({ name: `${cleanUpString(tornUser)} [${tornId}]`, iconURL: faction_icon, url: `https://byrod.cc/p/${tornId}` });
 
                     armouryEmbed.addFields({ name: `${item}`, value: `${tornUser} [${tornId}] ${newstext}`, inline: false });
@@ -142,7 +142,7 @@ async function checkArmoury(armouryChannel, homeFactionId) {
  * @param {number} homeFactionId - The ID of the faction to check
  * @return {Promise<void>} A Promise that resolves once the embed is updated or deleted
  */
-async function checkRetals(retalChannel, homeFactionId) {
+async function checkRetals(retalChannel, homeFactionId, factionConfig) {
 
     const currentTimestamp = Math.floor(Date.now() / 1000);
     let timestamp = currentTimestamp;
@@ -185,7 +185,7 @@ async function checkRetals(retalChannel, homeFactionId) {
             if (attacks[attackID].modifiers.overseas > 1) overseas = true;
 
             if (attacker_faction.toString() != homeFactionId.toString() && stealthed === 0 && respect > 0) {
-                const attackEmbed = initializeEmbed(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`);
+                const attackEmbed = initializeEmbed(`Retal on ${cleanUpString(attacker_name)} [${attacker_id}]`, 'overwrite', factionConfig.embedColor);
 
                 attackEmbed.setURL(`https://byrod.cc/a/${attacker_id}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://byrod.cc/f/${faction_id}` })
@@ -233,7 +233,7 @@ async function checkRetals(retalChannel, homeFactionId) {
  * @param {number} warUpdateInterval - The interval for updating war-related information.
  * @return {Promise} A promise that resolves when the war status is checked and the information is updated.
  */
-async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChannel = undefined, homeFactionId = undefined) {
+async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChannel = undefined, homeFactionId = undefined, factionConfig = undefined) {
 
     if (warChannel) {
 
@@ -249,15 +249,15 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             const rankedWars = factionJson['ranked_wars'];
             const raidWars = factionJson['raid_wars'];
 
-            const rwEmbed = initializeEmbed(`Embed`);
-            const travelEmbed = initializeEmbed(`Embed`);
-            const abroadEmbed = initializeEmbed(`Embed`);
-            const hospitalEmbed = initializeEmbed(`Embed`);
-            const statusEmbed = initializeEmbed(`Embed`);
-            const ownTravelEmbed = initializeEmbed(`Embed`);
-            const ownAbroadEmbed = initializeEmbed(`Embed`);
-            const ownHospitalEmbed = initializeEmbed(`Embed`);
-            const ownStatusEmbed = initializeEmbed(`Embed`);
+            const rwEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const travelEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const abroadEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const hospitalEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const statusEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const ownTravelEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const ownAbroadEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const ownHospitalEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
+            const ownStatusEmbed = initializeEmbed(`Embed`, 'overwrite', factionConfig.embedColor);
 
             const rankedWar = Object.values(rankedWars)[0];
 
@@ -1072,15 +1072,15 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
  * @param {number} memberUpdateInterval - The interval in milliseconds at which the member status and information will be updated.
  * @return {Promise<void>} A promise that resolves once the member status and information are updated in the Discord embeds.
  */
-async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId) {
+async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId, factionConfig) {
     const memberTitle = readConfig().factions[homeFactionId].memberTitle;
     printLog(homeFactionId + ' > Checking members - ' + memberTitle);
 
     if (memberChannel) {
 
         const response = await callTornApi('faction', 'basic,timestamp', homeFactionId, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, homeFactionId);
-        const jailEmbed = initializeEmbed(`:oncoming_police_car: Bust a ${memberTitle}!`);
-        const ownStatusEmbed = initializeEmbed(`:bar_chart: Member Overview`);
+        const jailEmbed = initializeEmbed(`:oncoming_police_car: Bust a ${memberTitle}!`, 'overwrite', factionConfig.embedColor);
+        const ownStatusEmbed = initializeEmbed(`:bar_chart: Member Overview`, 'overwrite', factionConfig.embedColor);
 
         if (response[0]) {
             const factionJson = response[2];
@@ -1191,7 +1191,7 @@ async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId) 
  * @param {number} selectedDateValue - The value representing the selected month.
  * @return An embed containing OC statistics for the specified month.
  */
-async function getOCStats(selection, selectedDateValue, exportData = false, homeFactionId = undefined) {
+async function getOCStats(selection, selectedDateValue, exportData = false, homeFactionId = undefined, factionConfig = undefined) {
 
     let timestamps;
     let title = '';
@@ -1241,7 +1241,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
     const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
 
     const faction_icon_URL = `https://factiontags.torn.com/${factionJson['tag_image']}`;
-    const crimeList = [8];
+    const crimeList = [8,7,6,5,4,3,2,1];
 
     const lastDateFormatted = (new Date(lastDay * 1000)).toISOString().replace('T', ' ').replace('.000Z', '');
 
@@ -1250,7 +1250,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
         filenameSuffix = title;
     }
 
-    const ocEmbed = initializeEmbed(`OC Overview for *${title}*`);
+    const ocEmbed = initializeEmbed(`OC Overview for *${title}*`, 'overwrite', factionConfig.embedColor);
     ocEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
 
     const crimeSummary = {};
@@ -1323,7 +1323,7 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
         const { total, success, failed } = crimeSummary[crimeName];
         const successRate = (success / total) * 100;
         printLog(homeFactionId + " > " + crimeName + " " + total + " " + successRate.toFixed(2) + "%");
-        ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}`, inline: true });
+        ocEmbed.addFields({ name: crimeName, value: `:blue_circle: \`${'Total'.padEnd(12, ' ')}:\` ${total}\n:green_circle: \`${'Success'.padEnd(12, ' ')}:\` ${success}\n:red_circle: \`${'Failed'.padEnd(12, ' ')}:\` ${failed}\n:chart_with_upwards_trend: \`${'Success rate'.padEnd(12, ' ')}:\` **${successRate.toFixed(2)}%**\n:moneybag: \`${'Money gained'.padEnd(12, ' ')}:\` $${crimeSummary[crimeName].money_gain.toLocaleString('en')}\n\n`, inline: false });
         //money per member
         const moneyPerMember = crimeSummary[crimeName].money_gain / total / 5;
         entry += `${crimeName};;;${successRate.toFixed(2)}%;${crimeSummary[crimeName].respect_gain};${crimeSummary[crimeName].money_gain};${moneyPerMember}\n`;
@@ -1353,11 +1353,11 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
  * @param {number} homeFactionId - The ID of the faction for which the OC stats are being retrieved.
  * @return {Promise<void>} A promise that resolves once the OC status embed has been updated.
  */
-async function checkOCs(memberChannel, memberUpdateInterval, homeFactionId) {
+async function checkOCs(memberChannel, memberUpdateInterval, homeFactionId, factionConfig) {
     printLog(homeFactionId + ' > Checking OCs');
     const now = moment();
 
-    const ocStatus = await getOCStats('months', undefined, false, homeFactionId);
+    const ocStatus = await getOCStats('months', undefined, false, homeFactionId, factionConfig);
     if (ocStatus === undefined) return;
     const ocStatusEmbed = ocStatus.embed;
     ocStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)

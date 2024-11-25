@@ -90,18 +90,18 @@ client.on('ready', () => {
 
 			if (channels.member) {
 				const memberUpdateInterval = factionConfig.updateIntervals.member || 5;
-				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId), 1000 * 60 * memberUpdateInterval);
-				setInterval(() => checkOCs(channels.member, memberUpdateInterval, factionId), 1000 * 60 * 60 * memberUpdateInterval);
+				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId, factionConfig), 1000 * 60 * memberUpdateInterval);
+				if (factionConfig.showOcStatus) setInterval(() => checkOCs(channels.member, memberUpdateInterval, factionId, factionConfig), 1000 * 60 * 60 * memberUpdateInterval);
 			}
 
 			if (channels.armoury) {
 				const armouryUpdateInterval = factionConfig.updateIntervals.armoury || 5;
-				setInterval(() => checkArmoury(channels.armoury, factionId), 1000 * 60 * armouryUpdateInterval);
+				setInterval(() => checkArmoury(channels.armoury, factionId, factionConfig), 1000 * 60 * armouryUpdateInterval);
 			}
 
 			if (channels.retal) {
 				const retalUpdateInterval = factionConfig.updateIntervals.retal || 5;
-				setInterval(() => checkRetals(channels.retal, factionId), 1000 * 60 * retalUpdateInterval);
+				setInterval(() => checkRetals(channels.retal, factionId, factionConfig), 1000 * 60 * retalUpdateInterval);
 			}
 
 			let isTravelInformationRunning = false;
@@ -117,7 +117,7 @@ client.on('ready', () => {
 				setInterval(() => {
 					if (!isTravelInformationRunning) {
 						isTravelInformationRunning = true;
-						checkWar(channels.rankedWar, channels.member, rankedWarUpdateInterval, channels.travel, factionId)
+						checkWar(channels.rankedWar, channels.member, rankedWarUpdateInterval, channels.travel, factionId, factionConfig)
 							.finally(() => {
 								isTravelInformationRunning = false;
 							});

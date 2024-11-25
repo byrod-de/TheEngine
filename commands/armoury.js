@@ -50,7 +50,7 @@ module.exports = {
 
             const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
 
-            const armouryEmbed = initializeEmbed('Armoury Overview - ' + capitalizedType);
+            const armouryEmbed = initializeEmbed('Armoury Overview - ' + capitalizedType, 'overwrite', factionData.embedColor);
             armouryEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
                         .setDescription('Overview of armoury stock');
 

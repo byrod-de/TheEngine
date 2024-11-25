@@ -80,7 +80,7 @@ module.exports = {
         if (command === 'months') selectedDateValue = interaction.options.getInteger('month');
         if (command === 'last-x-days') selectedDateValue = interaction.options.getInteger('days');
 
-        const ocData = await getOCStats(interaction.options.getSubcommand(), selectedDateValue, exportData);
+        const ocData = await getOCStats(interaction.options.getSubcommand(), selectedDateValue, exportData, factionId, factionData);
 
         await interaction.reply({ embeds: [ocData.embed], ephemeral: false });
 

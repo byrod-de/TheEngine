@@ -450,12 +450,13 @@ function readConfig() {
  * @param {string} [category='default'] - The category of the embed. Defaults to 'default'.
  * @return {EmbedBuilder} The initialized embed.
  */
-function initializeEmbed(title, category = 'default') {
+function initializeEmbed(title, category = 'default', colorCode = '') {
     const { embedColor, successColor, errorColor } = readConfig().discordConf;
     let color = 0x2695d1;
     switch (category.toLowerCase()) {
         case 'success': color = successColor; break;
         case 'error': color = errorColor; break;
+        case 'overwrite': if (colorCode) color = colorCode; else color = embedColor; break;
         default: color = embedColor;
     }
 
@@ -526,38 +527,47 @@ async function deleteThreads(channel) {
  */
 function getFactionConfigFromChannel(interaction) {
     const guild = interaction.guild;
-
-    // Get channel and thread details
     const channelId = interaction.channelId || null;
     const channel = guild.channels.cache.get(channelId);
-    const parentChannelId = channel?.parentId || null; // Parent of a thread
-    const categoryId = parentChannelId 
-        ? guild.channels.cache.get(parentChannelId)?.parentId 
-        : channel?.parentId || null;
+
+    if (!channel) {
+        console.warn(`Channel not found for ID: ${channelId}`);
+        return null;
+    }
+
+    // Traverse to find the effective category
+    const parentChannelId = channel.parentId; // Parent channel (if it's a thread)
+    const categoryChannel = parentChannelId
+        ? guild.channels.cache.get(parentChannelId)?.parent // Category of the parent channel
+        : channel.parent; // Category directly if it's a channel
+
+    const effectiveCategoryId = categoryChannel?.id || parentChannelId || channelId;
 
     const factionsConfig = readConfig().factions;
 
     for (const factionId in factionsConfig) {
         const faction = factionsConfig[factionId];
         const factionChannels = faction.channels || {};
+        const factionCategories = factionChannels.factionCategoryId || [];
 
-        if (
-            faction.enabled &&
-            (Object.values(factionChannels).includes(channelId) || // Check channel
-             Object.values(factionChannels).includes(parentChannelId) || // Check thread's parent
-             Object.values(factionChannels).includes(categoryId)) // Check category
-        ) {
+        // Normalize factionCategoryId to an array
+        const categories = Array.isArray(factionCategories) ? factionCategories : [factionCategories];
+
+        // Check if the effectiveCategoryId matches any faction categories
+        if (faction.enabled && categories.includes(effectiveCategoryId)) {
             console.log(
-                `Faction ${faction.name} (${factionId}) matched by channel: "${channel?.name || 'Unknown'}", parent: "${guild.channels.cache.get(parentChannelId)?.name || 'Unknown'}", or category: "${guild.channels.cache.get(categoryId)?.name || 'Unknown'}".`
+                `Faction ${faction.name} (${factionId}) matched by effective category: "${guild.channels.cache.get(effectiveCategoryId)?.name || 'Unknown'}" (ID: ${effectiveCategoryId}).`
             );
             return { id: factionId, ...faction };
         }
     }
 
     console.warn(
-        `No enabled faction found for channel: "${channel?.name || 'Unknown'}" (ID: ${channelId}), parent: "${guild.channels.cache.get(parentChannelId)?.name || 'Unknown'}" (ID: ${parentChannelId}), category: "${guild.channels.cache.get(categoryId)?.name || 'Unknown'}" (ID: ${categoryId}).`
+        `No enabled faction found for channel: "${channel.name || 'Unknown'}" (ID: ${channelId}), effective category: "${guild.channels.cache.get(effectiveCategoryId)?.name || 'Unknown'}" (ID: ${effectiveCategoryId}).`
     );
     return null;
 }
+
+
 
 module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyRoleAccess, readConfig, initializeEmbed, getTravelTimes, getFactionConfigFromChannel, verifyAdminAccess, verifyCategoryAccess };

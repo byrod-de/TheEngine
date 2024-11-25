@@ -406,27 +406,32 @@ async function verifyAdminAccess(interaction, limitedAccessConf) {
  * @param {Object} limitedAccessConf - The config containing the family category ID.
  * @param {Object} factions - The config containing faction categories.
  * @return {boolean} True if the user is in an allowed category (family or faction), false otherwise.
- */
-async function verifyCategoryAccess(interaction, limitedAccessConf, factions) {
+ */async function verifyCategoryAccess(interaction, limitedAccessConf, factions) {
     const categoryId = interaction.channel?.parentId; // Get the category ID of the channel
 
-    // Check if the user is in the family category or any faction category
-    if (categoryId === limitedAccessConf.familyCategoryId) {
-        return true; // Access allowed if in the family category
+    // Check if the user is in the family category or one of its subcategories
+    if (Array.isArray(limitedAccessConf.familyCategoryId)) {
+        if (limitedAccessConf.familyCategoryId.includes(categoryId)) {
+            return true; // Access allowed if in one of the family categories
+        }
+    } else if (categoryId === limitedAccessConf.familyCategoryId) {
+        return true; // Access allowed if it's a single family category
     }
 
     // Check if the category is one of the faction categories
     for (const factionId in factions) {
         const faction = factions[factionId];
-        if (categoryId === faction.channels.factionCategoryId) {
-            return true; // Access allowed if in the faction category
+        const factionCategories = Array.isArray(faction.channels.factionCategoryId)
+            ? faction.channels.factionCategoryId
+            : [faction.channels.factionCategoryId]; // Normalize to array
+
+        if (factionCategories.includes(categoryId)) {
+            return true; // Access allowed if in one of the faction categories
         }
     }
 
     return false; // Access denied if not in a valid category
 }
-
-
 
 
 /**

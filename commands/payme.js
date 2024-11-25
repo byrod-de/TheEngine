@@ -171,7 +171,7 @@ module.exports = {
                 
                     // Define the recursive fulfillment check function
                     const checkFulfillment = async (attemptsLeft) => {
-                        const fulfilled = await checkIfRequestFulfilled(i, currentTime, requestedAmount, tornId);  // Call your fulfillment check function
+                        const fulfilled = await checkIfRequestFulfilled(i, currentTime, requestedAmount, tornId, factionId);  // Call your fulfillment check function
                 
                         if (fulfilled) {
                             bankRequestEmbed.setTitle(":white_check_mark: Request Fulfilled")
@@ -247,9 +247,9 @@ const checkBankerStatus = async (discordId) => {
     return response[0] && response[2] ? response[2] : null;
 };
 
-const checkIfRequestFulfilled = async (i, currentTime, requestedAmount, tornId) => {
+const checkIfRequestFulfilled = async (i, currentTime, requestedAmount, tornId, factionId) => {
     // Logic to check if the request has been fulfilled goes here
-    const response = await callTornApi('faction', 'fundsnews', undefined, currentTime);
+    const response = await callTornApi('faction', 'fundsnews', undefined, currentTime, undefined, undefined, undefined, 'default', undefined, undefined, undefined, factionId);
 
     if (response[0]) {
         const newsJson = response[2].fundsnews;

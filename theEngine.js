@@ -43,16 +43,15 @@ client.once(Events.ClientReady, c => {
 		jsonData = JSON.parse(fs.readFileSync('./conf/activityPool.json'));
 		activityPool = jsonData.activity;
 	} catch (error) {
-		printLog("Error reading activityPool from file system.");
+		printLog("Error reading activityPool from file system.", 'error');
 	}
 
 
 	if (!activityPool) {
-		printLog("No activityPool found.");
+		printLog("No activityPool found.", 'warn');
 		return;
 	}
 	const randomActivity = activityPool[Math.floor(Math.random() * activityPool.length)]
-	console.log(randomActivity.name);
 
 	client.user.setPresence({
 		activities: [{ name: randomActivity.name, type: randomActivity.type }],

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
+const { logCommandUser, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
 const { cleanUpString } = require('../helper/formattings');
 
 module.exports = {
@@ -9,6 +9,7 @@ module.exports = {
         .setDescription('Gets CE Ranking for your faction!'),
 
     async execute(interaction) {
+        logCommandUser(interaction);
 
         const factionData = getFactionConfigFromChannel(interaction) || {};
         const factionId = factionData.id || ''; // Safely extract factionId

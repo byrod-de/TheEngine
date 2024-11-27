@@ -2,9 +2,36 @@ const { EmbedBuilder } = require('discord.js');
 const moment = require('moment');
 const fs = require('fs');
 const yaml = require('yaml');
-const { compileFunction } = require('vm');
+
+const winston = require('winston');
+const DailyRotateFile = require('winston-daily-rotate-file');
+
 const messageIdFile = './conf/messageIds.json';
 const configFilename = './conf/config.yaml';
+
+// Configure Winston logger
+const logger = winston.createLogger({
+    level: 'info', // Default log level
+    format: winston.format.combine(
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        winston.format.printf(({ timestamp, level, message }) => `${timestamp} | ${level.toUpperCase()} | ${message}`)
+    ),
+    transports: [
+        new winston.transports.Console({ // Logs to console
+            format: winston.format.combine(
+                winston.format.colorize(), // Adds colors for readability
+                winston.format.printf(({ timestamp, level, message }) => `${timestamp} | ${level} | ${message}`)
+            )
+        }),
+        new DailyRotateFile({ // Logs to file with rotation
+            filename: 'logs/app-%DATE%.log',
+            datePattern: 'YYYY-MM-DD',
+            maxSize: '20m',
+            maxFiles: '14d',
+            zippedArchive: true
+        })
+    ]
+});
 
 /**
  * Function to check the validity of an API key.
@@ -29,11 +56,23 @@ function checkAPIKey(apikey) {
  * @param {string} logtext - The text to be logged
  * @return {string} The logged message
  */
-function printLog(logtext) {
-    let currentDate = moment().format().replace('T', ' ');
-    let message = currentDate + ' | ' + logtext
-    console.log(message);
-    return message;
+function printLog(logtext, logLevel = 'info') {
+    logger.log({
+        level: logLevel,
+        message: logtext
+    });
+}
+
+function logCommandUser(interaction) {
+    const channelName = interaction.channel?.name || 'DM';
+    const commandName = interaction.commandName;
+    const channelParentName = interaction.channel?.parent?.name || 'null';
+
+    const username = interaction.user.username;
+    const discriminator = interaction.user.discriminator;
+    const userId = interaction.user.id;
+    const userTag = interaction.user.tag;
+    printLog(`Command: /${commandName} | Channel: #${channelName} in #${channelParentName} | User: @${userTag} (${username}#${discriminator}) [${userId}]`);
 }
 
 /**
@@ -107,10 +146,10 @@ function writeNewMessageId(key, newMessageId) {
         messageIds[key] = newMessageId;
         // Write the updated data back to the file
         fs.writeFileSync(messageIdFile, JSON.stringify(messageIds, null, 2), 'utf8');
-        console.log(`Message ID associated with key '${key}' has been updated to '${newMessageId}'.`);
+        
     } catch (error) {
         // Handle JSON parsing or writing errors
-        console.error('Error writing new message ID:', error.message);
+        printLog('Error writing new message ID:' + error.message, 'error');
     }
 }
 
@@ -358,9 +397,7 @@ async function verifyRoleAccess(interaction, factionData) {
     const allowedRoles = factionData.discordConf.allowedRoles || [];
     const userRoles = interaction.member.roles.cache; // Get the user's roles
 
-    console.log(`User roles: ${userRoles.map(role => role.name).join(', ')}`);
-    console.log(`User roles: ${userRoles.map(role => role.id).join(', ')}`);
-    console.log(`Allowed roles: ${allowedRoles.join(', ')}`);
+    printLog(`User roles: ${userRoles.map(role => role.name).join(', ')} (IDs: ${userRoles.map(role => role.id).join(', ')}), Allowed roles: ${allowedRoles.join(', ')}`);
 
     // Check if user has at least one of the allowed roles
     const hasRole = allowedRoles.some(roleId => userRoles.has(roleId));
@@ -443,7 +480,7 @@ function readConfig() {
     try {
         return yaml.parse(fs.readFileSync(configFilename, 'utf8'));
     } catch (e) {
-        console.log(e);
+        printLog(e, 'error');
         return null;
     }
 }
@@ -481,7 +518,7 @@ function initializeEmbed(title, category = 'default', colorCode = '') {
  */
 async function cleanChannel(channel) {
     if (!channel) {
-        console.log(`Channel with ID ${channelId} does not exist.`);
+        printLog(`Channel with ID ${channelId} does not exist.`, 'warn');
         return;
     }
 
@@ -513,7 +550,7 @@ async function cleanChannel(channel) {
  */
 async function deleteThreads(channel) {
     if (!channel) {
-        console.log(`Channel with ID ${channelId} does not exist.`);
+        printLog(`Channel with ID ${channelId} does not exist.`, 'warn');
         return;
     }
     channel.threads.cache.forEach(thread => {
@@ -560,19 +597,15 @@ function getFactionConfigFromChannel(interaction) {
 
         // Check if the effectiveCategoryId matches any faction categories
         if (faction.enabled && categories.includes(effectiveCategoryId)) {
-            console.log(
-                `Faction ${faction.name} (${factionId}) matched by effective category: "${guild.channels.cache.get(effectiveCategoryId)?.name || 'Unknown'}" (ID: ${effectiveCategoryId}).`
-            );
+            printLog(`Faction ${faction.name} (${factionId}) matched by effective category: "${guild.channels.cache.get(effectiveCategoryId)?.name || 'Unknown'}" (ID: ${effectiveCategoryId}).`);
             return { id: factionId, ...faction };
         }
     }
 
-    console.warn(
-        `No enabled faction found for channel: "${channel.name || 'Unknown'}" (ID: ${channelId}), effective category: "${guild.channels.cache.get(effectiveCategoryId)?.name || 'Unknown'}" (ID: ${effectiveCategoryId}).`
-    );
+    printLog(`No enabled faction found for channel: "${channel.name || 'Unknown'}" (ID: ${channelId}), effective category: "${guild.channels.cache.get(effectiveCategoryId)?.name || 'Unknown'}" (ID: ${effectiveCategoryId}).`, 'warn');
     return null;
 }
 
 
 
-module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyRoleAccess, readConfig, initializeEmbed, getTravelTimes, getFactionConfigFromChannel, verifyAdminAccess, verifyCategoryAccess };
+module.exports = { deleteThreads, cleanChannel, checkAPIKey, printLog, readStoredMessageId, writeNewMessageId, getFlagIcon, sortByUntil, sortByName, updateOrDeleteEmbed, calculateMonthTimestamps, calculateLastXDaysTimestamps, verifyRoleAccess, readConfig, initializeEmbed, getTravelTimes, getFactionConfigFromChannel, verifyAdminAccess, verifyCategoryAccess, logCommandUser };

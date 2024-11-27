@@ -7,6 +7,5 @@ conf/**.json
 **.conf
 **.yaml
 testScript.js
-sheettest.js
-exports/**.csv
-exports/**.json
+exports
+logs

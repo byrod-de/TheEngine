@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
+const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel, logCommandUser } = require('../helper/misc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,6 +17,7 @@ module.exports = {
                 )),
 
     async execute(interaction) {
+        logCommandUser(interaction);
 
         const factionData = getFactionConfigFromChannel(interaction) || {};
         const factionId = factionData.id || ''; // Safely extract factionId

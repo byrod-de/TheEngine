@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 const { getOCStats } = require('../functions/async');
-const { verifyChannelAccess, readConfig, getFactionConfigFromChannel, initializeEmbed } = require('../helper/misc');
+const { logCommandUser, readConfig, getFactionConfigFromChannel, initializeEmbed } = require('../helper/misc');
 
 const { adminChannelId } = readConfig().limitedAccessConf;
 
@@ -55,6 +55,8 @@ module.exports = {
         ),
 
     async execute(interaction) {
+
+        logCommandUser(interaction);
 
         const factionData = getFactionConfigFromChannel(interaction) || {};
         const factionId = factionData.id || ''; // Safely extract factionId

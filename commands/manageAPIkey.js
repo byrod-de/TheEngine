@@ -2,7 +2,7 @@ const fs = require('node:fs');
 
 const { SlashCommandBuilder } = require('discord.js');
 const { verifyAPIKey, verifyKeys } = require('../functions/api');
-const { printLog, checkAPIKey, readConfig, verifyAdminAccess, initializeEmbed } = require('../helper/misc');
+const { printLog, checkAPIKey, readConfig, verifyAdminAccess, initializeEmbed, logCommandUser } = require('../helper/misc');
 
 const apiConfigPath = './conf/apiConfig.json';
 
@@ -30,6 +30,7 @@ module.exports = {
                 .setRequired(false)),
 
     async execute(interaction) {
+        logCommandUser(interaction);
 
         // Check if the user has access to the channel
         if (!await verifyAdminAccess(interaction, readConfig().limitedAccessConf)) return;

@@ -123,7 +123,7 @@ async function checkArmoury(armouryChannel, homeFactionId, factionConfig) {
                     if (armouryChannel) {
                         armouryChannel.send({ embeds: [armouryEmbed], ephemeral: false });
                     } else {
-                        printLog(homeFactionId + ' > armouryChannel is undefined');
+                        printLog(homeFactionId + ' > armouryChannel is undefined', 'warn');
                     }
                 }
             }
@@ -193,8 +193,6 @@ async function checkRetals(retalChannel, homeFactionId, factionConfig) {
 
                 attackEmbed.addFields({ name: `Defender`, value: `[»»](https://byrod.cc/p/${defender_id}) ${cleanUpString(defender_name)} [${defender_id}]`, inline: false });
                 attackEmbed.addFields({ name: `Attacker`, value: `[»»](https://byrod.cc/p/${attacker_id}) ${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`, inline: false });
-                printLog(`Defender ${cleanUpString(defender_name)} [${defender_id}] < Attacker ${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`);
-
 
                 if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `:golf:Attack was abroad.`, inline: false });
 
@@ -215,7 +213,7 @@ async function checkRetals(retalChannel, homeFactionId, factionConfig) {
                     }, 15 * 60 * 1000); // Delete after 15 minutes
 
                 } else {
-                    printLog( homeFactionId + ' > retalChannel is undefined');
+                    printLog( homeFactionId + ' > retalChannel is undefined', 'warn');
                 }
             }
         }
@@ -700,8 +698,6 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
 
                     if (isEnlisted) {
 
-                        printLog('Faction is enlisted!');
-
                         rwEmbed.setTitle(`Faction is currently enlisted!`)
                             .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionID}` })
                             .setDescription(`:ballot_box_with_check: Faction is enlisted`);
@@ -720,11 +716,8 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             }
 
             if (Array.isArray(raidWars) && raidWars.length > 0) {
-                printLog('Raid!');
 
                 for (const raidWar of raidWars) {
-                    console.log(raidWar);
-
                     raidWarActive = true;
                     const raiding_faction = raidWar['raiding_faction'];
                     const defending_faction = raidWar['defending_faction'];
@@ -862,7 +855,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
             }
         }
     } else {
-        printLog('warChannel is undefined');
+        printLog('warChannel is undefined', 'warn');
     }
 }
 
@@ -930,7 +923,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                     if (cachedTravelInfo) {
                         const cachedStatusState = extractFromRegex(cachedTravelInfo, /<(.+)>/);
                         const cachedStatusDesc = extractFromRegex(cachedTravelInfo, /\[(.+)\]/);
-                        //console.log(cachedStatusState, cachedStatusDesc, member.status.description);
+
                         if (member.status.description != cachedStatusDesc && cachedStatusState == 'Traveling') {
                             printLog(`>>> Member status changed: [${memberId}] - ${cachedTravelInfo}`);
 
@@ -958,12 +951,12 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
                                     } catch (deleteError) {
                                         if (error.code === 10008) printLog('Message not found: ' + error);
-                                        else printLog('Failed to edit the message: ' + error);
+                                        else printLog('Failed to edit the message: ' + error, 'error');
                                     }
 
                                 } catch (fetchError) {
                                     if (fetchError.code === 10008) printLog('Message not found: ' + fetchError);
-                                    else printLog('Failed to fetch the message: ' + fetchError);
+                                    else printLog('Failed to fetch the message: ' + fetchError, 'error');
                                 }
 
                                 travelInfo += ` (${messageID})`;
@@ -972,7 +965,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                                 printLog(`Member cache entry for ${member.name} has been updated.`);
 
                             } catch (error) {
-                                printLog('Failed to process the message deletion or cache update: ' + error);
+                                printLog('Failed to process the message deletion or cache update: ' + error, 'error');
                             }
 
                         } else {
@@ -1035,18 +1028,18 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
 
                                     setTimeout(() => {
                                         originalMessage.delete().catch(deleteError => {
-                                            printLog('Failed to delete the message:' + deleteError);
+                                            printLog('Failed to delete the message:' + deleteError, 'error');
                                         });
                                     }, delMinutes * 60 * 1000);
 
                                 } catch (error) {
-                                    if (error.code === 10008) printLog('Message not found: ' + error);
+                                    if (error.code === 10008) printLog('Message not found: ' + error, 'error');
                                     else printLog('Failed to edit the message: ' + error);
                                 }
 
                             } catch (fetchError) {
-                                if (fetchError.code === 10008) printLog('Message not found: ' + fetchError);
-                                else printLog('Failed to fetch the message: ' + fetchError);
+                                if (fetchError.code === 10008) printLog('Message not found: ' + fetchError, 'error');
+                                else printLog('Failed to fetch the message: ' + fetchError, 'error');
                             }
                         }
                     }
@@ -1416,11 +1409,9 @@ async function getFactionReviveStatus(factionId, message) {
         const memberId = member.id;
         membersCount++;
 
-        console.log(memberIndex[member.name]);
 
         printLog(`${member.name} checked, revive status = ${member.is_revivable}`);
         if (member.is_revivable && member.status.state !== 'Fallen') {
-            console.log(member);
 
             let statusIcon = '`  `';
             let statusUntil = '';
@@ -1819,15 +1810,13 @@ async function listServerRoles(guild, filter = null) {
  * @return {Promise<Array<User>>} A Promise that resolves to an array of User objects.
  */
 async function getUsersByRole(guild, roleName) {
-    console.log(`Getting users with role: ${roleName}`);
+    printLog(`Getting users with role: ${roleName}`, 'info');
     const roleList = await listServerRoles(guild, roleName);
-
+    
     const roleId = roleList[0].id;
 
     const members = await guild.members.fetch();
     const users = members.filter((member) => member.roles.cache.has(roleId)).map((member) => member.user);
-    console.log(users);
-
     printLog('Users with role ID ' + roleId + ': ' + users.map((user) => user.tag).join(', '));
 
     return users;

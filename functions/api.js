@@ -65,7 +65,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         
         if (activeKeys.length === 0) {
             statusMessage = "No active keys available.";
-            printLog(statusMessage);
+            printLog(statusMessage, 'warn');
             return [status, statusMessage, apiJson];
         }
         const randomIndex = Math.floor(Math.random() * activeKeys.length);
@@ -77,7 +77,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         
         if (activeReviverKeys.length === 0) {
             statusMessage = "No active keys available.";
-            printLog(statusMessage);
+            printLog(statusMessage, 'warn');
             return [status, statusMessage, apiJson];
         }
         const randomIndex = Math.floor(Math.random() * activeReviverKeys.length);
@@ -89,7 +89,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
         
         if (activeFationKeys.length === 0) {
             statusMessage = "No active keys available.";
-            printLog(statusMessage);
+            printLog(statusMessage, 'warn');
             return [status, statusMessage, apiJson];
         }
         const randomIndex = Math.floor(Math.random() * activeFationKeys.length);
@@ -129,7 +129,7 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
             
                 if (errorCodes[errorCodeToCheck] && errorCodes[errorCodeToCheck].active) {
                     // Find the key object by ID and set it to inactive
-                    console.log(`Key ${selectedKey} set to inactive.`);
+                    printLog(`Key ${selectedKey} set to inactive.`, 'warn');
                     const errorKeyIndex = apiKeys.findIndex(key => key.key === selectedKey);
                     if (errorKeyIndex !== -1) {
                         apiConfig.apiKeys[errorKeyIndex].active = false;
@@ -148,12 +148,12 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
             statusMessage = `HTTP error with status code ${apiResponse.status}`;
         }
 
-        statusMessage = printLog(statusMessage);
+        if (!status) printLog(statusMessage, 'warn');
 
         return [status, statusMessage, apiJson];
     } catch (error) {
         statusMessage = `An error occurred: ${error.message}`;
-        statusMessage = printLog(statusMessage);
+        printLog(statusMessage, 'error');
         return [status, statusMessage, apiJson];
     }
 }
@@ -224,7 +224,7 @@ async function verifyAPIKey(apiKey, comment) {
 
                 const errorCodeToCheck = verificationJson['error'].code;
 
-                printLog(`Error Code ${errorCodeToCheck},  ${verificationJson['error'].error}.`);
+                printLog(`Error Code ${errorCodeToCheck},  ${verificationJson['error'].error}.`, 'error');
                 if (errorCodes[errorCodeToCheck] && errorCodes[errorCodeToCheck].active) {
                     apiKey.active = false;
                     apiKey.errorReason = `${verificationJson['error'].code} = ${verificationJson['error'].error}`;
@@ -282,14 +282,12 @@ async function getAdditionalKeyInfo(apiKey) {
             const faction = readConfig().factions;
 
             const homeFactions = Object.keys(faction);
-            console.log(homeFactions);
             if (homeFactions.includes(factionJson.faction_id.toString())) {
                 apiKey.factionAccess = true;
                 apiKey.factionId = factionJson.faction_id;
             } else {
                 apiKey.factionAccess = false;
             }
-            console.log(apiKey.factionAccess);
         }
     }
 }

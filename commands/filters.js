@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 
-const { printLog } = require('../helper/misc');
+const { printLog, logCommandUser } = require('../helper/misc');
 
 
 module.exports = {
@@ -41,6 +41,7 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        logCommandUser(interaction);
 
         const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
         let tornParams = JSON.parse(tornParamsFile);

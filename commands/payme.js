@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { verifyRoleAccess, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
+const { logCommandUser, initializeEmbed, getFactionConfigFromChannel } = require('../helper/misc');
 const { numberWithCommas, cleanUpString } = require('../helper/formattings');
 const he = require('he');
 
@@ -43,6 +43,7 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        logCommandUser(interaction);
 
         const factionData = getFactionConfigFromChannel(interaction) || {};
         const factionId = factionData.id || ''; // Safely extract factionId

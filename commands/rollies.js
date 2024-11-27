@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { initializeEmbed } = require('../helper/misc');
+const { initializeEmbed, logCommandUser } = require('../helper/misc');
 
 
 module.exports = {
@@ -21,6 +21,9 @@ module.exports = {
      * @return {Promise<void>} a promise that resolves when the interaction is executed
      */
     async execute(interaction) {
+
+        logCommandUser(interaction);
+
         let diceString = interaction.options.getString('dice') ?? '1d20';
         const show = interaction.options.getBoolean('show') ?? false;
         

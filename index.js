@@ -1,10 +1,10 @@
 const { ShardingManager } = require('discord.js');
-const { readConfig } = require('./helper/misc');
+const { readConfig, printLog } = require('./helper/misc');
 
 const { discordConf } = readConfig();
 const token = discordConf.token;
 
-console.log('Starting up...');
+printLog('Starting up...');
 
 const manager = new ShardingManager('./theEngine.js', {
     token: token,
@@ -12,9 +12,9 @@ const manager = new ShardingManager('./theEngine.js', {
 });
 
 manager.on('shardCreate', shard => {
-    console.log(`Launched shard ${shard.id}`);
+    printLog(`Launched shard ${shard.id}`);
 });
 
 manager.spawn().catch(error => {
-    console.error('Error spawning shards:', error);
+    printLog('Error spawning shards:' + error, 'error');
 });

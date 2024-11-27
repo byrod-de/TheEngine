@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
-const { printLog, readConfig } = require('../helper/misc');
+const { printLog, readConfig, logCommandUser } = require('../helper/misc');
 
 const { verifieRoleId } = readConfig().discordConf;
 
@@ -13,6 +13,9 @@ module.exports = {
                 .setDescription('Torn user ID.')),
 
     async execute(interaction) {
+
+        logCommandUser(interaction);
+
 
         const userID = interaction.options.getInteger('tornid') ?? interaction.user.id;
 

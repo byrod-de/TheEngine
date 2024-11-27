@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const { SlashCommandBuilder } = require('discord.js');
-const { readConfig, initializeEmbed } = require('../helper/misc');
+const { readConfig, initializeEmbed, printLog, logCommandUser } = require('../helper/misc');
 
 const config = readConfig();
 
@@ -11,6 +11,7 @@ module.exports = {
     .setDescription('Help to all commands.'),
 
   async execute(interaction) {
+    logCommandUser(interaction);
 
     const helpEmbed = initializeEmbed('Help');
     helpEmbed.setDescription('Slash Commands Overview');
@@ -36,8 +37,6 @@ module.exports = {
         value += '\n**Subcommands:**';
         subcommands.forEach(subcommand => {
           value += `\n- *${subcommand.name}* - ${subcommand.description}`;
-          console.log(`Name: ${subcommand.name}`);
-          console.log(`Description: ${subcommand.description}`);
         });
       }
 
@@ -58,9 +57,8 @@ module.exports = {
 
       if (channel) {
         existingChannelsSet.add(`<#${channel.id}>`); // Add channel ID to the Set
-        console.log(`${key.padEnd(20)}: Channel with ID ${channelId} exists: ${channel.name}`);
       } else {
-        console.log(`${key.padEnd(20)}: Channel with ID ${channelId} does not exist.`);
+        printLog(`${key.padEnd(20)}: Channel with ID ${channelId} does not exist.`, 'warn');
       }
     }
 

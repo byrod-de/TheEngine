@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { verifyAdminAccess, readConfig } = require('../helper/misc');
+const { verifyAdminAccess, readConfig, logCommandUser } = require('../helper/misc');
 const fs = require('fs');
 const yaml = require('yaml');
 const configFilename = './conf/config.yaml';
@@ -32,6 +32,7 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        logCommandUser(interaction);
 
         // Check if the user has access to the channel
         if (!await verifyAdminAccess(interaction, readConfig().limitedAccessConf)) return;

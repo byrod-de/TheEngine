@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { callTornApi } = require('../functions/api');
 const { abbreviateNumber, cleanUpString, numberWithCommas, convertSecondsToDaysHours, getRankNameById } = require('../helper/formattings');
-const { printLog, initializeEmbed, verifyCategoryAccess, readConfig } = require('../helper/misc');
+const { printLog, initializeEmbed, verifyCategoryAccess, readConfig, logCommandUser } = require('../helper/misc');
 
 const he = require('he');
 const moment = require('moment');
@@ -30,6 +30,8 @@ module.exports = {
 
     async execute(interaction) {
 
+        logCommandUser(interaction);
+        
         const isValidCategory = await verifyCategoryAccess(interaction, readConfig().limitedAccessConf, readConfig().factions);
 
         if (!isValidCategory) {

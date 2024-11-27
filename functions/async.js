@@ -191,8 +191,8 @@ async function checkRetals(retalChannel, homeFactionId, factionConfig) {
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon, url: `https://byrod.cc/f/${faction_id}` })
                     .setDescription(`Retal deadline <t:${deadline}:R>`);
 
-                attackEmbed.addFields({ name: `Defender`, value: `[»»](https://byrod.cc/p/${defender_id}) ${cleanUpString(defender_name)} [${defender_id}]`, inline: false });
-                attackEmbed.addFields({ name: `Attacker`, value: `[»»](https://byrod.cc/p/${attacker_id}) ${cleanUpString(attacker_name)} [${attacker_id}] of ${attacker_factionname}`, inline: false });
+                attackEmbed.addFields({ name: `Defender`, value: `[${cleanUpString(defender_name)}](https://byrod.cc/p/${defender_id}) [${defender_id}]`, inline: false });
+                attackEmbed.addFields({ name: `Attacker`, value: `[${cleanUpString(attacker_name)}](https://byrod.cc/p/${attacker_id}) [${attacker_id}] of ${attacker_factionname}`, inline: false });
 
                 if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `:golf:Attack was abroad.`, inline: false });
 
@@ -576,12 +576,12 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             const travelingToList = travelingMembersList.filter(member => member.direction === '`> `');
                             const travelingFromList = travelingMembersList.filter(member => member.direction === '`< `');
 
-                            const travelEntryFormat = `{{direction}} {{flag}} [»»](https://byrod.cc/p/{{id}}) {{name}} {{hospital}}\n`;
+                            const travelEntryFormat = `{{direction}} {{flag}} (https://byrod.cc/p/{{id}}) {{hospital}}\n`;
                             const travelToChunks = splitIntoChunks(travelingToList, travelEntryFormat);
                             const travelFromChunks = splitIntoChunks(travelingFromList, travelEntryFormat);
                             const abroadChunks = splitIntoChunks(abroadMembersList, travelEntryFormat);
 
-                            const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
+                            const hospitalEntryFormat = `:syringe: [{{name}}](https://byrod.cc/a/{{id}}) <t:{{statusUntil}}:R> {{flag}}\n`;
                             const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
 
                             if (factionID == ownFactionID) {
@@ -785,7 +785,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                         }
 
                         let opponentFactionName = faction.name;
-                        const hospitalEntryFormat = `:syringe: [»»](https://byrod.cc/a/{{id}}) {{name}} <t:{{statusUntil}}:R> {{flag}}\n`;
+                        const hospitalEntryFormat = `:syringe: [{{name}}](https://byrod.cc/a/{{id}}) <t:{{statusUntil}}:R> {{flag}}\n`;
                         const hospitalChunks = splitIntoChunks(hospitalMembersList, hospitalEntryFormat);
 
                         hospitalEmbed.setTitle(`:hospital: Members in hospital`)
@@ -1148,7 +1148,7 @@ async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId, 
                 jailEmbed.setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` })
                     .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`);
 
-                const entryFormat = `:oncoming_police_car: [»»](https://byrod.cc/p/{{id}}) {{name}} - out <t:{{statusUntil}}:R>\n`;
+                const entryFormat = `:oncoming_police_car: [{{name}}](https://byrod.cc/p/{{id}}) out <t:{{statusUntil}}:R>\n`;
                 const jailChunks = splitIntoChunks(jailMembersList, entryFormat);
 
                 // Add each chunk as a separate field
@@ -1168,7 +1168,7 @@ async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId, 
             if (offlineMembersList.length > 0) {
                 let offlineMembersEntries = '';
                 for (const member of offlineMembersList) {
-                    const entry = `:zzz: [»»](https://byrod.cc/p/${member.id}) ${cleanUpString(member.name)} last seen <t:${member.lastActionTimestamp}:R>\n`;
+                    const entry = `:zzz: [${cleanUpString(member.name)}](https://byrod.cc/p/${member.id}) last seen <t:${member.lastActionTimestamp}:R>\n`;
                     offlineMembersEntries += entry;
                 }
                 ownStatusEmbed.addFields({ name: 'Offline > 1 day', value: offlineMembersEntries, inline: false });
@@ -1445,7 +1445,7 @@ async function getFactionReviveStatus(factionId, message) {
 
     reviveEmbed.addFields({ name: 'Overview', value: `:green_circle: \`Revivable    : ${reviveCount}\`\n:red_circle: \`Not revivable: ${noneCount}\``, inline: false });
 
-    const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
+    const entryFormat = `{{statusIcon}} [{{name}}](https://byrod.cc/p/{{id}}) [{{id}}] {{statusUntil}}\n`;
     const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
 
     reviveChunks.forEach((chunk, index) => {
@@ -1560,7 +1560,7 @@ async function getOwnFactionReviveStatus(factionId, message) {
 
     reviveEmbed.addFields({ name: 'Overview', value: `:green_circle: \`Everyone         : ${everyoneCount}\`\n:yellow_circle: \`Friends & faction: ${friendNFactionCount}\`\n:red_circle: \`No one           : ${noneCount}\``, inline: false });
 
-    const entryFormat = `{{statusIcon}} [»»](https://byrod.cc/p/{{id}}) {{name}} [{{id}}] {{statusUntil}}\n`;
+    const entryFormat = `{{statusIcon}} [{{name}}](https://byrod.cc/p/{{id}}) [{{id}}] {{statusUntil}}\n`;
     const reviveChunks = splitIntoChunks(revivableMembersList, entryFormat);
 
     let embedCount = 0;

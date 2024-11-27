@@ -162,7 +162,6 @@ function decodeApiKeyWithCypher(encodedApiKey, cipherKey = cipher) {
  */
 function cleanUpString(inputString) {
   const specialCharacters = ['\\', '*', '_', '~', '`'];
-
   for (const char of specialCharacters) {
     if (inputString.startsWith(char) && inputString.endsWith(char)) {
       const escapedChar = `\\${char}`;
@@ -170,7 +169,7 @@ function cleanUpString(inputString) {
       inputString = inputString.replace(regex, escapedChar);
     }
   }
-
+  inputString = inputString.replaceAll('\\_', '＿');
   return inputString;
 }
 

@@ -73,7 +73,7 @@ client.on('ready', () => {
 			
 			const factionConfig = factions[factionId];
 			const isFactionEnabled = factionConfig.enabled || false;
-			printLog(`${factionId} > faction found: ${factionConfig.name} is ${isFactionEnabled ? 'enabled' : 'disabled'}`);
+			printLog(`${factionId.padStart(5, ' ')} > faction found: ${factionConfig.name} is ${isFactionEnabled ? 'enabled' : 'disabled'}`);
 
 			if (!isFactionEnabled) {
 				continue;

@@ -576,7 +576,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             const travelingToList = travelingMembersList.filter(member => member.direction === '`> `');
                             const travelingFromList = travelingMembersList.filter(member => member.direction === '`< `');
 
-                            const travelEntryFormat = `{{direction}} {{flag}} (https://byrod.cc/p/{{id}}) {{hospital}}\n`;
+                            const travelEntryFormat = `{{direction}} {{flag}} [{{name}}](https://byrod.cc/p/{{id}}) {{hospital}}\n`;
                             const travelToChunks = splitIntoChunks(travelingToList, travelEntryFormat);
                             const travelFromChunks = splitIntoChunks(travelingFromList, travelEntryFormat);
                             const abroadChunks = splitIntoChunks(abroadMembersList, travelEntryFormat);
@@ -619,8 +619,9 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                                     fieldFaction2 += `\n:ok_hand: **Okay:** ${okayMemberCount}`;
                                 }
                             }
-
+                            let isOwnFaction = true;
                             if (factionID != ownFactionID) {
+                                isOwnFaction = false;
                                 travelToChunks.forEach((chunk, index) => {
                                     const travelToChunksLength = (chunk.match(/\n/g) || []).length;
                                     travelEmbed.addFields({ name: `${faction.name} [${factionID}]\n:arrow_forward: Traveling to: (${travelToChunksLength}/${travelingMemberCount})`, value: chunk, inline: true });
@@ -650,7 +651,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             }
 
                             if (warChannel) {
-                                await getTravelInformation(travelChannel, warUpdateInterval, factionID);
+                                await getTravelInformation(travelChannel, warUpdateInterval, factionID, isOwnFaction, factionConfig);
                             }
                         }
                     }
@@ -868,7 +869,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
  * @param {number} factionId - The ID of the faction for which travel information is being retrieved. Defaults to the home faction ID.
  * @return {Promise<void>} A promise that resolves when the travel information has been retrieved and sent.
  */
-async function getTravelInformation(travelChannel, travelUpdateInterval, factionId = homeFaction) {
+async function getTravelInformation(travelChannel, travelUpdateInterval, factionId, isOwnFaction, factionConfig) {
 
     const threadName = 'Flight Tracker';
     const travelThread = await findOrCreateThread(travelChannel, threadName);
@@ -905,11 +906,11 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
                 const flagIcon = getFlagIcon(memberStatusState, member.status.description);
 
                 let embedCategory = 'default';
-                if (factionId != homeFaction) {
-                    embedCategory = 'error';
+                if (isOwnFaction) {
+                    embedCategory = 'overwrite';
                 }
 
-                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberId}]`, embedCategory);
+                const travelEmbed = initializeEmbed(`${cleanUpString(member.name)} [${memberId}]`, embedCategory, factionConfig.embedColor);
                 travelEmbed.setURL(`https://byrod.cc/p/${memberId}`)
                     .setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` })
                     .setDescription(member.status.description + ' ' + flagIcon.flag);

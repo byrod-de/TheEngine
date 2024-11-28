@@ -12,7 +12,7 @@ const { checkArmoury, checkRetals, checkWar, checkMembers, checkOCs, sendStatusM
 const { verifyKeys } = require('./functions/api');
 const { discordConf, botConf, factions } = readConfig();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -99,6 +99,7 @@ client.on('ready', () => {
 			}
 
 			if (channels.retal) {
+				cleanChannel(channels.retal);
 				const retalUpdateInterval = factionConfig.updateIntervals.retal || 5;
 				setInterval(() => checkRetals(channels.retal, factionId, factionConfig), 1000 * 60 * retalUpdateInterval);
 			}

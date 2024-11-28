@@ -71,8 +71,8 @@ function logCommandUser(interaction) {
     const username = interaction.user.username;
     const discriminator = interaction.user.discriminator;
     const userId = interaction.user.id;
-    const userTag = interaction.user.tag;
-    printLog(`Command: /${commandName} | Channel: #${channelName} in #${channelParentName} | User: @${userTag} (${username}#${discriminator}) [${userId}]`);
+    const nickName = interaction.member.nickname;
+    printLog(`Command: /${commandName} | Channel: #${channelName} in #${channelParentName} | User: @${nickName} (${username}#${discriminator}) [${userId}]`);
 }
 
 /**

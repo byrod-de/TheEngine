@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { callTornApi } = require('../functions/api');
+const { callTornApi, callTornStatsApi } = require('../functions/api');
 const { abbreviateNumber, cleanUpString, numberWithCommas, convertSecondsToDaysHours, getRankNameById } = require('../helper/formattings');
 const { printLog, initializeEmbed, verifyCategoryAccess, readConfig, logCommandUser } = require('../helper/misc');
 
@@ -17,10 +17,15 @@ module.exports = {
             option.setName('operation')
                 .setDescription('Operation to perform')
                 .addChoices(
-                    { name: 'History (30 days)', value: 'history' },
+                    { name: 'History (default = 30 days)', value: 'history' },
                     { name: 'Hall Of Fame', value: 'hall-of-fame' },
-                    { name: 'Attack Info (2 days)', value: 'attacks' },
+                    { name: 'Attack Info (default = 2 days)', value: 'attacks' },
                 )
+                .setRequired(false)
+        )
+        .addIntegerOption(option =>
+            option.setName('days')
+                .setDescription('Enter the number of days. Default values: see operations')
                 .setRequired(false)
         )
         .addBooleanOption(option =>
@@ -137,9 +142,11 @@ async function playerHistory(interaction) {
 
 
     const [response, responseHist] = await Promise.all([
-        callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
+        callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, 'networth,refills,xantaken,statenhancersused,useractivity,energydrinkused,awards,medicalitemsused,overdosed', 'rotate'),
         callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'networth,refills,xantaken,statenhancersused,useractivity,energydrinkused,awards,medicalitemsused,overdosed', 'rotate')
     ]);
+
+
 
     if (response[0] && responseHist[0]) {
         const playerJson = response[2];
@@ -180,7 +187,6 @@ async function playerHistory(interaction) {
         const faction_id = playerHistJson['faction']['faction_id'];
 
         let iconUrl = (gender == 'Male') ? 'https://www.torn.com/images/profile_man.jpg' : 'https://www.torn.com/images/profile_girl.jpg';
-
 
         const revivable = playerHistJson['revivable'] === 0 ? ':red_circle:' : ':green_circle:';
         const networthDiff = networthCur - networthHist;
@@ -348,7 +354,7 @@ async function playerAttackInfo(interaction) {
     const statsEmbed = initializeEmbed('Player Attack Info');
 
     const [response, responseHist] = await Promise.all([
-        callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, undefined, 'rotate'),
+        callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, undefined, 'attackswon,attackslost,defendswon,defendslost,attacksassisted,attackswonabroad,defendslostabroad,rankedwarhits,respectforfaction', 'rotate'),
         callTornApi('user', 'basic,personalstats,profile', userID, undefined, undefined, historymoment.unix(), 'attackswon,attackslost,defendswon,defendslost,attacksassisted,attackswonabroad,defendslostabroad,rankedwarhits,respectforfaction', 'rotate')
     ]);
 
@@ -432,7 +438,6 @@ async function playerAttackInfo(interaction) {
 
         for (const stat of statArray) {
             const diff = stat.cur - stat.hist;
-
 
             statsEmbed.addFields(
                 { name: `${stat.icon} ${stat.name}`, value: `*${stat.sign}${numberWithCommas(diff / days).toString()} per day*\n\`Current: ${numberWithCommas(stat.cur).toString()}\`\n\`Change : ${stat.sign}${numberWithCommas(diff).toString()}\`\n\u200B`, inline: true },

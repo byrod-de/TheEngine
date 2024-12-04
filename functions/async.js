@@ -5,7 +5,7 @@ const { abbreviateNumber, numberWithCommas, extractFromRegex, cleanUpString, cre
 
 const { importCsvToSheet } = require('../functions/google');
 
-const { callTornApi } = require('../functions/api');
+const { callTornApi, callTornStatsApi } = require('../functions/api');
 
 const NodeCache = require("node-cache");
 const timestampCache = new NodeCache();
@@ -15,18 +15,18 @@ const itemCache = new NodeCache();
 
 const moment = require('moment');
 const os = require('os');
+const { error } = require('node:console');
 
 const hostname = os.hostname();
 
 const { minDelay } = readConfig().apiConf;
 const { exportAttacks, exportContributors } = readConfig().exportConf;
+const { embedColor, successColor, errorColor } = readConfig().discordConf;
 
 const tornParamsFile = fs.readFileSync('./conf/tornParams.json');
 const tornParams = JSON.parse(tornParamsFile);
 
 const apiConfigPath = './conf/apiConfig.json';
-
-const homeFaction = "";
 
 /**
  * Send a status message to the specified channel at regular intervals.
@@ -194,7 +194,7 @@ async function checkRetals(retalChannel, homeFactionId, factionConfig) {
                 attackEmbed.addFields({ name: `Defender`, value: `[${cleanUpString(defender_name)}](https://byrod.cc/p/${defender_id}) [${defender_id}]`, inline: false });
                 attackEmbed.addFields({ name: `Attacker`, value: `[${cleanUpString(attacker_name)}](https://byrod.cc/p/${attacker_id}) [${attacker_id}] of ${attacker_factionname}`, inline: false });
 
-                if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `:golf:Attack was abroad.`, inline: false });
+                if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `:golf: Attack was abroad.`, inline: false });
 
 
                 if (retalChannel) {
@@ -213,7 +213,7 @@ async function checkRetals(retalChannel, homeFactionId, factionConfig) {
                     }, 15 * 60 * 1000); // Delete after 15 minutes
 
                 } else {
-                    printLog( homeFactionId + ' > retalChannel is undefined', 'warn');
+                    printLog(homeFactionId + ' > retalChannel is undefined', 'warn');
                 }
             }
         }
@@ -1234,8 +1234,8 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
 
     const { name: faction_name, ID: faction_id, tag: faction_tag, tag_image: faction_icon } = factionJson;
 
-    const faction_icon_URL = `https://factiontags.torn.com/${factionJson['tag_image']}`;
-    const crimeList = [8,7,6,5,4,3,2,1];
+    const faction_icon_URL = `https://factiontags.torn.com/${faction_icon}`;
+    const crimeList = [8, 7, 6, 5, 4, 3, 2, 1];
 
     const lastDateFormatted = (new Date(lastDay * 1000)).toISOString().replace('T', ' ').replace('.000Z', '');
 
@@ -1245,7 +1245,8 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
     }
 
     const ocEmbed = initializeEmbed(`OC Overview for *${title}*`, 'overwrite', factionConfig.embedColor);
-    ocEmbed.setAuthor({ name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` });
+    const authorInfo = { name: `${faction_tag} -  ${faction_name}`, iconURL: faction_icon_URL, url: `https://byrod.cc/f/${faction_id}` }
+    ocEmbed.setAuthor(authorInfo);
 
     const crimeSummary = {};
     var entry = 'Crime Name;Date;Time;Success;Respect Gain;Money Gain;Spot1;Spot2;Spot3;Spot4;ID1;ID2;ID3;ID4\n';
@@ -1330,11 +1331,14 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
         fs.writeFileSync(fileName, entry);
         returnResult.csvFilePath = fileName;
         let year = new Date().getFullYear();
-        
+
         await importCsvToSheet(fileName, undefined, 'PA_Overview' + year);
     }
 
     returnResult.embed = ocEmbed;
+    returnResult.crimeData = crimeData;
+    returnResult.members = members;
+    returnResult.authorInfo = authorInfo;
     return returnResult;
 }
 
@@ -1342,23 +1346,154 @@ async function getOCStats(selection, selectedDateValue, exportData = false, home
 /**
  * Checks the OC stats for a given faction and updates the OC status embed in the member channel.
  *
- * @param {Channel} memberChannel - The channel where the OC status embed will be updated.
+ * @param {Channel} ocChannel - The channel where the OC status embed will be updated.
  * @param {number} memberUpdateInterval - The interval in minutes at which the OC stats should be updated.
  * @param {number} homeFactionId - The ID of the faction for which the OC stats are being retrieved.
  * @return {Promise<void>} A promise that resolves once the OC status embed has been updated.
  */
-async function checkOCs(memberChannel, memberUpdateInterval, homeFactionId, factionConfig) {
+async function checkOCs(ocChannel, memberUpdateInterval, homeFactionId, factionConfig) {
     printLog(homeFactionId + ' > Checking OCs');
-    const now = moment();
 
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    let timestamp = currentTimestamp;
+
+    let lastTimestamp = timestampCache.get('ocExecTime_' + homeFactionId);
+    if (lastTimestamp !== undefined) {
+        timestamp = lastTimestamp;
+    } else {
+        printLog(homeFactionId + ' > OC timestamp cache empty');
+    }
+
+    const ocConf = factionConfig.ocConf;
+
+    // Get OC status
     const ocStatus = await getOCStats('months', undefined, false, homeFactionId, factionConfig);
     if (ocStatus === undefined) return;
-    const ocStatusEmbed = ocStatus.embed;
-    ocStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval * 60).toFixed(0)} minutes._`)
 
-    await updateOrDeleteEmbed(memberChannel, 'ocStatus', ocStatusEmbed, 'edit', homeFactionId);
+    // Show OC Status
+    if (ocConf.showStatus) {
+        const ocStatusEmbed = ocStatus.embed;
+        ocStatusEmbed.setDescription(`_Update interval: every ${(memberUpdateInterval).toFixed(0)} minutes._`);
+        await updateOrDeleteEmbed(ocChannel, 'ocStatus', ocStatusEmbed, 'edit', homeFactionId);
+    }
+
+    // Process crimes
+    if (ocConf.sendPing || ocConf.sendDetails) {
+        const ocCrimeData = ocStatus.crimeData;
+        const members = ocStatus.members;
+        const authorInfo = ocStatus.authorInfo;
+
+        for (const id in ocCrimeData) {
+            const crime = ocCrimeData[id];
+            const participants = crime.participants || [];
+
+            // Check if all participants are "Okay"
+            const allParticipantsOkay = participants.every((participant) => {
+                const participantId = Object.keys(participant)[0]; // Extract the ID key
+                return participant[participantId]?.state === "Okay" ?? null;
+            });
+
+            // Initialize embed
+            const crimeEmbed = initializeEmbed(crime.crime_name, 'overwrite', factionConfig.embedColor);
+            if (authorInfo) {
+                crimeEmbed.setAuthor(authorInfo);
+            }
+
+            const planner = members[crime.planned_by]?.name || 'Unknown';
+            const initiator = members[crime.initiated_by]?.name || 'Unknown';
+
+            console.log('planner: ', planner);
+            console.log('initiator: ', initiator);  
+
+            if (planner !== 'Unknown') {
+                crimeEmbed.addFields([
+                    {
+                        name: "Planned by",
+                        value: `[${cleanUpString(planner)}](https://byrod.cc/p/${crime.planned_by})`,
+                        inline: false,
+                    },
+                ]);
+            }
+
+            if (initiator !== 'Unknown') {
+                crimeEmbed.addFields([
+                    {
+                        name: "Initiated by",
+                        value: `[${cleanUpString(initiator)}](https://byrod.cc/p/${crime.initiated_by})`,
+                        inline: false,
+                    },
+                ]);
+            }
+
+            crimeEmbed.addFields([
+                {
+                    name: 'Participants',
+                    value: participants
+                        .map((participant) => {
+                            const id = Object.keys(participant)[0];
+                            const memberName = members[id]?.name || 'Unknown';
+                            return `- [${cleanUpString(memberName)}](https://byrod.cc/p/${id})`;
+                        })
+                        .join("\n"),
+                    inline: false,
+                },
+                {
+                    name: "Time ready",
+                    value: `<t:${Math.floor(crime.time_ready)}:f>`,
+                    inline: false,
+                },
+            ]);
+
+            console.log(id, ocConf.sendPing, crime.initiated, crime.time_left, allParticipantsOkay);
+            // Handle sendPing logic
+            if (ocConf.sendPing && crime.initiated === 0) {
+                if (crime.time_left === 0 && allParticipantsOkay) {
+                    crimeEmbed.setDescription(`:information_source: **${crime.crime_name}** ready to be initiated!\n## » [link to initiate](https://www.torn.com/factions.php?step=your#/tab=crimes)`);
+                    await ocChannel.send({ embeds: [crimeEmbed] });
+                    continue;
+                }
+            }
+
+            // Handle sendDetails logic
+            if (ocConf.sendDetails) {
+                if (crime.initiated === 0 && crime.time_left > 0) {
+                    if (crime.time_started > timestamp) {
+                        console.log(id, `:spy: **${crime.crime_name}** was planned.`);
+                        crimeEmbed.setTitle(`:spy: **${crime.crime_name}** was planned.`);
+                    } else {
+                        continue;
+                    }
+                } else if (crime.initiated === 1) {
+                    if (crime.time_completed > timestamp) {
+                        console.log(id, `:information_source: **${crime.crime_name}** has been initiated. Details below.`);
+                        const statusIcon = crime.success ? ':money_with_wings:' : ':poop:';
+                        if (crime.success) {
+                            crimeEmbed.setColor(successColor);
+                            crimeEmbed.setTitle(`${statusIcon} **${crime.crime_name}** Successful!`);
+                        } else {
+                            crimeEmbed.setColor(errorColor);
+                            crimeEmbed.setTitle(`${statusIcon} **${crime.crime_name}** Failed!`);
+
+                        }
+                        //crimeEmbed.setDescription(`${statusIcon} **${crime.crime_name}** has been initiated. Details below.`);
+                        crimeEmbed.addFields([
+                            {
+                                name: "Details",
+                                value: `Money gained: $${numberWithCommas(crime.money_gain)}\nRespect gained: ${crime.respect_gain}`,
+                                inline: false,
+                            }
+                        ])
+                    } else {
+                        continue;
+                    }
+                }
+                await ocChannel.send({ embeds: [crimeEmbed] });
+            }
+        }
+    }
+
+    if (timestampCache.set('ocExecTime_' + homeFactionId, currentTimestamp, 120)) printLog(homeFactionId + ` > Cache updated for 'ocExecTime_${homeFactionId}' with ${currentTimestamp}`);
 }
-
 
 
 
@@ -1813,7 +1948,7 @@ async function listServerRoles(guild, filter = null) {
 async function getUsersByRole(guild, roleName) {
     printLog(`Getting users with role: ${roleName}`, 'info');
     const roleList = await listServerRoles(guild, roleName);
-    
+
     const roleId = roleList[0].id;
 
     const members = await guild.members.fetch();

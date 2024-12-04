@@ -424,17 +424,24 @@ async function verifyRoleAccess(interaction, factionData) {
  * @return {boolean} True if the user is in the admin channel, false otherwise.
  */
 async function verifyAdminAccess(interaction, limitedAccessConf) {
-    // Check if the user is in the admin channel
-    const isInAdminChannel = interaction.channelId === limitedAccessConf.adminChannelId;
+    // Check if the user is in one of the admin channels
+    const isInAdminChannel = Array.isArray(limitedAccessConf.adminChannelId)
+        ? limitedAccessConf.adminChannelId.includes(interaction.channelId)
+        : interaction.channelId === limitedAccessConf.adminChannelId;
 
     if (!isInAdminChannel) {
         const notificationEmbed = initializeEmbed(`Error 418 - You're a teapot`, 'error');
-        notificationEmbed.setDescription(`:teapot: Nice try!\nThis command can only be used in the **admin channel** <#${limitedAccessConf.adminChannelId}>.`);
+        const channelMentions = Array.isArray(limitedAccessConf.adminChannelId)
+            ? limitedAccessConf.adminChannelId.map(id => `<#${id}>`).join(', ')
+            : `<#${limitedAccessConf.adminChannelId}>`;
+
+        notificationEmbed.setDescription(`:teapot: Nice try!\nThis command can only be used in the **admin channels** ${channelMentions}.`);
         await interaction.reply({ embeds: [notificationEmbed], ephemeral: true });
     }
 
-    return isInAdminChannel; // Admin access granted if user is in the admin channel
+    return isInAdminChannel; // Admin access granted if user is in one of the allowed admin channels
 }
+
 
 /**
  * Verifies if the command is executed in a valid category (family or faction).

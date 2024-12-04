@@ -85,12 +85,18 @@ client.on('ready', () => {
 				travel: client.channels.cache.get(factionConfig.channels.travelChannelId),
 				retal: client.channels.cache.get(factionConfig.channels.retalChannelId),
 				rankedWar: client.channels.cache.get(factionConfig.channels.rankedWarChannelId),
+				oc: client.channels.cache.get(factionConfig.channels.ocChannelId),
 			};
 
 			if (channels.member) {
+				cleanChannel(channels.member);
 				const memberUpdateInterval = factionConfig.updateIntervals.member || 5;
 				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId, factionConfig), 1000 * 60 * memberUpdateInterval);
-				if (factionConfig.showOcStatus) setInterval(() => checkOCs(channels.member, memberUpdateInterval, factionId, factionConfig), 1000 * 60 * 60 * memberUpdateInterval);
+			}
+
+			if (channels.oc) {
+				const ocUpdateInterval = factionConfig.updateIntervals.oc || 5;
+				setInterval(() => checkOCs(channels.oc, ocUpdateInterval, factionId, factionConfig), 1000 * 60 * ocUpdateInterval);
 			}
 
 			if (channels.armoury) {

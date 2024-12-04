@@ -57,7 +57,8 @@ module.exports = {
                                 tag: faction_tag,
                                 icon: faction_icon_URL,
                                 roleId: verifiedRoleId,
-                                members: factionMembers
+                                members: factionMembers,
+                                embedColor: factionConfig.embedColor
                             };
                         }
                     }
@@ -76,7 +77,8 @@ module.exports = {
                     roleId: factionInfo.roleId,
                     notWithRole: [],
                     notInFaction: [],
-                    hasRole: []
+                    hasRole: [],
+                    embedColor: factionInfo.embedColor
                 };
 
                 // Check for "Not with Role" and "Has Role"
@@ -110,12 +112,12 @@ module.exports = {
 
             // Step 4: Send Responses per Faction
             for (const [factionId, factionResults] of Object.entries(resultsByFaction)) {
-                const { name, id, tag, icon, roleId, notWithRole, notInFaction, hasRole } = factionResults;
+                const { name, id, tag, icon, roleId, notWithRole, notInFaction, hasRole, embedColor } = factionResults;
                 const faction_icon_URL = `https://factiontags.torn.com/${icon}`;
 
                 // Prepare embeds for the faction
                 if (notWithRole.length > 0) {
-                    const notWithRoleEmbed = initializeEmbed(`${name} - Discord Members with missing roles`)
+                    const notWithRoleEmbed = initializeEmbed(`${name} - Discord Members with missing roles`, 'overwrite', embedColor)
                         .setDescription(
                             notWithRole.join('\n').slice(0, 4000) || 'No members found.'
                         )
@@ -125,7 +127,7 @@ module.exports = {
                 }
 
                 if (notInFaction.length > 0) {
-                    const notInFactionEmbed = initializeEmbed(`${name} - Discord Members with role but not in faction`)
+                    const notInFactionEmbed = initializeEmbed(`${name} - Discord Members with role but not in faction`, 'overwrite', embedColor)
                         .setDescription(
                             notInFaction.join('\n').slice(0, 4000) || 'No members found.'
                         )
@@ -135,7 +137,7 @@ module.exports = {
                 }
 
                 if (hasRole.length > 0) {
-                    const hasRoleEmbed = initializeEmbed(`${name} - Discord Members with correct role`)
+                    const hasRoleEmbed = initializeEmbed(`${name} - Discord Members with correct role`, 'overwrite', embedColor)
                         .setDescription(
                             hasRole.join('\n').slice(0, 4000) || 'No members found.'
                         )

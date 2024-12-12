@@ -104,6 +104,15 @@ module.exports = {
                 return await interaction.reply({ embeds: [bankRequestEmbed], ephemeral: true });
             }
 
+            if (requestedAmount === 0) {
+                bankRequestEmbed.addFields({
+                    name: '🚫 Error',
+                    value: `You requested \$${numberWithCommas(requestedAmount)}, that is zero (0) dollars. Very funny...`,
+                    inline: true
+                });
+                return await interaction.reply({ embeds: [bankRequestEmbed], ephemeral: true });
+            }
+
             bankRequestEmbed
                 .setTitle(`✅ Request sent`)
                 .addFields({

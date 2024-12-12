@@ -33,8 +33,19 @@ client.once(Events.ClientReady, c => {
 	const statusChannel = client.channels.cache.get(statusConf.channelId);
 
 	if (statusChannel) {
-		sendStatusMsg(statusChannel, statusConf.updateInterval, statusMessage, startUpTime);
-		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval, startUpTime), 1000 * 60 * statusConf.updateInterval);
+		let factionInfo = '';
+        for (const factionId in factions) {
+            if (factions.hasOwnProperty(factionId)) {
+                const factionConfig = factions[factionId];
+                const isFactionEnabled = factionConfig.enabled || false;
+                const factioName = factionConfig.name || 'N/A';
+
+                factionInfo += `${isFactionEnabled ? 'Enabled ' : 'Disabled'} - ${factioName} [${factionId}]\n`;
+
+            }
+        }
+		sendStatusMsg(statusChannel, statusConf.updateInterval, statusMessage, startUpTime, factionInfo);
+		setInterval(() => sendStatusMsg(statusChannel, statusConf.updateInterval, undefined, startUpTime, factionInfo), 1000 * 60 * statusConf.updateInterval);
 	}
 
 	let jsonData;

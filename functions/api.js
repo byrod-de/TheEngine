@@ -159,6 +159,53 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
 }
 
 /**
+ * Makes a request to the TornStats API with the provided parameters and returns
+ * the response as an array containing a boolean status, a status message, and
+ * the API response JSON.
+ *
+ * @param {string} endpoint - the endpoint to call on the TornStats API
+ * @param {string} selection - the selection criteria for the API request
+ * @param {string} [criteria=''] - additional criteria for the API request
+ * @return {Array} an array containing the status, status message, and API response JSON
+ */
+
+async function callTornStatsApi(endpoint, selection, criteria = '') {
+
+    const apiKey = readConfig().apiConf.tornStatsApiKey;
+    let status = false;
+    let statusMessage = '';
+    let apiJson = {};
+
+    let apiURL = `https://www.tornstats.com/api/v2/${apiKey}/${endpoint}/${selection}/${criteria}`;
+    printLog(`TornStats >> ${apiURL.replace(apiKey, apiKey)}`);
+
+    try {
+        const apiResponse = await axios.get(apiURL);
+
+        if (apiResponse.status >= 200 && apiResponse.status < 300) {
+            apiJson = apiResponse.data;
+
+            if (apiJson.hasOwnProperty('error')) {
+                statusMessage = `Error Code ${apiJson['error'].code} >> ${apiJson['error'].error}.`;
+            } else {
+                statusMessage = `Torn API available! ${endpoint} - ${criteria} - ${selection}`;
+                status = true;
+            }
+        } else {
+            statusMessage = `HTTP error with status code ${apiResponse.status}`;
+        }
+
+        if (!status) printLog(statusMessage, 'warn');
+
+        return [status, statusMessage, apiJson];
+    } catch (error) {
+        statusMessage = `An error occurred: ${error.message}`;
+        printLog(statusMessage, 'error');
+        return [status, statusMessage, apiJson];
+    }
+}
+
+/**
  * Verifies API keys in the given configuration, updates their status, and sends a verification message.
  *
  * @param {string} statusChannel - The channel where the verification status message will be sent.
@@ -303,4 +350,4 @@ async function getAdditionalKeyInfo(apiKey) {
   return keyObj ? keyObj.key : null;
 }*/
 
-module.exports = { callTornApi, verifyKeys, verifyAPIKey };
+module.exports = { callTornApi, callTornStatsApi, verifyKeys, verifyAPIKey };

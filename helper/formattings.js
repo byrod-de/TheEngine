@@ -256,7 +256,7 @@ function splitIntoChunks(membersList, entryFormat) {
     .replace(/{{statusIcon}}/g, member.statusIcon)
     .replace(/{{hospital}}/g, member.hospital)
     .replace(/{{attackswon}}/g, (member.attackswon || 0).toString().padStart(5, ' '))
-    .replace(/{{level}}/g, '`' + member.level.toString().padStart(3, ' ') + '`')
+    .replace(/{{level}}/g, '`' + (member.level?.toString().padStart(3, ' ') || 'N/A') + '`')
     .replace(/{{totalStats}}/g, (member.totalStats === 0) ? '' : `> ${abbreviateNumber(member.totalStats)}`);
 
     if (currentChunk.length === 0 || (currentChunk.join('').length + entry.length) > MAX_FIELD_LENGTH) {

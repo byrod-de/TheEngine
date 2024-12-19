@@ -169,9 +169,19 @@ async function callTornApi(endpoint, selections, criteria = '', fromTS = 0, toTS
  * @return {Array} an array containing the status, status message, and API response JSON
  */
 
-async function callTornStatsApi(endpoint, selection, criteria = '') {
+async function callTornStatsApi(endpoint, selection, criteria = '', factionId = '') {
 
-    const apiKey = readConfig().apiConf.tornStatsApiKey;
+    let apiKey = readConfig().apiConf.tornStatsApiKey;
+
+    if (factionId.length > 0) {
+        const selectedFaction = readConfig().factions[factionId];
+        if (selectedFaction) {
+            apiKey = selectedFaction.tornStatsApiKey || apiKey;
+            printLog(`${factionId} > Using TornStats API key for faction ${selectedFaction.name}: ${apiKey}`);
+        }
+    }
+    
+
     let status = false;
     let statusMessage = '';
     let apiJson = {};

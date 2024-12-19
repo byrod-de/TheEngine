@@ -84,7 +84,7 @@ module.exports = {
                 // Check for "Not with Role" and "Has Role"
                 for (const member of members.values()) {
                     const displayName = member.displayName || member.user.username;
-                    const idMatch = displayName.match(/\[(\d+)\]$/);
+                    const idMatch = displayName.match(/\[(\d+)\]|\((\d+)\)|\{(\d+)\}|\<(\d+)\>$/);
                     const extractedId = idMatch ? idMatch[1] : null;
 
                     if (extractedId && factionInfo.members.hasOwnProperty(extractedId)) {

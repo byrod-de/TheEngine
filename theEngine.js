@@ -97,12 +97,13 @@ client.on('ready', () => {
 				retal: client.channels.cache.get(factionConfig.channels.retalChannelId),
 				rankedWar: client.channels.cache.get(factionConfig.channels.rankedWarChannelId),
 				oc: client.channels.cache.get(factionConfig.channels.ocChannelId),
+				jail: client.channels.cache.get(factionConfig.channels.jailChannelId)
 			};
 
 			if (channels.member) {
 				cleanChannel(channels.member);
 				const memberUpdateInterval = factionConfig.updateIntervals.member || 5;
-				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId, factionConfig), 1000 * 60 * memberUpdateInterval);
+				setInterval(() => checkMembers(channels.member, memberUpdateInterval, factionId, factionConfig, channels.jail), 1000 * 60 * memberUpdateInterval);
 			}
 
 			if (channels.oc) {

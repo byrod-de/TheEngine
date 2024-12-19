@@ -51,7 +51,7 @@ async function sendStatusMsg(statusChannel, statusUpdateInterval, statusMessage 
 
     if (startUpTime === undefined) startUpTime = timestampCache.get('startUpTime');
     if (timestampCache.set('startUpTime', startUpTime, 120 * statusUpdateInterval)) printLog(`Cache updated for 'startUpTime' with ${startUpTime}`);
-    
+
     botStatusEmbed.addFields({ name: 'Start Up Time', value: `\`${startUpTime}\``, inline: false });
     botStatusEmbed.addFields({ name: 'Bot Status', value: `\`${currentDate} > ${statusMessage}\``, inline: false });
     botStatusEmbed.addFields({ name: 'API Status', value: `\`${result[1]}\``, inline: false });
@@ -201,7 +201,7 @@ async function checkRetals(retalChannel, homeFactionId, factionConfig) {
 
                 if (overseas) attackEmbed.addFields({ name: `Additional Info`, value: `:golf: Attack was abroad.`, inline: false });
 
-                const battleStatsResponse = await callTornStatsApi('spy', 'user', attacker_id);
+                const battleStatsResponse = await callTornStatsApi('spy', 'user', attacker_id, homeFactionId);
 
                 if (battleStatsResponse[0]) {
                     const battleStatsJson = battleStatsResponse[2];
@@ -522,7 +522,7 @@ async function checkWar(warChannel, memberChannel, warUpdateInterval, travelChan
                             //Check TornStats API
                             let memberStats = {};
                             if (!isOwnFaction) {
-                                const battleStatsResponse = await callTornStatsApi('spy', 'faction', factionID);
+                                const battleStatsResponse = await callTornStatsApi('spy', 'faction', factionID, ownFactionID);
 
                                 if (battleStatsResponse[0]) {
                                     memberStats = battleStatsResponse[2].faction.members;
@@ -1140,7 +1140,7 @@ async function getTravelInformation(travelChannel, travelUpdateInterval, faction
  * @param {number} memberUpdateInterval - The interval in milliseconds at which the member status and information will be updated.
  * @return {Promise<void>} A promise that resolves once the member status and information are updated in the Discord embeds.
  */
-async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId, factionConfig) {
+async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId, factionConfig, jailChannel) {
     const memberTitle = readConfig().factions[homeFactionId].memberTitle;
     printLog(homeFactionId + ' > Checking members - ' + memberTitle);
 
@@ -1215,31 +1215,36 @@ async function checkMembers(memberChannel, memberUpdateInterval, homeFactionId, 
 
             }
 
-            // Sort jailMembersList and offlineMembersList based on different timestamps
-            jailMembersList.sort((a, b) => a.statusUntil - b.statusUntil);
-            offlineMembersList.sort((a, b) => a.lastActionTimestamp - b.lastActionTimestamp);
+            if (jailChannel) {
+                // Sort jailMembersList and offlineMembersList based on different timestamps
+                jailMembersList.sort((a, b) => a.statusUntil - b.statusUntil);
 
-            if (jailMembersList.length > 0) {
-                jailEmbed.setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` })
-                    .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`);
+                if (jailMembersList.length > 0) {
+                    jailEmbed.setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` })
+                        .setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`);
 
-                const entryFormat = `:oncoming_police_car: [{{name}}](https://byrod.cc/p/{{id}}) out <t:{{statusUntil}}:R>\n`;
-                const jailChunks = splitIntoChunks(jailMembersList, entryFormat);
+                    const entryFormat = `:oncoming_police_car: [{{name}}](https://byrod.cc/p/{{id}}) out <t:{{statusUntil}}:R>\n`;
+                    const jailChunks = splitIntoChunks(jailMembersList, entryFormat);
 
-                // Add each chunk as a separate field
-                jailChunks.forEach((chunk, index) => {
-                    jailEmbed.addFields({ name: `Members in jail (${index + 1}/${jailChunks.length})`, value: chunk, inline: true });
-                });
+                    // Add each chunk as a separate field
+                    jailChunks.forEach((chunk, index) => {
+                        jailEmbed.addFields({ name: `Members in jail (${index + 1}/${jailChunks.length})`, value: chunk, inline: true });
+                    });
 
-                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'edit', homeFactionId);
-            } else {
-                await updateOrDeleteEmbed(memberChannel, 'jail', jailEmbed, 'delete', homeFactionId);
+                    await updateOrDeleteEmbed(jailChannel, 'jail', jailEmbed, 'edit', homeFactionId);
+                } else {
+                    await updateOrDeleteEmbed(jailChannel, 'jail', jailEmbed, 'delete', homeFactionId);
+                }
             }
+
             ownStatusEmbed.setDescription(`_Update interval: every ${memberUpdateInterval} minutes._`)
                 .setAuthor({ name: `${ownFactionTag} -  ${ownFactionName}`, iconURL: ownFactionIcon, url: `https://byrod.cc/f/${ownFactionId}` });
 
             ownStatusEmbed.addFields({ name: `Member Status`, value: `:ok_hand: Okay: ${okayMemberCount}\n:airplane: Traveling: ${travelingMemberCount}\n:golf: Abroad: ${abroadMemberCount}\n:syringe: Hospital: ${hospitalMemberCount}\n:oncoming_police_car: Jail: ${jailMembersCount}\n:no_entry_sign: Federal: ${federalMembersCount}`, inline: true });
             ownStatusEmbed.addFields({ name: `Online Status`, value: `:green_circle: Online: ${membersOnline}\n:yellow_circle: Idle: ${membersIdle}\n:black_circle: Offline: ${membersOffline}`, inline: true });
+
+            offlineMembersList.sort((a, b) => a.lastActionTimestamp - b.lastActionTimestamp);
+
             if (offlineMembersList.length > 0) {
                 let offlineMembersEntries = '';
                 for (const member of offlineMembersList) {
